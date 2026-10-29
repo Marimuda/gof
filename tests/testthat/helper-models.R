@@ -67,3 +67,10 @@ expect_same_cumres <- function(a,b) {
     expect_equal(a$x,b$x)
     expect_equal(a$variable,b$variable)
 }
+
+ordinal_fixture <- function(k=3,n=180) {
+    set.seed(123)
+    d <- data.frame(x=rnorm(n))
+    d$y <- ordered(cut(d$x+rnorm(n),breaks=c(-Inf,if (k==3) c(-.5,.5) else 0,Inf)))
+    lava::ordreg(y~x,d)
+}

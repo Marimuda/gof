@@ -7,7 +7,7 @@
 ##                        + eta(t)' sum_i ic_i g_i ]             (under H0)
 ##   eta(t)  = sum_i 1{x_i <= t} dr_i   (derivative of residuals wrt beta)
 ##
-## with g_i iid N(0,1). The p-values are P(stat(W*) > stat(W)) estimated from
+## with g_i iid N(0,1). The p-values are P(stat(W*) >= stat(W)) estimated from
 ## R realisations, with stat = sup|W| or the L2 norm sqrt(int W(t)^2 dt).
 ##
 ## It consumes R's random number stream in exactly the same order as
@@ -31,6 +31,10 @@ ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
     idx <- lapply(seq_len(p),function(j) {
         s <- sort(variable[,j]); values <- unique(s)
         ends <- which(!duplicated(s,fromLast=TRUE))
+        if (b>0) {
+            values <- sort(unique(c(s,s+b)))
+            ends <- seq_along(values)
+        }
         if (is.null(subset.max) || length(values)<=subset.max) return(ends)
         if (subset.max==1) return(tail(ends,1))
         nq <- floor(subset.max/2); ne <- ceiling(subset.max/2)
@@ -56,16 +60,19 @@ ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
     sup_stat <- function(w) max(abs(w))
     l2_stat <- function(w, t) sqrt(sum(c(diff(t), 0) * w^2))
 
-    t0 <- lapply(seq_len(p), function(j) sort(variable[, j])[idx[[j]]])
+    t0 <- lapply(seq_len(p), function(j) {
+        values <- if (b==0) sort(variable[,j]) else sort(unique(c(variable[,j],variable[,j]+b)))
+        values[idx[[j]]]
+    })
     W <- lapply(seq_len(p), function(j) {
         if (b==0) return((cumsum(r[ord[[j]]])/sqrt(n))[idx[[j]]])
-        vapply(t0[[j]],function(t) sum(r*(variable[,j]>t-b & variable[,j]<=t))/sqrt(n),numeric(1))
+        vapply(t0[[j]],function(t) sum(r*(variable[,j]<=t & variable[,j]+b>t))/sqrt(n),numeric(1))
     })
     sample_at <- function(j,g) {
         if (b==0) return(one_process(ord[[j]],g)[idx[[j]]])
         o <- ord[[j]]
         vapply(t0[[j]],function(t) {
-            in_window <- variable[o,j]>t-b & variable[o,j]<=t
+            in_window <- variable[o,j]<=t & variable[o,j]+b>t
             (sum(r[o]*g*in_window)+sum(colSums(dr[o,,drop=FALSE]*in_window)*colSums(ic[o,,drop=FALSE]*g)))/sqrt(n)
         },numeric(1))
     }

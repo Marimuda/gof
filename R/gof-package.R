@@ -1,44 +1,63 @@
-##' Model-diagnostics based on cumulative residuals
+##' Model diagnostics based on cumulative residuals
 ##'
-##' @description Model-diagnostics based on cumulative residuals
-##' @name gof-package
-##' @import utils stats
-##' @aliases gof-package gof
-##' @docType package
+##' The \pkg{gof} package checks fitted mean structures using cumulative
+##' residual processes, multiplier simulations and Sup/L2 tests. Start with
+##' \code{\link{cumres}} for a model-to-diagnostic workflow, then use the
+##' model-specific help for its assumptions and available options.
+##'
+##' Supported adapters cover normal/binomial/Poisson regression, Gaussian
+##' structural equation models and ordinal regression fitted with \pkg{lava}.
+##' The low-level default method accepts custom residual and influence
+##' contributions when their statistical assumptions can be justified.
 ##' @author Klaus K. Holst <klaus@@holst.it>
-##' @seealso \code{\link[timereg]{cox.aalen}} in the \code{timereg}-package for
-##' similar GoF-methods for survival-data.
-##' @references D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
-##' Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
+##' @seealso \code{\link{cumres}}, \code{\link{cumres.glm}},
+##' \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
+##' \code{\link{plot.cumres}}, \code{\link{surgunit}}.
+##' @references D. Y. Lin, L. J. Wei and Z. Ying (2002).
+##' \emph{Model-Checking Techniques Based on Cumulative Residuals}.
+##' Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
 ##'
-##' John Q. Su and L.J. Wei (1991) \emph{A lack-of-fit test for the mean function
-##' in a generalized linear model}. Journal. Amer. Statist. Assoc., Volume 86,
-##' Number 414, pp 420-426.
-##' @useDynLib gof
-##' @importFrom lava iid vars
+##' John Q. Su and L. J. Wei (1991). \emph{A lack-of-fit test for the mean
+##' function in a generalized linear model}. Journal of the American
+##' Statistical Association 86, 420--426.
+##' @keywords internal
+##' @importFrom stats quantile runif coef family formula model.frame model.matrix
+##' @importFrom stats model.response model.weights vcov predict rnorm
+##' @importFrom utils head tail
+##' @useDynLib gof, .registration = TRUE
 ##' @importFrom Rcpp loadModule
-##' @importFrom graphics lines polygon
-##' @importFrom grDevices col2rgb rgb
 ##' @importFrom methods new
-##' @keywords package
-##' @examples
-##' example(cumres)
-##'
+"_PACKAGE"
+
 loadModule("gofmod", TRUE)
-NULL
 
 
-##' Surgical Unit Data
+##' Surgical unit data
 ##'
-##' Surgical Unit Data used in the paper by Lin et al. (2002).  Survival time and
-##' covariates for 54 patients undergoing liver surgery.
-##'
-##'
+##' Survival time and four covariates for 54 patients undergoing liver surgery.
+##' This is the surgical unit example used by Lin, Wei and Ying (2002).
 ##' @name surgunit
 ##' @docType data
-##' @references D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
-##' Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
+##' @format A data frame with 54 rows and five variables:
+##' \describe{
+##'   \item{\code{bloodclot}}{Numeric blood-clotting measure.}
+##'   \item{\code{prognostic}}{Integer prognostic measure.}
+##'   \item{\code{enzyme}}{Integer enzyme measure.}
+##'   \item{\code{liver function}}{Numeric liver-function measure. Its name
+##'   contains a space; use backticks in formulas or \code{[[} for extraction.}
+##'   \item{\code{survival}}{Integer survival-time measure.}
+##' }
+##' @details Measurement units and fuller variable definitions are not stored
+##' as metadata in the distributed data. Consult the cited original sources
+##' before interpreting these measurements in substantive analyses.
 ##' @source Neter, J., Kutner, M. H., Nachtsheim, C. J., and Wasserman, W.
-##' (1996), Applied Linear Statistical Models, 4th edition. Chicago: Irwin
+##' (1996), \emph{Applied Linear Statistical Models}, 4th edition. Chicago: Irwin.
+##' @references D. Y. Lin, L. J. Wei and Z. Ying (2002).
+##' \emph{Model-Checking Techniques Based on Cumulative Residuals}.
+##' Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
+##' @examples
+##' data(surgunit)
+##' names(surgunit)
+##' head(surgunit[["liver function"]])
 NULL
 

@@ -1,7 +1,7 @@
 Package: gof
 Type: Package
 Title: Model Diagnostics Based on Cumulative Residuals
-Version: 1.0.5
+Version: 1.1.0
 Date: 2026-10-29
 Authors@R: person("Klaus K.", "Holst", email = "klaus@holst.it",
     role = c("aut", "cre"))
@@ -9,14 +9,20 @@ Description: Implementation of model-checking techniques for generalized linear
     models and linear structural equation models based on cumulative residuals
     (Lin et al. (2002) <doi:10.1111/j.0006-341x.2002.00001.x>).
 Depends:
-    R (>= 3.5),
-    lava (>= 1.10)
+    R (>= 4.1)
 Imports:
+    lava (>= 1.10),
     methods,
-    Rcpp (>= 1.1.2),
+    lpSolve,
+    Rcpp (>= 1.1.2)
 Suggests:
     testthat (>= 3.2.3),
-    numDeriv
+    numDeriv,
+    knitr,
+    rmarkdown,
+    generics,
+    tibble,
+    broom
 License: Apache License (== 2.0) | file LICENSE
 LinkingTo: Rcpp, RcppArmadillo
 LazyLoad: yes
@@ -25,4 +31,11 @@ SystemRequirements: C++17
 ByteCompile: yes
 RcppModules: gofmod
 Encoding: UTF-8
-RoxygenNote: 7.1.0
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Config/Needs/website: pkgdown
+Config/Needs/documentation: roxygen2
+URL: https://github.com/kkholst/gof
+BugReports: https://github.com/kkholst/gof/issues
+Config/roxygen2/version: 8.1.1

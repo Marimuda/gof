@@ -1,9 +1,10 @@
+##' @rdname cumres.glm
 ##' @export
 `cumres.lm` <- function(model,...) {
   cumres.glm(model,...)
 }
 
-##' Calculates GoF statistics based on cumulative residual processes
+##' Cumulative residual diagnostics for linear and generalized linear models
 ##' 
 ##' Given the generalized linear models model \deqn{g(E(Y_i|X_{i1},...,X_{ik})) =
 ##' \sum_{j=1}^k \beta_jX_{ij}} the \code{cumres}-function calculates the
@@ -14,7 +15,7 @@
 ##' the cumulative residual process under the null (Lin et al., 2002).
 ##' 
 ##' 
-##' @aliases cumres cumres.glm cumres.lm
+##' @aliases cumres.glm cumres.lm
 ##' @param model Model object (\code{lm} or \code{glm})
 ##' @param variable Names of ordering variables. The default selects fitted
 ##' predictions and design columns with more than two distinct values. Explicit
@@ -22,10 +23,10 @@
 ##' factors supplied through \code{data}. Unordered factors are rejected.
 ##' @param data Data containing additional ordering variables. Rows are aligned
 ##' to the fitted model by row names, or must already be in fitted-row order.
-##' @param R Number of samples used in simulation
+##' @param R Positive whole number of multiplier simulations.
 ##' @param b Nonnegative moving-window bandwidth. Zero gives cumulative
 ##' residuals; positive values give residual sums over the window \eqn{(t-b,t]}.
-##' @param plots Number of realizations to save for use in the plot-routine
+##' @param plots Nonnegative whole number of null processes to retain for plotting.
 ##' @param ... additional arguments passed to \code{cumres.default}. In
 ##' particular \code{subset.max} (default 500): each process is evaluated at
 ##' at most this many distinct covariate values, retaining every observation
@@ -34,7 +35,8 @@
 ##' \code{breakties} argument is accepted with a warning when nonzero; no jitter
 ##' is added. A custom \code{subset} function receives sorted distinct values
 ##' and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.
-##' @return Returns an object of class 'cumres'.
+##' @returns A \code{cumres} object. See \code{\link{cumres}} for its observed
+##' and simulated curves, grids, Monte Carlo p-values and fitted-row metadata.
 ##' @note Normal, binomial and Poisson models with their standard links are
 ##' supported. Normal and Poisson prior weights describe inverse dispersion of
 ##' independently observed response means, as in \code{stats::glm}; their scores
@@ -45,6 +47,15 @@
 ##' Diagnostics retain the fitted coefficients, covariance and offsets, and omit
 ##' the same incomplete rows as the fit. Normal models require positive residual
 ##' degrees of freedom. A known mean with no estimated coefficients is supported.
+##' Estimated mean parameters must have a regular interior likelihood root.
+##' Binomial separation and Poisson recession checks use linear programming;
+##' constrained/noncanonical links additionally require numerical local-root
+##' qualification. A finite coefficient and \code{converged=TRUE} alone do not
+##' establish these conditions. Unresolved/boundary cases fail explicitly.
+##' These checks are numerical qualifications, not exact-arithmetic interval
+##' proofs, global optimization certificates, or proof that a loose/custom
+##' fitter estimated the coefficients accurately. Appropriate estimator
+##' consistency, precision and finite-information conditions remain required.
 ##' Predicted coordinates are reconstructed from the fitted coefficients so
 ##' identical design rows are not separated by subtraction roundoff.
 ##' Structurally recognized saturated ordering cells have no lack-of-fit
@@ -58,7 +69,8 @@
 ##' the observed statistic. \code{n} is the number of independent residual units
 ##' (trials for expanded binomial data); \code{nobs} records positive-weight fitted rows.
 ##' @author Klaus K. Holst
-##' @seealso The \href{https://CRAN.R-project.org/package=timereg}{timereg}
+##' @seealso \code{\link{cumres}}, \code{\link{cumres.default}} and
+##' \code{\link{plot.cumres}}. The \href{https://CRAN.R-project.org/package=timereg}{timereg}
 ##' package provides similar GoF methods for survival data.
 ##' @references D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
 ##' Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
@@ -69,26 +81,22 @@
 ##' @keywords models regression
 ##' @export
 ##' @examples
-##' 
-##' sim1 <- function(n=100, f=function(x1,x2) {10+x1+x2^2}, sd=1, seed=1) {
-##'   if (!is.null(seed))
-##'     set.seed(seed)
-##'   x1 <- rnorm(n);
-##'   x2 <- rnorm(n)
-##'   X <- cbind(1,x1,x2)
-##'   y <- f(x1,x2) + rnorm(n,sd=sd)
-##'   d <- data.frame(y,x1,x2)
-##'   return(d)
-##' }
-##' d <- sim1(100); l <- lm(y ~ x1 + x2,d)
-##' system.time(g <- cumres(l, R=100, plots=50))
-##' g
-##' \donttest{plot(g)}
-##' g1 <- cumres(l, c("y"), R=100, plots=50)
-##' g1
-##' g2 <- cumres(l, c("y"), R=100, plots=50, b=0.5)
-##' g2
-##' 
+##' set.seed(13)
+##' d <- data.frame(x = seq(-2, 2, length.out = 120))
+##' d$y <- rbinom(nrow(d), 1, plogis(-0.5 + d$x))
+##' fit <- glm(y ~ x, data = d, family = binomial())
+##' diagnostic <- cumres(fit, variable = "x", R = 99, plots = 5)
+##' coef(diagnostic)
+##' plot(diagnostic, idx = "x")
+##'
+##' # The limit applies to evaluation points, not observations.
+##' all_points <- cumres(fit, variable = "x", R = 99, plots = 0,
+##'   subset.max = Inf)
+##' all_points$nobs
+##'
+##' # A positive bandwidth requests residual sums over (t - b, t].
+##' window <- cumres(fit, variable = "x", R = 99, plots = 0, b = 0.5)
+##' coef(window)
 `cumres.glm` <- function(model,
                   variable=c("predicted",colnames(model.matrix(model))),
                   data=model.frame(model),
@@ -150,6 +158,7 @@
         active <- rowSums(counts)>0
         total <- sum(counts)
         if (!total || total>.Machine$integer.max) stop("The expanded trial count must be between 1 and .Machine$integer.max")
+        gof_validate_glm_mle(model,Xfit,y,w,eta_fit)
         rows <- rep(seq_len(nrow(mf)),rowSums(counts))
         y0 <- unlist(lapply(seq_len(nrow(counts)),function(i) rep(c(1,0),counts[i,])))
         X <- Xfit[rows,,drop=FALSE]
@@ -164,6 +173,7 @@
     } else {
         if (is_binomial && any(!y %in% c(0,1)))
             stop("Binomial proportions require trial counts supplied as weights")
+        if (is_glm) gof_validate_glm_mle(model,Xfit,y,w,eta_fit)
         rows <- which(active)
         X <- Xfit[rows,,drop=FALSE]
         yhat <- yhat_fit[rows]

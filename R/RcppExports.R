@@ -2,22 +2,22 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 SupTest <- function(x) {
-    .Call('_gof_SupTest', PACKAGE = 'gof', x)
+    .Call(`_gof_SupTest`, x)
 }
 
 L2Test <- function(x, t) {
-    .Call('_gof_L2Test', PACKAGE = 'gof', x, t)
+    .Call(`_gof_L2Test`, x, t)
 }
 
 FastApprox <- function(time, newtime, equal = FALSE, type = 0L) {
-    .Call('_gof_FastApprox', PACKAGE = 'gof', time, newtime, equal, type)
+    .Call(`_gof_FastApprox`, time, newtime, equal, type)
 }
 
 ClusterIndex <- function(t) {
-    .Call('_gof_ClusterIndex', PACKAGE = 'gof', t)
+    .Call(`_gof_ClusterIndex`, t)
 }
 
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
-    .Call('_gof_RcppExport_registerCCallable', PACKAGE = 'gof')
+    .Call(`_gof_RcppExport_registerCCallable`)
 })

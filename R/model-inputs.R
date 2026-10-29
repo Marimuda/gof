@@ -24,6 +24,14 @@ gof_informative_processes <- function(X,weights,ordering,grid=NULL,b=0) {
     # lack of test information, not evidence inferred from small p-values.
     p <- ncol(X)
     informative <- rep(TRUE,ncol(ordering))
+    if (b>0 && !is.null(grid)) {
+        if (length(grid)!=ncol(ordering)) stop("Evaluation grids must match ordering variables")
+        for (j in seq_len(ncol(ordering))) {
+            empty <- vapply(grid[[j]],function(t)
+                !any(ordering[,j]<=t & ordering[,j]+b>t),logical(1))
+            if (length(empty) && all(empty)) informative[j] <- FALSE
+        }
+    }
     if (!p) return(informative)
     for (j in seq_len(ncol(ordering))) {
         levels <- unique(ordering[,j])
@@ -80,7 +88,7 @@ gof_informative_processes <- function(X,weights,ordering,grid=NULL,b=0) {
         unresolved <- length(grid[[j]])>0L
         for (t in grid[[j]]) {
             indicator <- as.numeric(ordering[,j]<=t)
-            if (b>0) indicator <- indicator*as.numeric(ordering[,j]>t-b)
+            if (b>0) indicator <- indicator*as.numeric(ordering[,j]+b>t)
             projection <- drop(Q %*% crossprod(Q,indicator))
             error <- sqrt(sum((indicator-projection)^2))
             bound <- gamma*(sqrt(sum(indicator^2))+sqrt(sum(projection^2)))

@@ -1,32 +1,43 @@
-##' Plot cumulative residuals from a 'cumres' object
+##' Plot observed and simulated cumulative residual processes
 ##'
-##' \code{plot} displays the observed cumulative residual process with
-##' realizations under the null.
+##' Display the observed residual process together with saved realizations
+##' under the null. These curves provide a visual comparison and are not
+##' simultaneous confidence bands.
 ##'
-##'
-##' @param x Object produced by the function \code{cumres}.
-##' @param idx vector of numbers (or variable names) indicating which processes
-##' from the \code{x} to plot.
-##' @param col Color of the sample processes. By setting this parameter to "none"
-##' or \code{NULL} no realizations will be drawn. The number of realizations is
-##' determined by the \code{cumres}-object.
-##' @param col.alpha Transparency-level of plotted sample processes
-##' @param legend Type of legend where "type1" gives p-values of GoF-tests and
-##' "type2" gives usual type of legends.
-##' @param xlab Optional label of x-axis
-##' @param ylab Optional label of y-axis
-##' @param vs Label of predictor
-##' @param ylim Range of y axis
-##' @param title Main title
-##' @param ... Additional arguments passed to the plot-routine.
+##' @param x An object produced by \code{cumres}.
+##' @param idx Numeric process indices or character labels from
+##' \code{x$variable}. An empty vector draws no processes.
+##' @param col Colour or vector of colours for saved null processes. Use
+##' \code{"none"}, \code{NULL} or an empty vector to suppress simulated lines.
+##' @param col.alpha Transparency of saved null-process lines, between zero
+##' and one. The observed curve uses the current graphical foreground colour.
+##' @param legend Legend style: \code{"type1"} displays available p-values
+##' and information-status annotations; \code{"type2"} identifies observed
+##' and simulated lines; \code{"none"} suppresses the legend.
+##' @param xlab Optional horizontal-axis label.
+##' @param ylab Optional vertical-axis label.
+##' @param vs Logical; use the ordering-variable coordinates when \code{TRUE}
+##' (the default), or sequential evaluation-point indices when \code{FALSE}.
+##' @param ylim Optional numeric vertical-axis limits.
+##' @param title Optional plot title, overriding a supplied \code{main}.
+##' @param ... Named graphical arguments passed to \code{graphics::plot},
+##' such as \code{xlim}, \code{axes}, \code{cex.axis} or \code{main}.
+##' @returns The original \code{cumres} object, invisibly, so plotting can
+##' appear within a pipeline without replacing its diagnostic result.
+##' @seealso \code{\link{cumres}}.
 ##' @author Klaus K. Holst
 ##' @keywords hplot regression
 ##' @examples
+##' set.seed(16)
+##' d <- data.frame(x = seq(-2, 2, length.out = 100))
+##' d$y <- 1 + d$x + rnorm(nrow(d))
+##' fit <- lm(y ~ x, data = d)
+##' diagnostic <- cumres(fit, variable = "x", R = 99, plots = 5)
+##' plot(diagnostic, idx = "x", legend = "type2")
+##' plot(diagnostic, col = NULL, legend = "none", vs = FALSE)
 ##'
-##' n <- 500; x <- abs(rnorm(n,sd=0.2))+0.01; y <- sqrt(x) + rnorm(n,sd=0.2)
-##' l <- lm(y ~ x)
-##' g <- cumres(l, R=500)
-##' plot(g, idx=1, legend="type2")
+##' # Plotting returns the diagnostic invisibly.
+##' invisible(diagnostic |> plot(legend = "type1"))
 ##' @method plot cumres
 ##' @export
 plot.cumres <- function(x,idx=seq_along(x$W),col="purple",col.alpha=0.3,
@@ -62,12 +73,17 @@ plot.cumres <- function(x,idx=seq_along(x$W),col="purple",col.alpha=0.3,
             !is.matrix(simulated) || nrow(simulated)!=length(observed) || any(!is.finite(simulated)))
             stop("Incompatible or nonfinite plotted process data")
         score <- length(x$type)>=i && x$type[i]=="score"
+        ordinal_norm <- length(x$type)>=i && x$type[i]=="ordinal-norm"
         xlabel <- if (!missing(xlab)) xlab else if (!vs) "Observation" else if (score) "Time" else x$variable[i]
-        ylabel <- if (!missing(ylab)) ylab else as.expression(list(bquote(W[.(x$variable[i])](x))))
+        ylabel <- if (!missing(ylab)) ylab else if (ordinal_norm)
+            expression(sqrt(sum(W[k](x)^2,k==1,K))) else as.expression(list(bquote(W[.(x$variable[i])](x))))
         main <- if (!missing(title)) title else if (!is.null(extra$main)) extra$main else
             if (!is.null(x$response)) x$response else if (score) x$variable[i] else ""
         x0 <- if (vs) locations else seq_along(locations)
-        limits <- if (is.null(ylim)) max(abs(observed))*2*c(-1,1) else ylim
+        limits <- if (!is.null(ylim)) ylim else if (ordinal_norm) {
+            peak <- max(c(observed,simulated))
+            c(0,if (peak==0) 1 else 1.25*peak)
+        } else max(abs(observed))*2*c(-1,1)
         arguments <- list(x=x0,y=observed,type="n",lwd=2,xlab=xlabel,ylab=ylabel,ylim=limits,main=main)
         for (name in names(extra)) arguments[[name]] <- extra[[name]]
         if (!missing(title)) arguments$main <- title
@@ -87,9 +103,10 @@ plot.cumres <- function(x,idx=seq_along(x$W),col="purple",col.alpha=0.3,
             }
             if (length(labels)) graphics::legend("topright",labels,bg="white")
         } else if (legend=="type2") {
-            labels <- "Observed"; line_colors <- observed_color; line_widths <- 2
+            labels <- if (ordinal_norm) "Observed cutpoint norm" else "Observed"
+            line_colors <- observed_color; line_widths <- 2
             if (has_samples) {
-                labels <- c(labels,"Sample process under null")
+                labels <- c(labels,if (ordinal_norm) "Simulated cutpoint norm" else "Sample process under null")
                 line_colors <- c(line_colors,colors[1])
                 line_widths <- c(line_widths,1)
             }

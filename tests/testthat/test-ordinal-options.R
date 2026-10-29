@@ -11,7 +11,7 @@ test_that("ordinal named and fitted predictors retain complete tie groups", {
     cp <- predict(m,p=coef(m),type="cumulative")
     residual <- outer(m$up$y,seq_len(ncol(cp)),"<=")-cp
     x <- m$up$X[,"gB"]
-    g <- cumres(m,variable="gB",R=20,plots=3)
+    g <- cumres(m,variable="gB",R=20,plots=3,aggregate="score")
     expected <- vapply(sort(unique(x)),function(t) sum(residual[x<=t,,drop=FALSE])/sqrt(length(x)),numeric(1))
     expect_equal(g$W[[1]],expected)
     expect_equal(unname(g$x[[1]]),c(0,1))

@@ -1,3 +1,4 @@
+##' @rdname cumres-object
 ##' @export
 coef.cumres <- function(object,...) {
     columns <- list("p-value(Sup)"=object$KS,"p-value(L2)"=object$CvM)

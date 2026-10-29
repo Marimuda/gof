@@ -43,6 +43,18 @@ gof_grid <- function(x, subset.max, subset) {
     as.integer(ends)
 }
 
+gof_window_grid <- function(x, b, subset.max, subset) {
+    exits <- x+b
+    if (any(!is.finite(exits)))
+        stop("Moving-window exit coordinates must be finite; rescale the covariate and bandwidth")
+    if (any(exits<=x))
+        stop("Moving-window bandwidth cannot be resolved at the covariate's numeric scale; rescale the covariate and bandwidth")
+    # A window changes when a residual enters at x or leaves at x+b. Include
+    # the zero-valued final exit so the complete left-step integral is defined.
+    values <- sort(unique(c(x,exits)))
+    values[gof_grid(values,subset.max,subset)]
+}
+
 gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
     R <- gof_count(R,"R",1L)
     if (!is.null(x)) cumres_obj$order(as.matrix(x))
@@ -61,9 +73,165 @@ gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
          pval.cvm=mean(teststat[,2]>=cvm0), cvm=cvm0, t=t0, w=W0)
 }
 
+##' Cumulative residual diagnostics for fitted models
+##'
+##' Check a fitted mean structure by accumulating residuals over an ordering
+##' variable and comparing the observed process with simulated null processes.
+##' The fitted model is the first argument, so model objects can be passed with
+##' the native pipe \code{|>}.
+##'
+##' @param model A fitted model. Methods are supplied for \code{lm}, supported
+##' \code{glm}, \code{lava::lvmfit} and \code{lava::ordreg} objects. Use
+##' \code{NULL} with the default method when supplying residuals and influences.
+##' @param ... Arguments for the selected method, including ordering variables,
+##' the number of simulations and the number of curves to retain.
+##' @details
+##' Use \code{cumres.glm} for normal, binomial and Poisson mean models,
+##' \code{cumres.lvmfit} for supported Gaussian structural equation models,
+##' and \code{cumres.ordreg} for ordinal models fitted by \code{lava}.
+##' The default method accepts residuals, their parameter derivatives and
+##' coefficient influence contributions for other justified model structures.
+##'
+##' Each ordering defines a separate diagnostic. These marginal tests are not
+##' a global omnibus check of every aspect of a fitted model. Saved simulation
+##' columns from different orderings must not be combined as a joint null draw:
+##' multipliers are paired to sorted ranks separately for each ordering. The
+##' ordinal omnibus mode instead combines cutpoints for one ordering using
+##' shared subject multipliers.
+##'
+##' For cumulative processes, the Sup statistic is the largest absolute
+##' observed process value. The L2 statistic is the norm of the step process
+##' on its evaluation grid. The historically named \code{KS} and \code{CvM}
+##' components contain the corresponding Monte Carlo \emph{p-values}, not
+##' those observed statistics. A simulated statistic equal to the observed
+##' statistic is included in the tail probability. The p-value resolution is
+##' \eqn{1/R}; a simulated p-value of zero is not proof of an impossible null.
+##' Examples use few simulations to keep them fast; increase \code{R} when
+##' assessing small tail probabilities or the stability of a reported result.
+##'
+##' For default/linear/GLM/SEM processes, the default evaluation limit,
+##' \code{subset.max=500}, limits distinct grid
+##' values, never the fitted observations contributing to a process. Tied
+##' observations are accumulated together. Set a seed before calling
+##' \code{cumres} to reproduce simulations. Stored curves are intended for
+##' visual comparison; they are not simultaneous confidence bands.
+##' Positive-bandwidth grids include both entries \eqn{x_i} and exits
+##' \eqn{x_i+b}, through the final zero tail. A finite grid cap approximates
+##' the full-domain statistic. Prespecify bandwidth, ordering and grid-selection
+##' rules for formal testing; response-driven selection requires additional
+##' statistical adjustment.
+##'
+##' This is an asymptotic multiplier approximation. Rare counts, severe class
+##' imbalance, high leverage or little effective information can invalidate a
+##' Gaussian process approximation even when the nominal sample is large and
+##' the fitter reports convergence. No universal finite-sample guarantee or
+##' exact small-count calibration is supplied.
+##' @returns
+##' For one diagnostic, an S3 object of class \code{cumres}, represented by a
+##' list with the following common components:
+##' \describe{
+##'   \item{\code{W}}{A list of observed numeric process vectors, one per
+##'   ordering variable or ordinal aggregation component.}
+##'   \item{\code{What}}{A list of matrices of saved null processes. Rows
+##'   match the corresponding \code{W} and \code{x}; columns are saved draws.
+##'   With \code{plots=0}, the matrices have zero columns.}
+##'   \item{\code{x}}{A list of sorted numeric evaluation grids. Different
+##'   processes can have different numbers of grid values.}
+##'   \item{\code{KS}, \code{CvM}}{Numeric vectors of Sup and L2 Monte Carlo
+##'   p-values, respectively, in the same order as \code{W}.}
+##'   \item{\code{variable}}{Character labels for the processes.}
+##'   \item{\code{R}}{Number of null simulations used for the p-values.}
+##'   \item{\code{n}}{Number of independent residual units. Grouped binomial
+##'   diagnostics count expanded trials, rather than original fitted rows.}
+##'   \item{\code{type}, \code{model}}{Labels describing the process and
+##'   fitted model adapter.}
+##' }
+##' Normal/GLM methods additionally provide \code{nobs}, the number of
+##' positive-weight fitted rows, and \code{response}, the response expression.
+##' Normal/GLM and ordinal methods provide \code{informative}, a logical
+##' information flag. \code{FALSE} denotes a structurally recognized
+##' zero-information residual/CDF process; p-values are one. Built-in
+##' ordinal aggregations then return zero curves, while custom aggregators
+##' return their value at the zero vector. \code{NA} denotes numerically
+##' unresolved score-space membership: computed curves are retained but
+##' p-values are missing. Other methods may omit this metadata. Ordinal
+##' objects additionally record their \code{aggregation} mode.
+##'
+##' Structural equation calls requesting multiple diagnostics can return
+##' lists, including nested lists when supplied lists of formulas. Their
+##' individual elements follow the same \code{cumres} contract.
+##' @seealso \code{\link{cumres.glm}}, \code{\link{cumres.default}},
+##' \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
+##' \code{\link{plot.cumres}}.
+##' @references D. Y. Lin, L. J. Wei and Z. Ying (2002).
+##' \emph{Model-Checking Techniques Based on Cumulative Residuals}.
+##' Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
+##' @examples
+##' fit <- lm(mpg ~ wt, data = mtcars)
+##' set.seed(11)
+##' diagnostic <- fit |> cumres(variable = "wt", R = 99, plots = 5)
+##' coef(diagnostic)
+##' plot(diagnostic)
 ##' @export
 cumres <- function(model,...) UseMethod("cumres")
 
+##' Cumulative residual processes from residuals and influence contributions
+##'
+##' Construct a diagnostic from supplied residuals, residual derivatives and
+##' coefficient influence contributions. This interface supports custom models
+##' when the caller can justify the required conditional-centering and
+##' independent-unit influence representation.
+##'
+##' @param model Model providing the default coefficients, residuals and
+##' influences, or \code{NULL} when these quantities are supplied explicitly.
+##' @param variable A finite real numeric ordering vector or matrix with one
+##' row per independent residual unit. Matrix columns define separate processes.
+##' @param r A real residual vector, or a function of \code{coef} and
+##' \code{...} returning that vector. A \code{grad} attribute can supply the
+##' residual gradient.
+##' @param dr Residual gradient matrix, with one row per residual unit and one
+##' column per fitted parameter, or a function of \code{coef} and \code{...}.
+##' If omitted, use the residual's gradient attribute or differentiate the
+##' residual function with \pkg{numDeriv}.
+##' @param R Positive whole number of multiplier simulations.
+##' @param b Nonnegative moving-window bandwidth. Zero gives cumulative
+##' residuals; positive values give sums over the window \eqn{(t-b,t]}.
+##' @param plots Nonnegative whole number of null processes to retain for
+##' plotting. This is independent of \code{R}; zero retains no simulated curves.
+##' @param coef Finite real coefficient vector used to evaluate residual and
+##' gradient callbacks. It may be \code{NULL} when residuals, derivatives and
+##' influences are already supplied. A known mean with no fitted parameters
+##' uses an empty vector and zero-column \code{dr} and \code{ic} matrices.
+##' @param ic Finite real matrix of coefficient influence contributions, with
+##' one row per residual unit and the same parameter columns as \code{dr}.
+##' These are contributions to coefficient perturbations, not unscaled score
+##' vectors. The scaling is
+##' \eqn{\hat\beta-\beta_0 = \sum_i IC_i + o_p(n^{-1/2})}; typically
+##' \eqn{IC_i=I_n^{-1}s_i}, with total sample information \eqn{I_n}.
+##' An unscaled order-one influence function must be divided by \eqn{n}.
+##' Matched zero-column matrices are supported; when no coefficients
+##' or gradient columns exist, the default influence matrix has zero columns.
+##' @param breakties Deprecated jitter width. Nonzero values warn; tied
+##' observations are retained and evaluated together.
+##' @param subset Function receiving sorted distinct values and arguments
+##' \code{n.qt} and \code{n.eq}. It must return unique valid 1-based evaluation
+##' positions within \code{subset.max}.
+##' @param subset.max Positive whole-number cap on distinct evaluation values
+##' per process. \code{Inf} or \code{NULL} evaluates all distinct values.
+##' Every residual unit contributes irrespective of this cap.
+##' @param ... Additional arguments passed to residual and gradient callbacks.
+##' @returns A \code{cumres} object. See \code{\link{cumres}} for the common
+##' result components and interpretation of the Monte Carlo p-values.
+##' @seealso \code{\link{cumres}}, \code{\link{cumres.glm}}.
+##' @examples
+##' # Known zero mean: no fitted parameters or influence adjustment.
+##' set.seed(12)
+##' x <- seq(-2, 2, length.out = 80)
+##' r <- rnorm(length(x))
+##' diagnostic <- cumres(NULL, variable = cbind(x = x), r = r,
+##'   dr = matrix(numeric(), length(x), 0), coef = numeric(),
+##'   R = 99, plots = 5)
+##' coef(diagnostic)
 ##' @export
 cumres.default <- function(model, variable, r=stats::residuals(model), dr,
                            R=1e3L, b=0, plots=min(R,50L),
@@ -110,29 +278,38 @@ cumres.default <- function(model, variable, r=stats::residuals(model), dr,
     ## Reserve historical uniform draws to preserve seeded Monte Carlo streams
     ## for untied models. Numerical jitter is no longer added to observations.
     invisible(runif(n))
-    idx <- lapply(seq_len(p),function(i) gof_grid(variable[,i],subset.max,subset))
-    lens <- lengths(idx)
-    ## Repeating final endpoints pads unequal grids for C++ without changing
-    ## Sup or L2 statistics. Padding is trimmed from the returned processes.
-    Idx <- vapply(idx,function(i) c(i,rep(tail(i,1),max(lens)-length(i)))-1L,integer(max(lens)))
-    Idx <- matrix(Idx,ncol=p)
+    if (b==0) {
+        idx <- lapply(seq_len(p),function(i) gof_grid(variable[,i],subset.max,subset))
+        lens <- lengths(idx)
+        ## Repeating final endpoints pads unequal grids for C++ without changing
+        ## Sup or L2 statistics. Padding is trimmed from the returned processes.
+        Idx <- vapply(idx,function(i) c(i,rep(tail(i,1),max(lens)-length(i)))-1L,integer(max(lens)))
+        Idx <- matrix(Idx,ncol=p)
+    } else {
+        x <- lapply(seq_len(p),function(i) gof_window_grid(variable[,i],b,subset.max,subset))
+        lens <- lengths(x)
+    }
     cr <- new(CumRes,r,dr,ic)
     cr$order(variable)
-    x <- lapply(seq_len(p),function(i) cr$inp[idx[[i]],i])
+    if (b==0) x <- lapply(seq_len(p),function(i) cr$inp[idx[[i]],i])
     W0 <- cr$obs()
-    lower <- if (b>0) lapply(seq_len(p),function(i) findInterval(x[[i]]-b,cr$inp[,i])) else NULL
-    project <- function(w) lapply(seq_len(p),function(i) {
-        z <- w[idx[[i]],i]
-        if (b>0) z <- z-c(0,w[,i])[lower[[i]]+1L]
-        z
-    })
+    if (b==0) {
+        project <- function(w) lapply(seq_len(p),function(i) w[idx[[i]],i])
+    } else {
+        upper <- lapply(seq_len(p),function(i) findInterval(x[[i]],cr$inp[,i]))
+        lower <- lapply(seq_len(p),function(i) findInterval(x[[i]],cr$inp[,i]+b))
+        project <- function(w) lapply(seq_len(p),function(i) {
+            prefix <- c(0,w[,i])
+            prefix[upper[[i]]+1L]-prefix[lower[[i]]+1L]
+        })
+    }
     W <- project(W0)
     stats <- function(w) unlist(lapply(seq_len(p),function(i) c(SupTest(w[[i]]),L2Test(w[[i]],x[[i]]))))
     if (b==0) {
         teststat <- cr$samplestat(R,Idx,FALSE)
     } else {
-        ## A window (t-b,t] is a difference of cumulative processes. Full
-        ## prefixes keep lower endpoints exact even with a reduced grid.
+        ## A window is active from entry x through (but not including) exit
+        ## x+b. Use full prefixes at both events even on a reduced grid.
         teststat <- t(vapply(seq_len(R),function(k) stats(project(cr$sample1(matrix(integer(),0,0)))),numeric(2*p)))
     }
     observed <- stats(W)

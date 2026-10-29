@@ -34,7 +34,8 @@ cumresMaxSet <- function(m,var,...) {
 ##' @param x Predictor name, numeric vector, or function of \code{p}. Character
 ##' vectors and lists request separate diagnostics for each predictor. Explicit
 ##' numeric/function predictors must satisfy conditional centering of the
-##' selected residual; the caller is responsible for that property.
+##' selected residual, as well as the estimated-ordering conditions in the
+##' details; pointwise conditional centering alone is insufficient.
 ##' @param full If FALSE, named latent predictors use their conditional means
 ##' given the exogenous covariates; observed predictors use their data values.
 ##' If TRUE, named predictors are projected onto all manifest variables with no
@@ -42,20 +43,37 @@ cumresMaxSet <- function(m,var,...) {
 ##' variables are guaranteed uncorrelated with that error for every admissible
 ##' parameter value. The selection is conservative in models with exact path
 ##' cancellations. Supplied numeric/function predictors are used directly.
+##' @details This method implements mean/linearity residual-process diagnostics;
+##' it does not implement the separate normality-diagnostic suite in the SEM
+##' reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
+##' derivative contributes unless
+##' \eqn{E[r_{\theta_0}\partial_\theta x_\theta\mid x_{\theta_0}=t]=0}.
+##' A sufficient construction uses the same fixed admissible conditioning data
+##' \eqn{Z} for the ordering and its parameter derivatives, with
+##' \eqn{E[r_{\theta_0}\mid Z]=0}. Named predictions use structural safe sets;
+##' arbitrary callbacks are not automatically certified. Smoothness, moment
+##' and stochastic-equicontinuity conditions for estimated orderings are also
+##' required. The adapter differentiates residuals, not arbitrary ordering
+##' callbacks. The caller must justify these stronger conditions or supply a
+##' different, fully derived influence process through the default interface.
 ##' @param data Complete finite numeric model data (default \code{model.frame(model)}).
 ##' Residuals, predictions, scores and information all use these same rows.
 ##' @param p Optional parameter vector, with names matching the fitted
 ##' coefficients. It is used consistently in all diagnostic quantities; no
 ##' refitting is performed. Calibrated inference assumes these parameters were
 ##' estimated from the supplied data using the model's estimation procedure.
-##' @param R Number of processes to simulate
-##' @param b Moving average parameter
-##' @param plots Number of processes to save for use with the plot method
-##' @param \dots Additional arguments parsed on to lower-level functions
+##' @param R Positive whole number of multiplier simulations.
+##' @param b Nonnegative moving-window bandwidth. Zero gives cumulative
+##' residuals; positive values give residual sums over \eqn{(t-b,t]}.
+##' @param plots Nonnegative whole number of null processes to retain for plotting.
+##' @param ... Additional arguments passed to \code{cumres.default}, including
+##' \code{subset.max}, which limits grid values without discarding data rows.
 ##' @method cumres lvmfit
 ##' @export
-##' @return A \code{cumres} object with \code{plot}, \code{print} and
-##' \code{coef} methods, or a list when multiple diagnostics are requested.
+##' @returns A \code{cumres} object for one residual/predictor pair, a named
+##' list for multiple pairs, or a list of results when \code{y} is a list of
+##' formulas. See \code{\link{cumres}} for each diagnostic's common result
+##' components; normal/GLM-specific metadata are not added by this method.
 ##' @author Klaus K. Holst
 ##' @note The residual process assumes a Gaussian SEM with independent subjects
 ##' and complete data, a positive semidefinite structural error covariance and
@@ -72,26 +90,20 @@ cumresMaxSet <- function(m,var,...) {
 ##' \emph{Residual-Based Diagnostics for Structural Equation Models}. Biometrics
 ##' Volume 65 (1), pp 104-115.
 ##' @keywords models regression
+##' @seealso \code{\link{cumres}}, \code{\link{cumres.default}},
+##' \code{\link{plot.cumres}}.
 ##' @examples
-##' 
-##' \donttest{
-##' library(lava)
-##' m <- lvm(list(c(y1,y2,y3)~eta,eta~x)); latent(m) <- ~eta
-##' ## simulate some data with non-linear covariate effect
-##' functional(m,eta~x) <- function(x) 0.3*x^2
-##' d <- sim(m,100)
-##' 
-##' e <- estimate(m,d)
-##' ## Checking the functional form of eta on x
-##' g <- cumres(e,eta~x,R=1000)
-##' plot(g)
-##' 
-##' x <- function(p) predict(e,x=~y2+y3,p=p)[,"eta"]
-##' ## Checking the functional form of y1 on eta
-##' cumres(e,y1~eta,R=1000)
-##' g <- cumres(e,"y1",x=x,R=1000)
-##' plot(g)
-##' 
+##' if (requireNamespace("numDeriv", quietly = TRUE)) {
+##'   set.seed(14)
+##'   model <- lava::lvm(y ~ x)
+##'   d <- lava::sim(model, 100)
+##'   fit <- lava::estimate(model, d)
+##'   diagnostic <- cumres(fit, y ~ x, R = 49, plots = 3)
+##'   coef(diagnostic)
+##'
+##'   # A named collection retains one diagnostic for each formula.
+##'   diagnostics <- cumres(fit, list(check_x = y ~ x), R = 49, plots = 0)
+##'   names(diagnostics)
 ##' }
 cumres.lvmfit <- function(model,y,x,full=FALSE,
                    data=model.frame(model),p,

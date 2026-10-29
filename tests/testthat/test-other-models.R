@@ -1,10 +1,3 @@
-ordinal_fixture <- function(k=3,n=180) {
-    set.seed(123)
-    d <- data.frame(x=rnorm(n))
-    d$y <- ordered(cut(d$x+rnorm(n),breaks=c(-Inf,if (k==3) c(-.5,.5) else 0,Inf)))
-    lava::ordreg(y~x,d)
-}
-
 test_that("ordinal diagnostics use the shared print/plot result contract", {
     for (k in 2:3) {
         m <- ordinal_fixture(k)
