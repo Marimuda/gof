@@ -28,15 +28,13 @@ using matlist = std::vector<arma::mat>;
 
 namespace target {
 
-  arma::mat expit(arma::mat x);
-  arma::cx_mat expit(arma::cx_mat x);
+  // Row-wise probabilities; the matrix overload optionally adds a reference
+  // category or returns log probabilities. Inputs must be finite.
   arma::vec softmax(arma::vec u);
-  arma::mat softmax(arma::mat lp, bool ref, bool log);
+  arma::mat softmax(arma::mat lp, bool ref = true, bool log = false);
 
-  // template<typename T>
-  // arma::Mat<T> expit(const arma::Mat<T> &x) {
-  //   return 1.0/(1+exp(-x));
-  // }
+  // Real expit includes the limits at +/-infinity. The complex overload
+  // supports finite analytic arguments, including complex-step perturbations.
   arma::mat expit(arma::mat x);
   arma::cx_mat expit(arma::cx_mat x);
 
@@ -45,7 +43,7 @@ namespace target {
     arma::mat iid;
     arma::mat vcov;
     IID(): iid(arma::zeros(1, 1)), vcov(arma::zeros(1, 1)) {}
-    IID(arma::mat score, arma::mat v): iid(score*v), vcov(v) {}
+    IID(arma::mat score, arma::mat v);
   };
 
   IID logistic_iid(const arma::vec &y,

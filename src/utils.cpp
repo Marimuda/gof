@@ -15,18 +15,27 @@ namespace target {
 
   // Complex step derivative
   arma::mat deriv(cx_func f, arma::vec theta) {
+    if (!f || !theta.is_finite())
+      throw std::invalid_argument("Supply a function and finite parameters for complex-step differentiation");
     arma::cx_vec thetac = arma::conv_to<arma::cx_vec>::from(theta);
     arma::cx_mat val0 = f(thetac);
-    unsigned n = val0.n_elem;
-    unsigned p = theta.n_elem;
+    if (!val0.is_finite() || arma::any(arma::vectorise(arma::imag(val0)) != 0))
+      throw std::invalid_argument("Complex-step function must be finite and real at real parameters");
+    arma::uword n = val0.n_elem;
+    arma::uword p = theta.n_elem;
     arma::mat res(n, p);
-    double h = DBL_MIN;
+    // DBL_MIN underflows intermediate products even for modest derivatives.
+    const double h = 1e-20;
     cx_dbl h0 = cx_dbl(0, h);
-    for (unsigned i=0; i < p; i++) {
+    for (arma::uword i=0; i < p; i++) {
       arma::cx_vec theta0 = thetac;
       theta0[i] += h0;
-      arma::mat val = imag(f(theta0))/h;
-      for (unsigned j=0; j < n; j++)
+      const arma::cx_mat perturbed = f(theta0);
+      if (perturbed.n_rows != val0.n_rows || perturbed.n_cols != val0.n_cols || !perturbed.is_finite())
+        throw std::invalid_argument("Complex-step function must retain its output shape and finite values");
+      arma::mat val = imag(perturbed)/h;
+      if (!val.is_finite()) throw std::domain_error("Complex-step derivative overflowed");
+      for (arma::uword j=0; j < n; j++)
 	res(j, i) = val[j];
     }
     return(res);
@@ -36,10 +45,10 @@ namespace target {
   // Find index of clusters/ids in sorted integer vector
   arma::umat clusterid(const arma::uvec &id) {
     if (id.is_empty()) return arma::umat(0, 2);
-    unsigned ncl = 1;
-    unsigned n = id.size();
-    unsigned id0 = id(0);
-    for (unsigned i=0; i < n; i++) {
+    arma::uword ncl = 1;
+    arma::uword n = id.size();
+    arma::uword id0 = id(0);
+    for (arma::uword i=0; i < n; i++) {
       if (id(i) != id0) {
 	ncl++;
 	id0 = id(i);
@@ -47,9 +56,9 @@ namespace target {
     }
     arma::umat res(ncl, 2);  // column 1: index, column 2: size
     res.fill(0);
-    unsigned cl = 0;
+    arma::uword cl = 0;
     id0 = id(0);
-    for (unsigned i=0; i < n; i++) {
+    for (arma::uword i=0; i < n; i++) {
       if (id(i) != id0) {
 	cl++;
 	res(cl, 0) = i;  // index
@@ -64,33 +73,45 @@ namespace target {
   arma::mat groupsum(const arma::mat &x,
 		     const arma::uvec &cluster,
 		     bool reduce) {
-    unsigned ncl = cluster.n_elem;
-    unsigned n = ncl;
+    if (!x.is_finite()) throw std::invalid_argument("Group values must be finite");
+    if (x.n_rows == 0) {
+      if (!cluster.is_empty()) throw std::invalid_argument("Empty data cannot have cluster starts");
+      return arma::mat(0,x.n_cols);
+    }
+    if (cluster.is_empty() || cluster(0) != 0 || cluster.max() >= x.n_rows)
+      throw std::invalid_argument("Cluster starts must begin at zero and lie within the data");
+    for (arma::uword i=1; i < cluster.n_elem; ++i)
+      if (cluster(i) <= cluster(i-1))
+        throw std::invalid_argument("Cluster starts must be strictly increasing");
+    if (x.n_cols == 0) return arma::mat(reduce ? cluster.n_elem : x.n_rows,0);
+    arma::uword ncl = cluster.n_elem;
+    arma::uword n = ncl;
     if (!reduce) {
       n = x.n_rows;
     }
-    unsigned stop;
+    arma::uword stop;
     arma::mat res(n, x.n_cols);
     arma::rowvec tmp(x.n_cols);
-    for (unsigned i=0; i < ncl; i++) {  // Iterate over individuals
-      unsigned start = cluster(i);
+    for (arma::uword i=0; i < ncl; i++) {  // Iterate over individuals
+      arma::uword start = cluster(i);
       if (i == (ncl-1)) {
 	stop = x.n_rows;
       } else {
 	stop = cluster(i+1);
       }
       tmp.fill(0);
-      for (unsigned j=start; j < stop; j++) {
+      for (arma::uword j=start; j < stop; j++) {
 	tmp += x.row(j);
       }
       if (reduce) {
 	res.row(i) = tmp;
       } else {
-	for (unsigned j=start; j < stop; j++) {
+        for (arma::uword j=start; j < stop; j++) {
 	  res.row(j) = tmp;
 	}
       }
     }
+    if (!res.is_finite()) throw std::domain_error("Group sum overflowed");
     return(res);
   }
 
@@ -99,24 +120,29 @@ namespace target {
 		   arma::umat &pattern,
 		   arma::uvec &group,
 		   unsigned categories) {
-    unsigned n = y.n_rows;
-    unsigned k = y.n_cols;
-
-    arma::uvec mygroup(n);
-    double lognpattern = k*std::log(static_cast<double>(categories));
-    unsigned npattern = n;
-    if (lognpattern<std::log(static_cast<double>(npattern))) {
-      npattern = (unsigned) pow(static_cast<double>(categories),
-				static_cast<double>(k));
+    if (categories == 0) throw std::invalid_argument("categories must be positive");
+    arma::uword n = y.n_rows;
+    arma::uword k = y.n_cols;
+    if (n == 0) {
+      pattern.set_size(0,k);
+      group.set_size(0);
+      return;
     }
-    arma::umat mypattern(npattern, k);
-    mypattern.fill(1);
-    unsigned K = 0;
+    if (k == 0) {
+      pattern.set_size(1,0);
+      group.zeros(n);
+      return;
+    }
+    arma::uvec mygroup(n);
+    // At most n distinct rows exist. The old categories^k allocation could
+    // overflow or be too small for arbitrary labels and floating rounding.
+    arma::umat mypattern(n, k);
+    arma::uword K = 0;
 
-    for (unsigned i=0; i < n; i++) {
+    for (arma::uword i=0; i < n; i++) {
       arma::urowvec ri = y.row(i);
       bool found = false;
-      for (unsigned j=0; j < K; j++) {
+      for (arma::uword j=0; j < K; j++) {
 	if (sum(ri != mypattern.row(j)) == 0) {
 	  found = true;
 	  mygroup(i) = j;
@@ -146,7 +172,7 @@ namespace target {
     arma::uvec idx(newtime.n_elem);
     arma::uvec eq(newtime.n_elem);
 
-    for (unsigned i=0; i < newtime.n_elem; i++) {
+    for (arma::uword i=0; i < newtime.n_elem; i++) {
       auto it = std::lower_bound(time.begin(), time.end(), newtime(i));
       arma::uword pos;
       if (type == 2) {
@@ -178,10 +204,17 @@ namespace target {
   double L2Test(const arma::vec &D, const arma::vec &t) {
     if (D.is_empty() || D.n_elem != t.n_elem || !D.is_finite() || !t.is_finite() || !t.is_sorted())
       throw std::invalid_argument("Process and sorted times must have equal nonzero lengths and finite values");
-    arma::vec delta(t.n_elem);
-    for (unsigned i=0; i < t.n_elem-1; i++) delta(i) = t[i+1]-t[i];
-    delta(delta.n_elem-1) = 0;
-    return std::sqrt(sum(delta % D % D));
+    double norm = 0.0;
+    for (arma::uword i=0; i+1 < t.n_elem; ++i) {
+      // sqrt(b-a) without overflowing an interval straddling zero, then
+      // hypot instead of squaring tiny/large residuals prematurely.
+      const double root_delta = t(i) < 0 && t(i+1) > 0
+        ? std::hypot(std::sqrt(-t(i)),std::sqrt(t(i+1)))
+        : std::sqrt(t(i+1)-t(i));
+      norm = std::hypot(norm,root_delta*D(i));
+    }
+    if (!std::isfinite(norm)) throw std::domain_error("L2 statistic overflowed");
+    return norm;
   }
 
   // Comparison of ECDF of (x1,...,xn) with null CDF

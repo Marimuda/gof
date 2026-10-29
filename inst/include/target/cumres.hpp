@@ -34,6 +34,10 @@ namespace target {
     arma::mat sample(unsigned R,
 		     const arma::umat &idx = arma::umat(),
                      bool quantiles = false);
+  private:
+    void validate_inputs() const;
+    void validate_order() const;
+    void validate_indices(const arma::umat &idx) const;
   };
 
 

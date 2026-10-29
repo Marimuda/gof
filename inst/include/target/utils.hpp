@@ -24,13 +24,18 @@ namespace target {
   using cx_dbl  = std::complex<double>;
   using cx_func = std::function<arma::cx_mat(arma::cx_vec theta)>;
 
+  // Real Jacobian of a holomorphic extension that is real-valued at theta;
+  // rows follow column-major vectorization of the returned matrix.
   arma::mat deriv(cx_func f,
                   arma::vec theta);
 
   arma::umat clusterid(const arma::uvec &id);
+  // Cluster starts are zero-based, strictly increasing and begin at zero.
   arma::mat groupsum(const arma::mat &x,
                      const arma::uvec &cluster,
                      bool reduce = true);
+  // Distinct rows in first-seen order, with zero-based group membership.
+  // categories must be positive; category labels themselves may be arbitrary.
   void fastpattern(const arma::umat &y,
                    arma::umat &pattern,
 		   arma::uvec &group,
