@@ -11,11 +11,54 @@
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::interfaces(r, cpp)]]
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp17)]]
 
 #include <target/cumres.hpp>
 #include <RcppArmadillo.h>
 #include <cmath>
+#include <limits>
+#include <stdexcept>
+
+namespace {
+  bool real_numeric(SEXP x) {
+    return TYPEOF(x)==REALSXP || TYPEOF(x)==INTSXP;
+  }
+
+  arma::umat checked_indices(SEXP x, unsigned n, unsigned p) {
+    if (!Rf_isMatrix(x) || !real_numeric(x))
+      throw std::invalid_argument("Evaluation indices must be a real numeric matrix");
+    arma::mat value = Rcpp::as<arma::mat>(x);
+    if (!value.is_empty() && (value.n_cols!=p || !value.is_finite() ||
+        arma::any(arma::vectorise(value)<0) || arma::any(arma::vectorise(value)>=n) ||
+        arma::any(arma::vectorise(value)!=arma::vectorise(arma::floor(value)))))
+      throw std::invalid_argument("Evaluation indices must be whole valid zero-based positions");
+    return arma::conv_to<arma::umat>::from(value);
+  }
+
+  arma::mat sample_checked(target::cumres* engine, SEXP idx) {
+    return engine->sample(checked_indices(idx,engine->n,engine->ord.n_cols));
+  }
+
+  arma::mat statistics_checked(target::cumres* engine, SEXP count, SEXP idx, SEXP quantiles) {
+    if (!real_numeric(count) || Rf_xlength(count)!=1)
+      throw std::invalid_argument("R must be a positive whole number");
+    double value = Rcpp::as<double>(count);
+    if (!std::isfinite(value) || value<1 || value!=std::floor(value) ||
+        value>std::numeric_limits<int>::max())
+      throw std::invalid_argument("R must be a positive whole number within the R matrix limit");
+    if (TYPEOF(quantiles)!=LGLSXP || Rf_xlength(quantiles)!=1 || LOGICAL(quantiles)[0]==NA_LOGICAL)
+      throw std::invalid_argument("quantiles must be TRUE or FALSE");
+    return engine->sample(static_cast<unsigned>(value),
+                          checked_indices(idx,engine->n,engine->ord.n_cols),
+                          LOGICAL(quantiles)[0]!=0);
+  }
+
+  void order_checked(target::cumres* engine, SEXP x) {
+    if (!real_numeric(x)) throw std::invalid_argument("Ordering variables must be real numeric values");
+    arma::mat value = Rf_isMatrix(x) ? Rcpp::as<arma::mat>(x) : arma::mat(Rcpp::as<arma::vec>(x));
+    engine->order(value);
+  }
+}
 
 // [[Rcpp::export]]
 double SupTest(const arma::vec &x) {
@@ -27,7 +70,7 @@ double L2Test(const arma::vec &x, const arma::vec &t) {
   return target::L2Test(x, t);
 }
 
-// [[Rcpp::export(name=.fastapprox)]]
+// [[Rcpp::export]]
 arma::umat FastApprox(arma::vec &time, arma::vec &newtime,
 		      bool equal  = false, unsigned type = 0) {
   arma::umat result = target::fastapprox(time, newtime, equal, type);
@@ -35,7 +78,7 @@ arma::umat FastApprox(arma::vec &time, arma::vec &newtime,
   return result;
 }
 
-// [[Rcpp::export(name=.clusterindex)]]
+// [[Rcpp::export]]
 arma::umat ClusterIndex(const arma::uvec &t) {
   arma::umat res = target::clusterid(t);
   res.col(0) += 1;
@@ -55,13 +98,13 @@ RCPP_MODULE(gofmod) {
       .field( "r",   &target::cumres::r )
       .field( "qt",  &target::cumres::qt )
 
-      .method("samplestat", (arma::mat (target::cumres::*)(unsigned, const arma::umat&, bool ) )( &target::cumres::sample),
+      .method("samplestat", &statistics_checked,
       	       "sample process and return Sup and L2 statistic")
-      .method("sample1",    (arma::mat (target::cumres::*)(const arma::umat&) )( &target::cumres::sample),
+      .method("sample1",    &sample_checked,
 	       "sample process")      
       .method("obs",    &target::cumres::obs,   "Return observed process")
       .method("rnorm",  &target::cumres::rnorm,   "Sample from Gaussian")
-      .method("order",  &target::cumres::order,  "Order observations after input variable")
+      .method("order",  &order_checked,  "Order observations after input variable")
       ;
 }
 

@@ -45,7 +45,7 @@ gof_grid <- function(x, subset.max, subset) {
 
 gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
     R <- gof_count(R,"R",1L)
-    if (!is.null(x)) cumres_obj$order(x)
+    if (!is.null(x)) cumres_obj$order(as.matrix(x))
     if (ncol(cumres_obj$inp)!=1L) stop("Supply a single ordering variable")
     t <- cumres_obj$inp[,1]
     if (is.null(idx)) idx <- gof_grid(t,Inf,subset_t)
@@ -57,8 +57,8 @@ gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
     W0 <- cumres_obj$obs()[idx,1]
     ks0 <- SupTest(W0)
     cvm0 <- L2Test(W0,t0)
-    list(pval.ks=mean(teststat[,1]>ks0), ks=ks0,
-         pval.cvm=mean(teststat[,2]>cvm0), cvm=cvm0, t=t0, w=W0)
+    list(pval.ks=mean(teststat[,1]>=ks0), ks=ks0,
+         pval.cvm=mean(teststat[,2]>=cvm0), cvm=cvm0, t=t0, w=W0)
 }
 
 ##' @export
@@ -79,22 +79,31 @@ cumres.default <- function(model, variable, r=stats::residuals(model), dr,
         stop("breakties must be a finite nonnegative number")
     if (breakties!=0) warning("breakties is deprecated; tied observations are evaluated together")
     if (anyNA(coef)) stop("Over-parametrized model")
+    if (!is.null(coef) && (!is.numeric(coef) || is.complex(coef) || any(!is.finite(coef))))
+        stop("Coefficients must be finite numeric values")
+    residual_function <- if (is.function(r)) r else NULL
+    if (!is.null(residual_function)) r <- residual_function(coef,...)
     if (missing(dr)) {
         dr <- attributes(r)$grad
         if (is.null(dr)) {
-            if (!is.function(r)) stop("Supply a residual gradient dr (or a residual function)")
-            if (!requireNamespace("numDeriv",quietly=TRUE)) stop("Supply gradient")
-            dr <- numDeriv::jacobian(r,coef,...)
+            if (is.null(residual_function)) stop("Supply a residual gradient dr (or a residual function)")
+            if (!length(coef)) dr <- matrix(0,length(r),0L) else {
+                if (!requireNamespace("numDeriv",quietly=TRUE)) stop("Supply gradient")
+                dr <- numDeriv::jacobian(function(p) residual_function(p,...),coef)
+            }
         }
-    } else if (is.function(dr)) dr <- dr(coef)
-    if (is.function(r)) r <- r(coef,...)
+    } else if (is.function(dr)) dr <- dr(coef,...)
+    if (missing(ic) && !length(coef) && ncol(as.matrix(dr))==0L) ic <- matrix(0,length(r),0L)
+    if (!is.numeric(r) || is.complex(r) || !is.numeric(dr) || is.complex(dr) ||
+        !is.numeric(ic) || is.complex(ic))
+        stop("Residuals, gradients and influences must be real numeric values")
     r <- as.numeric(r); dr <- as.matrix(dr); ic <- as.matrix(ic)
     vnames <- names(as.data.frame(variable))
     variable <- as.matrix(variable)
     n <- length(r); p <- ncol(variable)
     if (!n || !p || nrow(variable)!=n || nrow(dr)!=n || nrow(ic)!=n ||
-        !ncol(dr) || ncol(dr)!=ncol(ic)) stop("Incompatible residual, variable, gradient or influence dimensions")
-    if (!is.numeric(variable) || any(!is.finite(variable)) ||
+        ncol(dr)!=ncol(ic)) stop("Incompatible residual, variable, gradient or influence dimensions")
+    if (!is.numeric(variable) || is.complex(variable) || any(!is.finite(variable)) ||
         any(!is.finite(r)) || any(!is.finite(dr)) || any(!is.finite(ic)))
         stop("Residuals, variables, gradients and influences must be finite numeric values")
 

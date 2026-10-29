@@ -76,8 +76,10 @@ test_that("non-canonical link (probit) with grouped data works", {
     expect_same_cumres(a, b)
 })
 
-test_that("prior weights are rejected with an informative error", {
+test_that("prior binomial trial weights are supported", {
     d <- fx_grouped_data()
     m <- glm(control=glm.control(epsilon=1e-14,maxit=100), s / size ~ x, data = d, weights = size, family = binomial())
-    expect_error(cumres(m, R = 10), "Weight argument not supported")
+    expect_no_error(g <- cumres(m,R=10))
+    expect_equal(g$n,sum(d$size))
+    expect_equal(g$variable,c("predicted","x"))
 })

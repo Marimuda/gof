@@ -161,8 +161,8 @@ static int _gof_RcppExport_validate(const char* sig) {
     if (signatures.empty()) {
         signatures.insert("double(*SupTest)(const arma::vec&)");
         signatures.insert("double(*L2Test)(const arma::vec&,const arma::vec&)");
-        signatures.insert("arma::umat(*.fastapprox)(arma::vec&,arma::vec&,bool,unsigned)");
-        signatures.insert("arma::umat(*.clusterindex)(const arma::uvec&)");
+        signatures.insert("arma::umat(*FastApprox)(arma::vec&,arma::vec&,bool,unsigned)");
+        signatures.insert("arma::umat(*ClusterIndex)(const arma::uvec&)");
     }
     return signatures.find(sig) != signatures.end();
 }
@@ -171,8 +171,8 @@ static int _gof_RcppExport_validate(const char* sig) {
 RcppExport SEXP _gof_RcppExport_registerCCallable() { 
     R_RegisterCCallable("gof", "_gof_SupTest", (DL_FUNC)_gof_SupTest_try);
     R_RegisterCCallable("gof", "_gof_L2Test", (DL_FUNC)_gof_L2Test_try);
-    R_RegisterCCallable("gof", "_gof_.fastapprox", (DL_FUNC)_gof_FastApprox_try);
-    R_RegisterCCallable("gof", "_gof_.clusterindex", (DL_FUNC)_gof_ClusterIndex_try);
+    R_RegisterCCallable("gof", "_gof_FastApprox", (DL_FUNC)_gof_FastApprox_try);
+    R_RegisterCCallable("gof", "_gof_ClusterIndex", (DL_FUNC)_gof_ClusterIndex_try);
     R_RegisterCCallable("gof", "_gof_RcppExport_validate", (DL_FUNC)_gof_RcppExport_validate);
     return R_NilValue;
 }

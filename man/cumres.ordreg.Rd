@@ -12,9 +12,17 @@
 \item{variable}{Covariate name, or "predicted" for the linear predictor.}
 \item{R}{Number of null processes to simulate.}
 \item{plot}{Display the resulting process.}
-\item{aggregate}{Function combining cumulative residuals across categories.}
+\item{aggregate}{Function combining cumulative residuals across categories.
+It must return a fixed-length finite real numeric vector for every row.}
 \item{plots}{Number of simulated processes to retain.}
 \item{...}{Arguments passed to plot when plot=TRUE.}
 }
 \value{A cumres object with Sup and L2 tests.}
 \description{Cumulative residual diagnostics for an ordinal regression.}
+
+\note{Predictions use the fitted coefficients and the internal fit state is
+restored after diagnostics. The upstream \code{lava::ordreg} fitter ignores
+\code{offset}, \code{subset}, \code{weights} and \code{na.action}. Fits recording
+these options are rejected to avoid diagnosing an unintended model. Subset and
+complete the data before fitting. Ordinal offsets require upstream fitting
+support and cannot be added by diagnostics.}

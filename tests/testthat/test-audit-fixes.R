@@ -105,5 +105,7 @@ test_that("normal glm matches lm and unsupported fits have informative errors", 
     expect_equal(a$What,b$What)
     expect_error(cumres(glm(y~x1+x2,transform(model.frame(m),y=exp(y)),family=Gamma()),R=5),"Unsupported family")
     mw <- lm(formula(m),model.frame(m),weights=rep(1,100))
-    expect_error(cumres(mw,R=5),"Weight argument")
+    set.seed(91); a <- cumres(mw,R=5)
+    set.seed(91); b <- cumres(m,R=5)
+    expect_same_cumres(a,b)
 })

@@ -67,17 +67,17 @@ namespace gof {
         return Rcpp::as<double >(rcpp_result_gen);
     }
 
-    inline arma::umat _fastapprox(arma::vec& time, arma::vec& newtime, bool equal = false, unsigned type = 0) {
-        typedef SEXP(*Ptr__fastapprox)(SEXP,SEXP,SEXP,SEXP);
-        static Ptr__fastapprox p__fastapprox = NULL;
-        if (p__fastapprox == NULL) {
-            validateSignature("arma::umat(*_fastapprox)(arma::vec&,arma::vec&,bool,unsigned)");
-            p__fastapprox = (Ptr__fastapprox)R_GetCCallable("gof", "_gof__fastapprox");
+    inline arma::umat FastApprox(arma::vec& time, arma::vec& newtime, bool equal = false, unsigned type = 0) {
+        typedef SEXP(*Ptr_FastApprox)(SEXP,SEXP,SEXP,SEXP);
+        static Ptr_FastApprox p_FastApprox = NULL;
+        if (p_FastApprox == NULL) {
+            validateSignature("arma::umat(*FastApprox)(arma::vec&,arma::vec&,bool,unsigned)");
+            p_FastApprox = (Ptr_FastApprox)R_GetCCallable("gof", "_gof_FastApprox");
         }
         RObject rcpp_result_gen;
         {
             RNGScope RCPP_rngScope_gen;
-            rcpp_result_gen = p__fastapprox(Shield<SEXP>(Rcpp::wrap(time)), Shield<SEXP>(Rcpp::wrap(newtime)), Shield<SEXP>(Rcpp::wrap(equal)), Shield<SEXP>(Rcpp::wrap(type)));
+            rcpp_result_gen = p_FastApprox(Shield<SEXP>(Rcpp::wrap(time)), Shield<SEXP>(Rcpp::wrap(newtime)), Shield<SEXP>(Rcpp::wrap(equal)), Shield<SEXP>(Rcpp::wrap(type)));
         }
         if (rcpp_result_gen.inherits("interrupted-error"))
             throw Rcpp::internal::InterruptedException();
@@ -88,17 +88,17 @@ namespace gof {
         return Rcpp::as<arma::umat >(rcpp_result_gen);
     }
 
-    inline arma::umat _clusterindex(const arma::uvec& t) {
-        typedef SEXP(*Ptr__clusterindex)(SEXP);
-        static Ptr__clusterindex p__clusterindex = NULL;
-        if (p__clusterindex == NULL) {
-            validateSignature("arma::umat(*_clusterindex)(const arma::uvec&)");
-            p__clusterindex = (Ptr__clusterindex)R_GetCCallable("gof", "_gof__clusterindex");
+    inline arma::umat ClusterIndex(const arma::uvec& t) {
+        typedef SEXP(*Ptr_ClusterIndex)(SEXP);
+        static Ptr_ClusterIndex p_ClusterIndex = NULL;
+        if (p_ClusterIndex == NULL) {
+            validateSignature("arma::umat(*ClusterIndex)(const arma::uvec&)");
+            p_ClusterIndex = (Ptr_ClusterIndex)R_GetCCallable("gof", "_gof_ClusterIndex");
         }
         RObject rcpp_result_gen;
         {
             RNGScope RCPP_rngScope_gen;
-            rcpp_result_gen = p__clusterindex(Shield<SEXP>(Rcpp::wrap(t)));
+            rcpp_result_gen = p_ClusterIndex(Shield<SEXP>(Rcpp::wrap(t)));
         }
         if (rcpp_result_gen.inherits("interrupted-error"))
             throw Rcpp::internal::InterruptedException();

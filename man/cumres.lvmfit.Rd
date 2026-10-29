@@ -18,23 +18,35 @@
 )
 }
 \arguments{
-\item{model}{\code{lvm} object}
+\item{model}{A fitted \code{lvmfit} object from \code{lava::estimate}.}
 
 \item{y}{A formula specifying the association to be checked. Alternatively
 the outcome specified as a function or a string with the name of the outcome
-in the model.}
+in the model. Lists of formulas retain a list of results. Multiple named
+outcomes or lists of residual functions are crossed with the requested
+predictors to produce separately named diagnostics. A residual function may
+attach a matrix or function-valued \code{grad} attribute.}
 
-\item{x}{Predictor. A function, vector or character}
+\item{x}{Predictor name, numeric vector, or function of \code{p}. Character
+vectors and lists request separate diagnostics for each predictor. Explicit
+numeric/function predictors must satisfy conditional centering of the selected
+residual; the caller is responsible for that property.}
 
-\item{full}{If FALSE the prediction, Pr, of the variable that are ordered
-after is only calculated based on the conditional distribution given
-covariates. If TRUE the conditional expectation is based on the largest set
-of covariates and endogenous variables such that the residual and Pr are
-uncorrelated.}
+\item{full}{If FALSE, named latent predictors use conditional means given
+exogenous covariates and observed predictors use their data values. If TRUE,
+named predictors are projected onto all manifest variables with no structural
+covariance path from the selected residual's error. These are guaranteed
+uncorrelated with that error for every admissible parameter value. Selection
+is conservative in models with exact path cancellations. Numeric/function
+predictors are used directly.}
 
-\item{data}{data.frame (default is the model.frame of the model)}
+\item{data}{Complete finite numeric model data (default \code{model.frame(model)}).
+Residuals, predictions, scores and information all use these same rows.}
 
-\item{p}{Optional parameter vector}
+\item{p}{Optional parameter vector with names matching fitted coefficients.
+It is used consistently throughout, without refitting. Calibrated inference
+assumes the parameters were estimated from these data using the model's
+estimation procedure.}
 
 \item{R}{Number of processes to simulate}
 
@@ -45,8 +57,8 @@ uncorrelated.}
 \item{\dots}{Additional arguments parsed on to lower-level functions}
 }
 \value{
-Returns a \code{cumres} object with associated
-\code{plot},\code{print},\code{coef} methods
+A \code{cumres} object with \code{plot}, \code{print} and \code{coef}
+methods, or a list when multiple diagnostics are requested.
 }
 \description{
 Calculates GoF statistics based on cumulative residual processes for
@@ -89,3 +101,15 @@ Klaus K. Holst
 }
 \keyword{models}
 \keyword{regression}
+
+\note{The residual process assumes a Gaussian SEM with independent subjects
+and complete data, a positive semidefinite structural error covariance and
+an invertible structural system. With \code{full=FALSE}, named observed predictors with a
+covariance path from the selected structural error are rejected; use
+\code{full=TRUE} to construct an orthogonal prediction instead.
+Declared exogenous variables must have structurally zero error covariance
+with endogenous/latent variables; contradictory forced declarations are
+rejected because all lava predictions condition on the exogenous set.
+Clustered, weighted and incomplete-data SEM fits require different influence
+processes and are rejected explicitly. Collections are evaluated directly from
+the supplied objects, including models fitted inside functions.}

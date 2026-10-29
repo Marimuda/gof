@@ -1,4 +1,5 @@
 ## -*- Makefile -*-
+CXX_STD = CXX17
 
 
 PKGROOT=../../..

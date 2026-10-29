@@ -1,5 +1,31 @@
 # -*- mode: org -*-
 
+* Version 1.0.5 <2026-10-29 Thu>
+ - Extended qualification to every native utility, public R method and
+   documented adapter option. AUDIT.org tracks the defects, evidence, fixes,
+   support boundaries and validation status before C++ modernization.
+ - Fixed vector softmax returning log probabilities, complex-step underflow,
+   unsigned degrees of freedom, grouping/pattern buffer edge cases, 64-bit
+   cluster labels, L2 intermediate overflow and mutable cumulative-process state.
+ - Added projection-free processes for models with no fitted coefficients.
+ - Added normal/Poisson response-mean precision weights and integer binomial
+   trial weights, using the original fit and excluding zero-weight rows.
+ - Reconstructed predicted coordinates from coefficients to preserve design
+   ties. Structurally saturated processes have zero curves, p-value one and
+   informative=FALSE metadata; numerical score-space ambiguity returns missing
+   p-values with the computed curves preserved.
+ - Made data/variable selection follow fitted rows; fixed generic residual and
+   gradient callbacks and added explicit finite real-value/index contracts.
+ - Replaced unsafe SEM conditioning-set inversion with structural covariance
+   paths. Fixed full prediction, custom p/data, formula/list/function handling,
+   ordinal shared-state restoration and invalid fitted-model domain checks.
+ - Preserved historical private R aliases while correcting generated C++
+   callable names; added downstream installed-header client qualification.
+ - Fixed plotting palettes, graphical arguments, legends, legacy matrix
+   objects and coefficient tables without statistics.
+ - Added isolated qualification/coverage tooling and a nonpublishing OS/R CI
+   matrix; removed obsolete Travis deployment and notification configuration.
+
 * Version 1.0.4 <2026-10-29 Thu>
  - Tied covariates are evaluated at complete tie groups, without numerical
    jitter. This fixes severe false rejection for grouped data at large

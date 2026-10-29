@@ -9,7 +9,7 @@
 \method{cumres}{glm}(
   model,
   variable = c("predicted", colnames(model.matrix(model))),
-  data = data.frame(model.matrix(model)),
+  data = model.frame(model),
   R = 1000,
   b = 0,
   plots = min(R, 50),
@@ -19,9 +19,13 @@
 \arguments{
 \item{model}{Model object (\code{lm} or \code{glm})}
 
-\item{variable}{List of variable to order the residuals after}
+\item{variable}{Names of ordering variables. The default selects fitted
+predictions and design columns with more than two distinct values. Explicit
+selections may also use binary or constant numeric variables, or ordered
+factors supplied through \code{data}. Unordered factors are rejected.}
 
-\item{data}{data.frame used to fit model (complete cases)}
+\item{data}{Data containing additional ordering variables. Rows are aligned
+to the fitted model by row names, or must already be in fitted-row order.}
 
 \item{R}{Number of samples used in simulation}
 
@@ -52,12 +56,28 @@ statistics are calculated via simulation from the asymptotic distribution of
 the cumulative residual process under the null (Lin et al., 2002).
 }
 \note{
-Unweighted normal, binomial and Poisson models are supported;
-noncanonical binomial links are also tested. Grouped binomial responses
-must contain integer success/failure counts. Diagnostics use the original
-maximum-likelihood fit and do not refit grouped data. Rows omitted during
-fitting are also omitted by the diagnostic. Monte Carlo p-values count
-simulated statistics greater than or equal to the observed statistic.
+Normal, binomial and Poisson models with their standard links are
+supported. Normal and Poisson prior weights describe inverse dispersion of
+independently observed response means, as in \code{stats::glm}; their scores
+and coefficient influences account for those weights. Zero-weight rows are
+excluded. Binomial weights specify trial counts; weighted proportions and
+grouped responses must reconstruct nonnegative integer successes/failures
+within floating-point roundoff. Binomial trials are expanded without refitting.
+Diagnostics retain the fitted coefficients, covariance and offsets, and omit
+the same incomplete rows as the fit. Normal models require positive residual
+degrees of freedom. A known mean with no estimated coefficients is supported.
+Predicted coordinates are reconstructed from the fitted coefficients so
+identical design rows are not separated by subtraction roundoff.
+Structurally recognized saturated ordering cells have no lack-of-fit
+information: \code{informative=FALSE}, zero curves and p-values of one.
+Other processes whose selected indicators are numerically indistinguishable
+from the fitted score space are reported as \code{informative=NA}, with
+missing p-values and the computed curves retained. This avoids interpreting
+numerical cancellation as evidence of lack of fit. These checks use the
+design/score structure, not a threshold on observed p-values or residuals.
+Monte Carlo comparisons count simulated statistics greater than or equal to
+the observed statistic. \code{n} is the number of independent residual units
+(trials for expanded binomial data); \code{nobs} records positive-weight fitted rows.
 }
 \examples{
 

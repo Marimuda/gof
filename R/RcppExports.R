@@ -9,11 +9,11 @@ L2Test <- function(x, t) {
     .Call('_gof_L2Test', PACKAGE = 'gof', x, t)
 }
 
-.fastapprox <- function(time, newtime, equal = FALSE, type = 0L) {
+FastApprox <- function(time, newtime, equal = FALSE, type = 0L) {
     .Call('_gof_FastApprox', PACKAGE = 'gof', time, newtime, equal, type)
 }
 
-.clusterindex <- function(t) {
+ClusterIndex <- function(t) {
     .Call('_gof_ClusterIndex', PACKAGE = 'gof', t)
 }
 

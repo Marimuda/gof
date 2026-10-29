@@ -1,7 +1,7 @@
 Package: gof
 Type: Package
 Title: Model Diagnostics Based on Cumulative Residuals
-Version: 1.0.4
+Version: 1.0.5
 Date: 2026-10-29
 Authors@R: person("Klaus K.", "Holst", email = "klaus@holst.it",
     role = c("aut", "cre"))
@@ -9,11 +9,11 @@ Description: Implementation of model-checking techniques for generalized linear
     models and linear structural equation models based on cumulative residuals
     (Lin et al. (2002) <doi:10.1111/j.0006-341x.2002.00001.x>).
 Depends:
-    R (>= 3.3),
-    lava (>= 1.6.3)
+    R (>= 3.5),
+    lava (>= 1.10)
 Imports:
     methods,
-    Rcpp (>= 1.0.0),
+    Rcpp (>= 1.1.2),
 Suggests:
     testthat (>= 3.2.3),
     numDeriv
@@ -21,6 +21,7 @@ License: Apache License (== 2.0) | file LICENSE
 LinkingTo: Rcpp, RcppArmadillo
 LazyLoad: yes
 NeedsCompilation: yes
+SystemRequirements: C++17
 ByteCompile: yes
 RcppModules: gofmod
 Encoding: UTF-8
