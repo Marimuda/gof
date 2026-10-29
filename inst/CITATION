@@ -22,3 +22,17 @@ bibentry(
   doi = "10.1111/j.0006-341X.2002.00001.x",
   header = "For the cumulative-residual method, also cite:"
 )
+
+bibentry(
+  bibtype = "Article",
+  title = "Residual-Based Diagnostics for Structural Equation Models",
+  author = c(person(c("B.", "N."), "Sanchez"),
+             person(c("E.", "A."), "Houseman"), person(c("L.", "M."), "Ryan")),
+  journal = "Biometrics",
+  year = "2009",
+  volume = "65",
+  number = "1",
+  pages = "104--115",
+  doi = "10.1111/j.1541-0420.2008.01022.x",
+  header = "When using Gaussian SEM residual-distribution diagnostics, also cite:"
+)

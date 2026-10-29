@@ -39,7 +39,10 @@ if (nzchar(cpp)) {
 capture.output(sessionInfo(),file=file.path(output,"session-info.txt"))
 Sys.setenv(GOF_CALIBRATION_REPORT=file.path(output,"calibration-rates.rds"),
            GOF_SEM_CALIBRATION_REPORT=file.path(output,"calibration-sem-ordinal.rds"),
-           GOF_WEIGHT_CALIBRATION_REPORT=file.path(output,"calibration-weights.rds"))
+           GOF_WEIGHT_CALIBRATION_REPORT=file.path(output,"calibration-weights.rds"),
+           GOF_JOINT_CALIBRATION_REPORT=file.path(output,"calibration-joint.rds"),
+           GOF_NORMALITY_CALIBRATION_REPORT=file.path(output,"calibration-normality.rds"),
+           GOF_BOOTSTRAP_CALIBRATION_REPORT=file.path(output,"calibration-bootstrap.rds"))
 client <- paste0("source(",encodeString(file.path(snapshot,"tools","check-client.R"),quote='"'),")")
 coverage <- covr::package_coverage(snapshot,type=c("tests","examples"),code=client,
                                   quiet=FALSE,clean=FALSE)

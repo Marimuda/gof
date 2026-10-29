@@ -13,16 +13,19 @@ local({
     topics <- c("gof", "cumres", "cumres.glm", "cumres.lm", "cumres.default",
                 "cumres.lvmfit", "cumres.ordreg", "plot.cumres", "cumres-object",
                 "coef.cumres", "summary.cumres", "as.data.frame.cumres",
-                "as.data.frame.summary.cumres", "tidy.cumres", "surgunit")
+                "as.data.frame.summary.cumres", "tidy.cumres", "surgunit",
+                "cumres_joint", "cumres_normality", "cumres_bootstrap")
     for (topic in topics) {
         if (!length(utils::help(topic, package = "gof", lib.loc = library_path)))
             stop("Installed help topic not found: ", topic)
     }
     vignettes <- utils::vignette(package = "gof", lib.loc = library_path)$results
-    if (is.null(vignettes) || nrow(vignettes) < 2L)
+    if (is.null(vignettes) || nrow(vignettes) < 3L)
         stop("Install the source archive after building its vignettes")
     html <- list.files(file.path(path, "doc"), pattern = "[.]html$", full.names = TRUE)
-    if (length(html) < 2L) stop("The installed vignette HTML files are missing")
+    if (!all(c("getting-started.html","statistical-details.html",
+               "joint-normality-bootstrap.html") %in% basename(html)))
+        stop("The installed vignette HTML files are missing")
 
     news <- utils::news(package = "gof", lib.loc = library_path)
     version <- as.character(utils::packageVersion("gof", lib.loc = library_path))
@@ -58,7 +61,37 @@ local({
     on.exit(grDevices::dev.off(), add = TRUE)
     returned <- piped |> plot()
     stopifnot(identical(returned, piped))
+    set.seed(2603)
+    joint <- fit |> gof::cumres_joint(variable = c("x", "predicted"), R = 19L, plots = 2L)
+    joint_table <- as.data.frame(joint)
+    stopifnot(inherits(joint,"cumres_joint"), nrow(joint_table)==6L,
+              identical(joint_table,as.data.frame(summary(joint))),
+              identical(unique(joint_table$scope),c("marginal","family")),
+              all(is.finite(joint$joint$p.value)), identical(invisible(plot(joint,idx="x")),joint))
+    set.seed(2604)
+    sem <- lava::estimate(lava::lvm(y~x),data)
+    normality <- sem |> gof::cumres_normality(R = 19L, plots = 2L)
+    normality_table <- as.data.frame(normality)
+    stopifnot(inherits(normality,"cumres_normality"),
+              identical(normality_table,as.data.frame(summary(normality))),
+              all(normality_table$diagnostic=="normality"),
+              identical(invisible(plot(normality)),normality))
+    set.seed(2605)
+    counts <- data.frame(x=seq_len(40),y=stats::rpois(40,.5))
+    count_fit <- stats::glm(y~1,data=counts,family=stats::poisson())
+    bootstrap <- count_fit |> gof::cumres_bootstrap(variable="x",data=counts,
+        R=19L,plots=2L,null="specified",mean=rep(.5,40))
+    bootstrap_table <- as.data.frame(bootstrap)
+    stopifnot(inherits(bootstrap,"cumres_bootstrap"),
+              identical(bootstrap_table,as.data.frame(summary(bootstrap))),
+              all(bootstrap_table$calibration=="specified-null-monte-carlo"),
+              length(bootstrap$bootstrap$status)==19L,
+              identical(invisible(plot(bootstrap)),bootstrap))
+    if (requireNamespace("generics", quietly = TRUE) && requireNamespace("tibble", quietly = TRUE)) {
+        for (diagnostic in list(joint,normality,bootstrap))
+            stopifnot(identical(as.data.frame(generics::tidy(diagnostic)),as.data.frame(diagnostic)))
+    }
     cat("Installed R-interface checks passed for gof ", version, " at ", path, "\n", sep = "")
     cat("Help topics: ", length(topics), "; built vignettes: ", nrow(vignettes),
-        "; native-pipe, table, summary and plot invariants passed.\n", sep = "")
+        "; native-pipe, table, summary and plot invariants passed for legacy and all three new endpoints.\n", sep = "")
 })

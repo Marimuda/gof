@@ -261,12 +261,16 @@ missing metadata alone does not invalidate their returned p-values.
 
 ## What these checks do not establish
 
-Each ordering defines a marginal residual-process check. Multiple selected
-orderings are not a joint global goodness-of-fit test. The native engine
+The default `cumres()` call defines a marginal residual-process check for
+each ordering. The legacy native engine
 pairs reused multipliers to sorted ranks separately for different orderings;
 saved curve columns must not be combined as joint cross-variable draws.
 The ordinal cutpoint combination is different: it uses shared subject
 multipliers across its cutpoints and is valid for that joint functional.
+`cumres_joint()` supplies a separate subject-coupled simulation for family
+inference across prespecified orderings. Its simultaneous reference envelope
+applies to the chosen family and evaluated grids; it is not a parameter
+confidence interval or a test of every possible model departure.
 
 For parameter-dependent custom orderings $x_\theta$, conditional centering
 only at $\theta_0$ is insufficient. An ordering-derivative term vanishes
@@ -277,9 +281,10 @@ ordering and its parameter derivatives, with $E[r_{\theta_0}\mid Z]=0$,
 along with the required smoothness and stochastic-equicontinuity conditions.
 The adapter differentiates residuals, not arbitrary ordering callbacks.
 Named safe SEM predictions provide a structured construction; other
-callbacks require the caller's derivation. The SEM endpoint implements
-mean/linearity diagnostics, not the separate normality-testing suite in
-Sánchez, Houseman and Ryan (2009).
+callbacks require the caller's derivation. The SEM `cumres()` endpoint checks
+mean/linearity. Use `cumres_normality()` for the separate residual-ECDF
+diagnostics in Sánchez, Houseman and Ryan (2009), including their nuisance
+parameter-estimation correction.
 
 This is an asymptotic Gaussian multiplier approximation. Rare events,
 severe imbalance, high leverage and little effective information can make
@@ -287,8 +292,12 @@ it unreliable even with a large nominal sample and a numerically regular
 fit. For example, a known Poisson mean of $10^{-12}$ with 1,000 observations
 has almost no expected events; the empirical residual multiplier does not
 supply exact small-count inference. No universal count cutoff or exact
-finite-sample calibration is claimed. A model-based exact or parametric
-procedure for such regimes would be a separate method.
+finite-sample calibration is claimed for the multiplier method.
+`cumres_bootstrap()` implements a separate binomial/Poisson simulation
+procedure: fitted-null calibration refits every sample and remains approximate;
+specified-null Monte Carlo testing requires genuinely prespecified means.
+Unresolved refits are accounted for explicitly. See the
+[joint, normality and bootstrap guide](joint-normality-bootstrap.html).
 
 ## Reproduce the simulation, not just the fit
 
@@ -304,7 +313,7 @@ second <- cumres(custom_fit, variable = "x", R = 99, plots = 3)
 identical(first, second)
 ```
 
-For a fixed observed statistic, the implemented Monte Carlo p-value is
+For a fixed observed statistic, the legacy `cumres()` Monte Carlo p-value is
 the fraction of simulated statistics greater than or equal to it. A
 reported zero means that none of the `R` draws reached the observed
 statistic; it does not establish a zero tail probability. Near an
@@ -316,8 +325,11 @@ draws <- c(199L, 999L, 4999L)
 data.frame(R = draws, approximate_se_at_0.05 = sqrt(0.05 * 0.95 / draws))
 ```
 
-Different orderings and test statistics need not be independent. The
-package does not provide automatic joint or familywise calibration.
+Different orderings and test statistics need not be independent. Request
+`cumres_joint()` explicitly when a family reference distribution is needed;
+calling the legacy marginal API does not enable it automatically. The new
+joint, normality and parametric-calibration endpoints use the documented
+plus-one Monte Carlo convention, with minimum reported value `1/(R+1)`.
 Its regression, reference and bounded simulation checks support the
 implemented paths; they do not prove finite-sample calibration for every
 possible fitted model or user-supplied residual function.

@@ -75,8 +75,8 @@ variables to use in the prediction of the outcome and predictor (use the
 \code{predict} method as below).
 
 This method implements mean/linearity residual-process diagnostics;
-it does not implement the separate normality-diagnostic suite in the SEM
-reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
+use \code{\link{cumres_normality}} for residual-distribution diagnostics
+from the SEM reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
 derivative contributes unless
 \eqn{E[r_{\theta_0}\partial_\theta x_\theta\mid x_{\theta_0}=t]=0}.
 A sufficient construction uses the same fixed admissible conditioning data

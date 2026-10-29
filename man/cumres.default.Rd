@@ -17,6 +17,7 @@
   breakties = 0,
   subset = subset_t,
   subset.max = 500L,
+  simulation = c("marginal", "joint"),
   ...
 )
 }
@@ -69,6 +70,12 @@ positions within \code{subset.max}.}
 \item{subset.max}{Positive whole-number cap on distinct evaluation values
 per process. \code{Inf} or \code{NULL} evaluates all distinct values.
 Every residual unit contributes irrespective of this cap.}
+
+\item{simulation}{Null simulation coupling. The default \code{"marginal"}
+preserves the original separate-ordering simulations. \code{"joint"}
+shares multipliers by independent subject and adds family statistics and
+simultaneous null reference envelopes. See \code{\link{cumres_joint}};
+this option applies to the default and linear/GLM methods.}
 
 \item{...}{Additional arguments passed to residual and gradient callbacks.}
 }

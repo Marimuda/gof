@@ -115,7 +115,10 @@ main <- function() {
         Sys.setenv(GOF_SLOW_TESTS=if (slow) "true" else "false",
                    GOF_CALIBRATION_REPORT=file.path(output,"calibration-rates.rds"),
                    GOF_SEM_CALIBRATION_REPORT=file.path(output,"calibration-sem-ordinal.rds"),
-                   GOF_WEIGHT_CALIBRATION_REPORT=file.path(output,"calibration-weights.rds"))
+                   GOF_WEIGHT_CALIBRATION_REPORT=file.path(output,"calibration-weights.rds"),
+                   GOF_JOINT_CALIBRATION_REPORT=file.path(output,"calibration-joint.rds"),
+                   GOF_NORMALITY_CALIBRATION_REPORT=file.path(output,"calibration-normality.rds"),
+                   GOF_BOOTSTRAP_CALIBRATION_REPORT=file.path(output,"calibration-bootstrap.rds"))
         result <- testthat::test_dir(file.path(snapshot,"tests","testthat"),
                                     reporter="summary",stop_on_failure=FALSE)
         saveRDS(result,file.path(output,paste0(label,".rds")))

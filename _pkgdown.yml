@@ -16,6 +16,9 @@ reference:
       - cumres.lvmfit
       - cumres.ordreg
       - cumres.default
+      - cumres_joint
+      - cumres_normality
+      - cumres_bootstrap
   - title: Results and visualization
     contents:
       - cumres-object
@@ -30,3 +33,4 @@ articles:
     contents:
       - getting-started
       - statistical-details
+      - joint-normality-bootstrap

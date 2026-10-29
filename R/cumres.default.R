@@ -92,20 +92,24 @@ gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
 ##' The default method accepts residuals, their parameter derivatives and
 ##' coefficient influence contributions for other justified model structures.
 ##'
-##' Each ordering defines a separate diagnostic. These marginal tests are not
+##' By default, each ordering defines a separate diagnostic. These marginal tests are not
 ##' a global omnibus check of every aspect of a fitted model. Saved simulation
 ##' columns from different orderings must not be combined as a joint null draw:
 ##' multipliers are paired to sorted ranks separately for each ordering. The
 ##' ordinal omnibus mode instead combines cutpoints for one ordering using
-##' shared subject multipliers.
+##' shared subject multipliers. Use \code{\link{cumres_joint}} for simultaneous
+##' inference across prespecified orderings of a linear/generalized linear
+##' model or a justified default residual process.
 ##'
 ##' For cumulative processes, the Sup statistic is the largest absolute
 ##' observed process value. The L2 statistic is the norm of the step process
 ##' on its evaluation grid. The historically named \code{KS} and \code{CvM}
 ##' components contain the corresponding Monte Carlo \emph{p-values}, not
 ##' those observed statistics. A simulated statistic equal to the observed
-##' statistic is included in the tail probability. The p-value resolution is
-##' \eqn{1/R}; a simulated p-value of zero is not proof of an impossible null.
+##' statistic is included in the tail probability. The legacy marginal p-value
+##' resolution is \eqn{1/R}; a simulated p-value of zero is not proof of an
+##' impossible null. Joint simulations use the plus-one rule described in
+##' \code{\link{cumres_joint}}.
 ##' Examples use few simulations to keep them fast; increase \code{R} when
 ##' assessing small tail probabilities or the stability of a reported result.
 ##'
@@ -198,6 +202,11 @@ cumres <- function(model,...) UseMethod("cumres")
 ##' residuals; positive values give sums over the window \eqn{(t-b,t]}.
 ##' @param plots Nonnegative whole number of null processes to retain for
 ##' plotting. This is independent of \code{R}; zero retains no simulated curves.
+##' @param simulation Null simulation coupling. The default \code{"marginal"}
+##' preserves the original separate-ordering simulations. \code{"joint"}
+##' shares multipliers by independent subject and adds family statistics and
+##' simultaneous null reference envelopes. See \code{\link{cumres_joint}};
+##' this option applies to the default and linear/GLM methods.
 ##' @param coef Finite real coefficient vector used to evaluate residual and
 ##' gradient callbacks. It may be \code{NULL} when residuals, derivatives and
 ##' influences are already supplied. A known mean with no fitted parameters
@@ -236,7 +245,9 @@ cumres <- function(model,...) UseMethod("cumres")
 cumres.default <- function(model, variable, r=stats::residuals(model), dr,
                            R=1e3L, b=0, plots=min(R,50L),
                            coef=stats::coef(model), ic=lava::iid(model), breakties=0,
-                           subset=subset_t, subset.max=500L, ...) {
+                           subset=subset_t, subset.max=500L,
+                           simulation=c("marginal","joint"), ...) {
+    simulation <- match.arg(simulation)
     R <- gof_count(R,"R",1L)
     plots <- gof_count(plots,"plots")
     if (!is.null(subset.max)) subset.max <- gof_count(subset.max,"subset.max",1L,TRUE)
@@ -274,6 +285,9 @@ cumres.default <- function(model, variable, r=stats::residuals(model), dr,
     if (!is.numeric(variable) || is.complex(variable) || any(!is.finite(variable)) ||
         any(!is.finite(r)) || any(!is.finite(dr)) || any(!is.finite(ic)))
         stop("Residuals, variables, gradients and influences must be finite numeric values")
+
+    if (simulation=="joint")
+        return(gof_joint_engine(model,variable,r,dr,ic,R,b,plots,subset,subset.max,vnames))
 
     ## Reserve historical uniform draws to preserve seeded Monte Carlo streams
     ## for untied models. Numerical jitter is no longer added to observations.

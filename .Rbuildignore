@@ -17,6 +17,7 @@ testthat-problems\.rds$
 ^DEVELOPMENT\.md$
 ^CONTRIBUTING\.md$
 ^PACKAGE_POLISH\.md$
+^CAPABILITIES\.md$
 ^README\.html$
 ^STATISTICAL_REVIEW\.org$
 ^docs$

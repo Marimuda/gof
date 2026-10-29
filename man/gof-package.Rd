@@ -16,6 +16,10 @@ Supported adapters cover normal/binomial/Poisson regression, Gaussian
 structural equation models and ordinal regression fitted with \pkg{lava}.
 The low-level default method accepts custom residual and influence
 contributions when their statistical assumptions can be justified.
+\code{\link{cumres_joint}} provides simultaneous ordering-variable inference;
+\code{\link{cumres_normality}} checks Gaussian SEM residual distributions;
+\code{\link{cumres_bootstrap}} supplies parametric calibration for canonical
+binomial and Poisson residual diagnostics.
 }
 \references{
 D. Y. Lin, L. J. Wei and Z. Ying (2002).
@@ -29,6 +33,8 @@ Statistical Association 86, 420--426.
 \seealso{
 \code{\link{cumres}}, \code{\link{cumres.glm}},
 \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
+\code{\link{cumres_joint}}, \code{\link{cumres_normality}},
+\code{\link{cumres_bootstrap}},
 \code{\link{plot.cumres}}, \code{\link{surgunit}}.
 }
 \author{

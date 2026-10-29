@@ -82,7 +82,7 @@ interface dependencies, then install that archive:
 
 ```{r install-archive, eval=FALSE}
 install.packages(c("lava", "Rcpp", "RcppArmadillo", "numDeriv", "lpSolve"))
-install.packages("gof_1.1.0.tar.gz", repos = NULL, type = "source")
+install.packages("gof_1.2.0.tar.gz", repos = NULL, type = "source")
 ```
 
 From the root of a checkout, this also builds the installed guides:
@@ -109,10 +109,14 @@ R interfaces:
 ?cumres.glm
 ?cumres.lvmfit
 ?cumres.ordreg
+?cumres_joint
+?cumres_normality
+?cumres_bootstrap
 ?`cumres-object`
 
 vignette("getting-started", package = "gof")
 vignette("statistical-details", package = "gof")
+vignette("joint-normality-bootstrap", package = "gof")
 ```
 
 The ordinal default combines the joint cutpoint process for one ordering;
@@ -151,11 +155,28 @@ p-values and retain their curves for inspection. An unavailable information
 flag in another adapter is distinct from that numerical case; see
 `?"cumres-object"`.
 
-These are directed checks for a selected ordering, not a joint global test
-over all covariates. Saved null curves from different orderings cannot be
-combined as a joint draw. The approximation can fail with rare events,
-severe imbalance or little effective information despite a large nominal
-sample; it is not an exact small-count procedure.
+The default `cumres()` call provides separate checks for each ordering.
+Its saved null curves from different orderings cannot be combined as a
+joint draw. `cumres_joint()` instead shares multipliers by subject and
+provides family tests and simultaneous null reference envelopes over the
+chosen orderings and evaluated grids. This does not check every possible
+model departure.
+
+`cumres_normality()` checks Gaussian SEM residual distributions with an
+explicit correction for estimated nuisance parameters. It complements
+the existing SEM mean/linearity diagnostics. A projected latent-residual
+check cannot uniquely identify the source of nonnormality under alternatives.
+Its one-step calibration is asymptotic; finite-sample rejection rates can
+depart from the nominal level.
+
+The multiplier approximation can fail with rare events, severe imbalance
+or little effective information despite a large nominal sample.
+`cumres_bootstrap()` supplies model-based calibration for canonical binomial
+and Poisson diagnostics. A fitted-null bootstrap remains an approximation;
+simulation under genuinely specified means permits a distinct Monte Carlo
+test. Failed refits are accounted for rather than silently discarded.
+See `vignette("joint-normality-bootstrap", package = "gof")` for supported
+models and interpretation.
 
 Regression tests, independent numerical references, calibration experiments
 and native sanitizers support the recorded implementation checks. They do

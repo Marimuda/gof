@@ -76,6 +76,11 @@ work directly with \code{cumres()}, \code{summary()}, \code{as.data.frame()} and
 }
 \details{
 Extraction consumes no random draws and does not rerun simulations.
+The additional endpoints retain their interpretation in extracted tables:
+\code{\link[=cumres_joint]{cumres_joint()}} adds marginal/family \code{scope}; \code{\link[=cumres_normality]{cumres_normality()}} adds
+calibration, diagnostic and residual labels; \code{\link[=cumres_bootstrap]{cumres_bootstrap()}} adds
+calibration/null labels, unresolved-refit counts and simulated tail bounds.
+Their method-specific help defines these additional columns.
 The data-frame methods also accept saved matrix-based diagnostic objects.
 A saved summary made before result tables were added retains its p-values
 but cannot reconstruct observed statistics without the original curves.

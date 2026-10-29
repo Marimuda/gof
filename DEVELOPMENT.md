@@ -3,7 +3,8 @@
 The public interface is documented in roxygen blocks under `R/`. Commit the
 generated `man/*.Rd` files and `NAMESPACE`; users need no documentation tools
 to install a built package. The statistical repair baseline is recorded in
-`AUDIT.org`. User-facing changes belong in `NEWS.md`.
+`AUDIT.org`. `CAPABILITIES.md` records the subsequent capability contracts,
+review findings and qualification. User-facing changes belong in `NEWS.md`.
 
 ## Development dependencies
 

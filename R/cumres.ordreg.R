@@ -66,6 +66,8 @@
 ##' @export
 cumres.ordreg <- function(model,variable="predicted",R=100,plot=FALSE,
                           aggregate=c("omnibus","score","cutpoints"),plots=min(R,50L),...) {
+    if ("simulation" %in% names(list(...)))
+        stop("Ordinal diagnostics use shared cutpoint multipliers for one ordering; simulation is a default/linear/GLM option")
     R <- gof_count(R,"R",1L)
     plots <- gof_count(plots,"plots")
     if (!is.logical(plot) || length(plot)!=1L || is.na(plot)) stop("plot must be TRUE or FALSE")

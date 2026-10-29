@@ -236,6 +236,7 @@
     }
     indeterminate <- which(is.na(res$informative))
     res$KS[indeterminate] <- res$CvM[indeterminate] <- NA_real_
+    if (inherits(res,"cumres_joint")) res <- gof_joint_finalize(res)
     res
 }
 

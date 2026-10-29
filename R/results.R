@@ -41,6 +41,11 @@
 #'   `print()` returns its input invisibly. Optional `generics::tidy()` and
 #'   `broom::tidy()` methods return the same result columns as a tibble.
 #' @details Extraction consumes no random draws and does not rerun simulations.
+#'   The additional endpoints retain their interpretation in extracted tables:
+#'   [cumres_joint()] adds marginal/family `scope`; [cumres_normality()] adds
+#'   calibration, diagnostic and residual labels; [cumres_bootstrap()] adds
+#'   calibration/null labels, unresolved-refit counts and simulated tail bounds.
+#'   Their method-specific help defines these additional columns.
 #'   The data-frame methods also accept saved matrix-based diagnostic objects.
 #'   A saved summary made before result tables were added retains its p-values
 #'   but cannot reconstruct observed statistics without the original curves.

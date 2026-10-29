@@ -44,8 +44,8 @@ cumresMaxSet <- function(m,var,...) {
 ##' parameter value. The selection is conservative in models with exact path
 ##' cancellations. Supplied numeric/function predictors are used directly.
 ##' @details This method implements mean/linearity residual-process diagnostics;
-##' it does not implement the separate normality-diagnostic suite in the SEM
-##' reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
+##' use \code{\link{cumres_normality}} for residual-distribution diagnostics
+##' from the SEM reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
 ##' derivative contributes unless
 ##' \eqn{E[r_{\theta_0}\partial_\theta x_\theta\mid x_{\theta_0}=t]=0}.
 ##' A sufficient construction uses the same fixed admissible conditioning data
@@ -155,6 +155,8 @@ cumres.lvmfit <- function(model,y,x,full=FALSE,
   if (isTRUE(attr(moment$IAi,"pseudo")))
       stop("Gaussian structural system must be invertible; a pseudoinverse is not a valid generative SEM")
   dots <- list(...)
+  if ("simulation" %in% names(dots) && !identical(dots$simulation,"marginal"))
+      stop("Joint ordering simulation supports the default and linear/GLM methods; SEM collections remain separate diagnostics")
   ## IC.default evaluates information at pars(model). Update a copy so explicit
   ## p/data options affect scores, information and residuals consistently.
   fit <- model

@@ -1,3 +1,17 @@
+# gof 1.2.0
+
+* Added joint multiplier diagnostics across prespecified ordering variables,
+  family Sup and range-normalized L2 tests, and simultaneous null reference
+  envelopes. Legacy marginal simulations retain their seeded behavior.
+* Added Gaussian structural-equation residual-distribution diagnostics with
+  parameter-estimation correction, separate from mean/linearity checks.
+* Added canonical binomial/Poisson parametric calibration, distinguishing
+  fitted-null bootstrap refitting from specified-null Monte Carlo testing.
+  Failed replicates remain visible. Unresolved refits withhold informative
+  p-values; certified zero-information processes retain p-values of one.
+* Added installed help and a worked capability guide explaining the methods,
+  numerical qualification, finite-grid scope and inferential limitations.
+
 # gof 1.1.0
 
 * Added a generated README, installed workflow and statistical-detail

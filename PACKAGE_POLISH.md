@@ -1,5 +1,9 @@
 # Package maturity and statistical review, version 1.1.0
 
+This is the historical 1.1.0 qualification record. Subsequent statistical
+capability development and its current support boundaries are recorded in
+[CAPABILITIES.md](CAPABILITIES.md).
+
 This phase starts at `7fc29b8` (the 1.0.5 repair baseline). Its initial goal
 was a shareable R package: readable installation/use instructions, installed
 help, worked guides, conventional result extraction and reproducible

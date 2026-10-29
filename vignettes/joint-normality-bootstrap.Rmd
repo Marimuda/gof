@@ -1,0 +1,214 @@
+---
+title: "Joint inference, normality and parametric calibration"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Joint inference, normality and parametric calibration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+library(gof)
+```
+
+These three procedures extend cumulative-residual model checking in different
+directions. They answer different questions and retain distinct assumptions.
+The examples use few simulations for speed; increase `R` for an analysis.
+
+| Question | Endpoint | Null simulation |
+|:--|:--|:--|
+| Does a fitted mean model depart along any of several selected orderings? | `cumres_joint()` | Subject-coupled Gaussian multipliers and a maximum statistic. |
+| Do Gaussian SEM residual distributions depart from normality? | `cumres_normality()` | Gaussian response simulation with a first-order nuisance-estimation correction. |
+| How do residual diagnostics behave under a binomial/Poisson sampling model? | `cumres_bootstrap()` | Response simulation, with refitting for an estimated null. |
+
+## Joint inference across orderings
+
+The historical `cumres()` simulations provide marginal reference distributions.
+Their saved columns are not joint draws across orderings. The new endpoint
+keeps the same multiplier attached to a subject under every ordering.
+
+```{r joint}
+set.seed(1201)
+d <- data.frame(x = seq(-2, 2, length.out = 160), z = rnorm(160))
+d$y <- 1 + 0.6*d$x - 0.3*d$z + rnorm(nrow(d))
+fit <- lm(y ~ x + z, data = d)
+
+set.seed(1202)
+joint <- fit |> cumres_joint(variable = c("x", "z"), R = 99, plots = 5)
+joint |> as.data.frame()
+plot(joint, idx = "x")
+```
+
+The table distinguishes `scope="marginal"` from `scope="family"`. The family
+Sup statistic is the largest absolute process value over every chosen
+ordering and evaluated point. The family `L2.range` statistic takes the
+largest coordinate-range-normalized L2 norm. This normalization avoids
+changing a family's relative coordinate weighting merely by changing units.
+Individual `L2` rows retain the original unnormalized statistic.
+
+The horizontal envelope is a simultaneous **null reference envelope**, not
+a confidence interval for regression coefficients or fitted means. It applies
+to the joint supported mean-model null, the chosen orderings and the evaluated
+grid. It does not check every possible departure and does not supply strong
+familywise error control for arbitrary separately interpreted component
+hypotheses under partial alternatives.
+
+Choose the ordering family, bandwidth and grid rule before inspecting the
+responses. A finite grid cap limits the assertion to that grid. A numerically
+indeterminate selected process withholds the family result instead of quietly
+shrinking the family. Inspect `joint$joint` for the retained reference statistics,
+adjusted marginal tails and envelope status.
+
+## Gaussian SEM residual distributions
+
+The existing SEM `cumres()` method checks mean/linearity. Normality requires a
+different process: the empirical CDF of standardized marginal or projected
+structural residuals, minus the standard Gaussian CDF. Fitted residuals cannot
+be treated as if the parameters were known.
+
+```{r normality}
+set.seed(1203)
+sem <- lava::lvm(y ~ x)
+sem_data <- lava::sim(sem, 180)
+sem_fit <- lava::estimate(sem, sem_data)
+
+set.seed(1204)
+normality <- sem_fit |> cumres_normality(R = 99, plots = 5)
+normality |> as.data.frame()
+plot(normality)
+```
+
+`variable=NULL` pools standardized marginal residual components. A single
+named endogenous or latent variable selects its standardized projected
+structural-error residual. Under the Gaussian SEM these linear residuals have
+known standard normal marginal distributions at the true parameters.
+The pooled component ECDF is not a universally consistent test of multivariate
+normality or dependence.
+
+The reference simulations implement the first-order correction in Sánchez,
+Houseman and Ryan (2009), Section 3.1, equations (10)--(11). They use the joint
+Gaussian likelihood score, expected information and the derivative of the
+expected residual CDF. The correction includes parameters shared by the mean,
+covariance and projection. This is an asymptotic fitted-model procedure, not
+an ordinary known-parameter Kolmogorov--Smirnov test.
+
+The horizontal coordinate is a fixed probability grid: at probability `u`,
+the plotted process compares the residual ECDF at `qnorm(u)` with `u`.
+Sup is the maximum on that grid; L2 integrates over probability using the
+documented grid approximation. Finite grids approximate the full-domain
+statistics in the paper.
+
+Support is confined to complete, independent-subject Gaussian lava fits with
+regular, identified nuisance information and valid structural moments.
+Missing-data/FIML, clustered, weighted and boundary fits are outside this
+endpoint. Observed exogenous covariates are held fixed. A projected residual
+diagnostic may detect a distributional departure, but cannot uniquely attribute
+it to one latent error when other model assumptions are false. A large p-value
+does not establish that all latent or measurement errors are normal.
+
+Finite-sample calibration needs care. In the qualification experiment with
+200 cohorts of size 300 and `R=199`, inclusive `p <= 0.05` rejection rates
+were 6--8.5% across the three residual modes and two statistics. The two
+8.5% L2 results prompted a prespecified fresh paired study rather than being
+dismissed because a broad screening check passed. With 200 fresh cohorts,
+`R=399` and sample sizes 300/1,200, rates were 2.5--7% and 3.5--5%, respectively;
+no fits were discarded or unresolved. All component-wise exact 95% binomial
+intervals in the fresh study included 5%. This supports the bounded checks
+without proving equivalence to 5% or a significant sample-size trend. Both
+studies remain in the qualification record. The method is an asymptotic
+diagnostic, not an exact finite-sample normality test.
+
+## Binomial and Poisson parametric calibration
+
+For a fitted canonical binomial/logit or Poisson/log model, this endpoint
+simulates responses under the fitted distribution and refits each sample on
+the same stored design, offsets and binomial trial counts. It does not run
+an inner multiplier simulation or reevaluate the original user call.
+
+```{r fitted-bootstrap}
+set.seed(1205)
+counts <- data.frame(x = seq(-1, 1, length.out = 100),
+                     exposure = rep(c(1, 2), 50))
+true_mean <- counts$exposure * exp(-1.5 + 0.5*counts$x)
+counts$y <- rpois(nrow(counts), true_mean)
+count_fit <- glm(y ~ x + offset(log(exposure)), data = counts, family = poisson())
+
+set.seed(1206)
+bootstrap <- count_fit |> cumres_bootstrap(variable = "x", R = 49, plots = 3)
+bootstrap |> as.data.frame()
+```
+
+Ordering variables must be fixed design quantities. The fitted-prediction
+ordering is rejected because freezing a response-dependent ordering would
+define a different procedure. A single grid is selected and reused for the
+observation and every simulated sample. Grouped binomial responses are
+accumulated as success-minus-expected-success totals and normalized by the
+square root of total trials, matching individual trial expansion at tied
+ordering values. Nonunit positive Poisson prior weights are unsupported here:
+their mean/variance interpretation alone does not specify a count sampler.
+
+Fitted parametric bootstrap calibration remains approximate. It is a way to
+use the assumed sampling distribution, not a guarantee that every sparse or
+boundary-estimation problem has been solved.
+
+A different mode tests a genuinely specified null:
+
+```{r specified-null}
+set.seed(1207)
+specified <- count_fit |> cumres_bootstrap(
+  variable = "x", R = 99, plots = 0,
+  null = "specified", mean = true_mean
+)
+specified |> as.data.frame()
+```
+
+Here `true_mean` was specified before generating the observations. Under the
+stated independent Poisson null, the observed and simulated statistics are
+exchangeable conditional on the fixed design and grid. The plus-one rank
+p-value controls finite-sample rejection probability, conservatively with
+ties. Supplying means estimated from these observations does not have that
+guarantee. The same distinction applies to specified binomial probabilities.
+
+Every one of the `R` replicates is recorded. Some all-zero or all-successful
+fits have analytically known boundary means and can be represented exactly.
+Other separated, nonconverged or unresolved refits withhold the ordinary
+p-value. `p.lower` and `p.upper` bound the tail calculation by assigning every
+unresolved indicator zero or one; these are not confidence intervals.
+Structurally certified zero-information processes keep zero statistics and
+p-values of one even if another aspect of a replicate fit is unresolved.
+Warnings, failure reasons and retained curve indices remain in
+`bootstrap$bootstrap`. No successful-only resampling hides a fitting problem.
+A fitted all-zero boundary null is degenerate and cannot assess unseen events.
+
+## Reporting and reproducibility
+
+All three endpoints accept the fitted model first and work with native `|>`.
+`as.data.frame()`, `summary()` and optional tidiers retain their result labels
+and method-specific metadata. Record the endpoint, its null interpretation,
+selected family or residual projection, grid, bandwidth, `R`, seed and fitted
+model/dependency versions with an analysis.
+
+New endpoint Monte Carlo tails use `(1 + exceedances)/(R + 1)`. This avoids
+reported zeros but does not make an asymptotic approximation exact. The
+historical marginal `cumres()` convention is preserved for compatibility.
+
+## References
+
+Lin, D. Y., Wei, L. J. and Ying, Z. (2002). Model-Checking Techniques Based on
+Cumulative Residuals. *Biometrics* 58, 1--12.
+<https://doi.org/10.1111/j.0006-341X.2002.00001.x>.
+
+Sánchez, B. N., Houseman, E. A. and Ryan, L. M. (2009). Residual-Based
+Diagnostics for Structural Equation Models. *Biometrics* 65, 104--115.
+<https://doi.org/10.1111/j.1541-0420.2008.01022.x>.
+
+Genest, C. and Rémillard, B. (2008). Validity of the parametric bootstrap for
+goodness-of-fit testing in semiparametric models. *Annales de l'Institut Henri
+Poincaré, Probabilités et Statistiques* 44, 1096--1127.
+<https://doi.org/10.1214/07-AIHP148>.
+
+Phipson, B. and Smyth, G. K. (2010). Permutation P-values Should Never Be Zero:
+Calculating Exact P-values When Permutations Are Randomly Drawn. *Statistical
+Applications in Genetics and Molecular Biology* 9, Article 39.
+<https://doi.org/10.2202/1544-6115.1585>.

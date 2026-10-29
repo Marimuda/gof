@@ -78,9 +78,10 @@ observed data; repeatedly trying models until a p-value becomes large is
 not an independent validation exercise.
 
 A large p-value does not establish that every part of the model is
-correct. These are asymptotic model checks, and several ordering variables
-or tests produce several comparisons. `gof` does not automatically adjust
-them for multiple testing.
+correct. These default `cumres()` calls provide marginal model checks, and
+several ordering variables or tests produce several comparisons. Use
+`cumres_joint()` for a prespecified ordering family under its documented
+joint null; the marginal calls do not enable that inference automatically.
 
 `R` is the number of null simulations used for the p-values. The examples
 use small values to keep the guide quick to run. Use more simulations when
