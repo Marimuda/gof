@@ -96,8 +96,9 @@ function(model,...) UseMethod("cumres")
         for (i in seq(p)) {
             t0 <- cr$inp[,i]
             if (length(Idx)>0) {
-                t0 <- t0[Idx[,i]]
-                W[[i]] <- W[[i]][Idx[,i]]
+                ## Idx holds 0-based positions for the C++ code; R is 1-based
+                t0 <- t0[Idx[,i]+1]
+                W[[i]] <- W[[i]][Idx[,i]+1]
             }
             ks0 <- SupTest(W[[i]])
             cvm0 <- L2Test(W[[i]],t0)
