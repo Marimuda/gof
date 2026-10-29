@@ -25,7 +25,13 @@ test_that("subset process equals the full process at the selected points", {
     for (i in seq_along(sub$W)) {
         pos <- match(sub$x[[i]], full$x[[i]])
         expect_false(anyNA(pos))
-        expect_equal(sub$W[[i]], full$W[[i]][pos])
+        ## The 1e-12 tie-breaking jitter does not separate every tied value
+        ## (e.g. 'group' keeps a few exact duplicates), and matching by value
+        ## is ambiguous there. Compare at the values that are unique.
+        dup <- full$x[[i]] %in% full$x[[i]][duplicated(full$x[[i]])]
+        ok <- !dup[pos]
+        expect_gt(mean(ok), 0.8)
+        expect_equal(sub$W[[i]][ok], full$W[[i]][pos][ok])
     }
 })
 
@@ -36,7 +42,7 @@ test_that("the observed process is the cumulated residuals at the x-values", {
     r <- residuals(m, type = "response")
     z <- model.matrix(m)[, "z"]
     ## z is continuous: no ties, the jitter does not change the order
-    Wz <- cumsum(r[order(z)]) / sqrt(length(r))
+    Wz <- unname(cumsum(r[order(z)]) / sqrt(length(r)))
     pos <- match(g$x[[3]], sort(z + g$untie))
     expect_false(anyNA(pos))
     expect_equal(g$W[[3]], Wz[pos])
