@@ -1,0 +1,538 @@
+#+TITLE: gof: issue register and qualification before C++ modernization
+#+DATE: 2026-10-29
+
+* Purpose and current status
+
+This note records what has been inspected, what failed, why it matters, and
+what was changed. It is maintained alongside the source so that the
+reason for a change is not lost when the implementation is modernized.
+
+The first repair baseline is commit =2b92bd1= (gof 1.0.4). It passed 44 fast
+tests, 11 calibration tests, native sanitizer checks, and a full R package
+build under C++23. That result did not establish coverage of every function
+or option. The package-wide audit starts from that commit.
+
+The local repair baseline is now 1.0.5. The 34 findings below have implemented
+repairs, explicit tested support boundaries, or measured qualification results.
+No reproduced implementation failure remains open in the inspected supported
+paths. This does not establish that every possible input or model is bug-free.
+
+Final checks pass: 83 fast blocks/691 assertions, 16 calibration blocks/18
+assertions, native sanitizer checks under C++14/17/20/23, and full GNU/C++17
+and Clang/C++23 package checks. Both compiler variants have zero errors,
+zero warnings and one incoming note that the package is archived on CRAN.
+The final execution and source-hash register is in the evidence section below.
+
+Status terms used below:
+- Identified: source review or a reproducer establishes a problem.
+- Proposed: a repair has been specified but is not yet implemented.
+- Implemented: source has changed; integration validation is still pending.
+- Verified: the reproducer, regression test and relevant integration checks
+  pass against the final source snapshot.
+- Coverage gap: correctness has not yet been established for that path.
+- Limitation: a stated support boundary, rather than a passing test or a bug.
+
+Findings are not marked verified merely because a local patch compiles.
+Calibration results are empirical evidence for the tested designs; they are
+not a guarantee for every finite sample or every model supplied by a user.
+
+* Earlier repairs retained as the starting point
+
+- F1: zero-based C++ positions were also used to index R vectors. Corrected
+  the R/C++ boundary and observed-process alignment for more than 500 rows.
+- F2: the grid selector added one to indices already converted to R indexing.
+  Corrected selection and then replaced the indirect selector with explicit
+  nearest-value and quantile endpoints.
+- F3/F4: grouped binomial refitting mishandled equal sizes, fitted subsets,
+  offsets, local evaluation environments and original variable names. The
+  1.0.4 adapter retains the fitted coefficients and covariance and expands
+  individual trial contributions without refitting.
+- F5: null-process gradients omitted model offsets. They now use the full
+  fitted linear predictor.
+- Ties: numerical jitter failed to separate large values and allowed partial
+  sums within success/failure groups. Whole tie groups are now evaluated.
+  In the recorded 200 paired simulations, the rescaled Sup rejection rate
+  changed from 100% to 4%, matching the result in the original units.
+- Other 1.0.4 repairs: missing-row alignment, moving windows, ordinal result
+  shape and plotting, zero saved processes, grid counts and selectors,
+  native approximation/CDF edge cases and basic input validation.
+
+Evidence: the course audit directory
+=audits/gof-2026-10-29/= contains the original failing probes, repair report,
+final source archive, test results, package-check logs and source manifest.
+The original 1.0.1 golden fixture remains unchanged. Its grouped results
+record an incorrect tied-data path and are not used as correct predictions.
+
+* Package-wide audit: native utilities
+
+** N01: vector softmax returns log probabilities
+- Status: verified in subsystem regressions and the final package gates.
+- Trigger: call the vector overload and compare with a one-row matrix.
+- Impact: callers receive a different mathematical transform depending on
+  the input shape, despite both functions being named softmax.
+- Repair implemented: define and document consistent probability/log-probability
+  behavior, preserve numerical stability, and check normalization and extreme
+  inputs independently of the implementation.
+- Source: =src/glm.cpp= and =inst/include/target/glm.hpp=.
+
+** N02: real/complex expit and softmax boundaries lack qualification
+- Status: verified in native regressions and final compiler checks.
+- Scope: empty inputs, very large magnitudes, nonfinite values and complex
+  arguments used in numerical derivatives.
+- Repair implemented: test mathematical identities and stable limits; correct
+  any overflow/invalid-value behavior and define rejected inputs explicitly.
+
+** N03: native linear influence function subtracts unsigned dimensions
+- Status: verified in subsystem regressions and the final package gates.
+- Trigger: nonpositive residual degrees of freedom, zero weights or an exact fit.
+- Impact: unsigned subtraction can wrap; dividing by zero residual variance
+  can produce NaNs even where the coefficient influence is exactly zero.
+- Repair implemented: validate dimensions/rank/positive-weight degrees of freedom;
+  compute influences without cancelling divisions by residual variance.
+  Check weighted linear and logistic results against direct matrix algebra.
+
+** N04: complex-step differentiation uses DBL_MIN
+- Status: verified in subsystem regressions and the final package gates.
+- Impact: subnormal arithmetic can lose derivative information. Function
+  output shapes and finite values are not checked before indexing.
+- Repair implemented: use an appropriate representable step, check the analytic
+  real-on-real contract and output shape, and test against exact derivatives.
+
+** N05: groupsum can leave output rows uninitialized
+- Status: verified in subsystem regressions and the final package gates.
+- Trigger: missing first cluster start, invalid order, duplicate/out-of-range
+  starts, or empty grouping of nonempty data.
+- Repair implemented: validate the partition before calculation; define empty
+  input behavior and compare reduced/expanded sums with independent loops.
+
+** N06: fastpattern can exceed its category-based allocation
+- Status: verified in subsystem regressions and the final package gates.
+- Trigger: more distinct rows than the declared category count permits, or
+  empty input reaching the final row slice.
+- Repair implemented: use a safe capacity based on actual rows, validate
+  the positive category hint without treating it as a bound on actual labels;
+  define empty/zero-column behavior and test first-seen reconstruction.
+
+** N07: mutable native process state and zero-parameter models
+- Status: verified in independent regressions and the final package gates.
+- Scope: public ordering/residual fields can be changed after construction;
+  stale or invalid state must not reach unsafe indexing. Matched n-by-zero
+  derivative/influence matrices are valid when no coefficients are estimated.
+- Repair implemented: validate the complete process state and support the
+  no-projection multiplier process for zero-parameter models.
+
+** N08: constructing a native engine silently reseeds global RNG state
+- Status: verified in standalone C++14/17/20/23 regression runs.
+- Trigger: set an Armadillo seed before constructing CumRes, or construct a
+  second engine during a reproducible sequence.
+- Impact: the constructor called set_seed_random, overriding the caller's seed
+  and altering unrelated users of the process-wide RNG. The R backend was
+  excluded from this block and was unaffected.
+- Repair: remove the implicit reset; construction consumes no random draws.
+- Evidence: =native/rng-before.log= fails before the change; the added 30th
+  native case checks seed-before-construction, two engines and the expected
+  next draw. Each final native run executes 553 assertions.
+
+** N09: L2 computation overflows intermediate squares
+- Status: verified in native regressions.
+- Trigger: a representable norm around 1e200 or 1e-250, or a time interval
+  spanning -1e308 to 1e308 whose direct subtraction overflows.
+- Repair: use interval square-root factors and a scaled hypot accumulation.
+  This preserves representable norms without taking overflowing squares.
+
+** N10: cluster identifiers are narrowed from 64 bits
+- Status: verified in native regressions.
+- Trigger: labels such as UINT64_MAX in a native arma::uvec.
+- Impact: converting a label to unsigned int can invent extra cluster runs.
+- Repair: use arma::uword consistently. R aliases separately require finite
+  nonnegative R integers; that is not a promise that R can represent every
+  64-bit integer exactly.
+
+** N11: the installed C++ header cannot call two registered functions
+- Status: verified by the installed client in both final compiler variants.
+- Trigger: a downstream client includes gof.h and calls the generated
+  _fastapprox or _clusterindex wrappers from version 1.0.4.
+- Impact: generated header signatures use underscores, while registration uses
+  dotted R export names. Calls fail even though the R wrappers work.
+- Repair: export valid FastApprox/ClusterIndex native identifiers, regenerate
+  Rcpp attributes, and retain .fastapprox/.clusterindex as validated private
+  R aliases. The new header names are gof::FastApprox and gof::ClusterIndex.
+- Evidence: =portability/logs/cpp-client-probe.log= records both original
+  failures. =tools/check-client.R= tests all four installed callables twice,
+  cached lookup, error propagation and empty clusters in a fresh R session.
+
+* Package-wide audit: SEM and ordinal adapters
+
+** S01: full=TRUE uses the wrong structural matrix
+- Status: verified in subsystem regressions and the final package gates.
+- Trigger: the adjacency template is binarized before inverting I-A. A valid
+  cyclic fitted model can therefore become singular; fixed signs disappear.
+- Impact: the conditioning set may fail or lack the required independence
+  from the outcome residual.
+- Repair implemented: derive the safe conditioning set from structural paths and
+  error-covariance paths, rather than a fitted numerical cancellation.
+- Source: =cumresMaxSet= in =R/cumres.lvmfit.R=.
+
+** S02: SEM call recursion re-evaluates user expressions
+- Status: verified in independent regressions and the final package gates.
+- Scope: lists of formulas, multiple outcomes/predictors, numeric vectors and
+  functions defined in local environments.
+- Repair implemented: dispatch on evaluated values and retain stable list labels;
+  check the scalar and collection paths against each other under fixed seeds.
+
+** S03: SEM predictions omit supplied p/data and can omit the requested target
+- Status: verified in subsystem regressions and the final package gates.
+- Impact: custom parameter/data evaluations and full conditioning can use the
+  wrong predictions or attempt to select a missing prediction column.
+- Repair implemented: pass the requested parameters and data throughout, request
+  explicit prediction targets, validate dimensions, and test the numerical
+  processes with independent reference inputs.
+
+** S04: ordinal numerical derivatives mutate the fitted object
+- Status: verified in subsystem regressions and the final package gates.
+- Cause: the current lava predictor modifies the shared model environment.
+- Trigger: call predict(model,p=other.parameters), then request diagnostics.
+- Impact: the old adapter selected its ordering coordinate from stale state,
+  then overwrote the caller's state. In ordinary calls a later lava::iid reset
+  happened to conceal part of this side effect.
+- Repair implemented: compute the fitted predictions before selecting coordinates;
+  restore the exact entry state on normal and error exits. Tests start from a
+  deliberately perturbed state and check both numerical output and restoration.
+
+** S05: upstream ordinal fitting can ignore options
+- Status: explicit support boundary now detected and tested.
+- Current lava implementation ignores offset and options supplied through
+  dots, including subset/weights. A diagnostic cannot reconstruct the model
+  a caller intended from a fit that ignored those inputs.
+- Repair implemented: detect recorded ignored options and fail explicitly;
+  retain support for correctly fitted, explicitly pre-subset data.
+
+** S06: invalid Gaussian covariance/system parameters receive finite p-values
+- Status: implemented and verified in model-option regressions.
+- Before: an explicit negative residual variance returned ordinary p-values
+  0.2/0.2. A pseudoinverse system was not distinguished from a generative SEM.
+- Repair: require finite symmetric positive-semidefinite error covariance,
+  no negative variance diagonal and an invertible structural system. Only
+  eigenvalue error on the machine backward-error scale is allowed; no
+  tolerance is chosen to obtain desired p-values.
+- Evidence: =sem/invalid-parameters-before.log=, =test-sem-options.R=,
+  =sem/design-proof.txt=. All 160 full-SEM calibration fits pass these guards.
+
+** S07: an observed ordering predictor can correlate with the residual
+- Status: implemented and verified in model-option regressions.
+- Trigger: with full=FALSE, order a structural residual by its own outcome or
+  a descendant carrying that error.
+- Impact: even a correct model need not give a centered process.
+- Repair: check named observed predictors against the structural safe set and
+  direct unsafe cases to full=TRUE. For supplied numeric/function predictors,
+  the caller must justify conditional centering; code cannot prove that
+  property for an arbitrary callback.
+
+** S08: forced exogeneity contradicts the full-prediction independence proof
+- Status: verified in the final installed model-option suite.
+- Ordinary covariance(y,x) makes lava reclassify x as endogenous; the empty-set
+  prediction is then correctly constant. Explicitly forcing x exogenous keeps
+  error covariance 0.2 but makes lava's ~1 fallback condition on varying x.
+  The before probe has predictor variance 1.096463 and 300 evaluation values.
+- Repair: reject structural error-covariance paths between declared exogenous
+  and other errors. The test uses the structural pattern, not fitted-zero
+  coincidences. Removing the forced exogeneity override retains support.
+- Evidence: =sem/exogenous-boundary-probe-{before,after}.log= and its replay
+  script; the existing option test block checks both declarations.
+
+* Package-wide audit: public R interface
+
+** R01: weighted models are rejected without a qualified alternative
+- Status: verified in installed regressions, calibration and package checks.
+- Support implemented: normal-model inverse-variance weights, GLM response-mean
+  precision weights, and integer binomial trial counts. Exclude zero-weight
+  observations consistently. Do not treat arbitrary precision weights as
+  replicated rows. Use the original fitted QR information and scores.
+- Binomial proportions must reconstruct integer success/failure counts within
+  floating-point roundoff; an unknown number of trials must not be guessed.
+- Source definition: R stats glm documentation on prior weights:
+  https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html
+
+** R02: generic residual/gradient functions have incomplete argument handling
+- Status: verified in installed regressions and both package checks.
+- Scope: supplied gradient attributes, callable residuals/gradients, numerical
+  differentiation, extra arguments and coefficients with no estimated terms.
+- Repair: evaluate the residual function first, honor its gradient attribute,
+  forward extra arguments consistently, and validate real finite inputs.
+
+** R03: valid zero-parameter fits are rejected
+- Status: verified in installed regressions, calibration and package checks.
+- Trigger: lm(y~0) or a GLM with only a known offset has zero coefficient columns.
+- Repair implemented: use zero-column derivative/influence matrices and simulate
+  the residual multiplier process without a coefficient projection.
+
+** R04: the glm data argument is ignored
+- Status: verified in installed regressions and both package checks.
+- Impact: callers cannot select an additional ordering variable from supplied
+  data, and fitted subsets/omitted rows need explicit alignment.
+- Repair: align supplied data by fitted row identifiers or fitted-row order;
+  select finite numeric/ordered variables without replaying the fitting call.
+  Response aliases refer to the first response variable and the full response
+  expression. Other components such as the denominator in successes/size
+  remain selectable ordering covariates; regressions check both that case
+  and constant response expressions.
+
+** R05: plotting options and descriptive legends are incomplete
+- Status: verified in presentation regressions and both package checks.
+- Scope: a color palette causes a scalar-condition error; graphical dots are
+  ignored; the sample-process legend is assembled in a local closure and lost.
+- Repair implemented: pass plotting arguments through, retain sample legend
+  entries, support palettes and test all documented plotting/summary options.
+
+** R06: validation and one-variable edge paths lack coverage
+- Status: verified in boundary regressions and both package checks.
+- Scope: nonfinite coefficients, complex/non-numeric matrices, invalid scalar
+  options, missing gradient/influence dimensions and small grids.
+- Repair implemented: fail before native allocation and check each public option
+  through its declared contract, including explicit zero-parameter inputs.
+
+** R07: scalar helper uses strict comparisons for degenerate statistics
+- Status: verified in installed regressions and both package checks.
+- Impact: a zero-width L2 statistic can receive p=0 instead of p=1.
+- Repair: use greater-than-or-equal comparisons consistently with cumres.default.
+
+** R08: stored fitted values manufacture ties and degenerate processes look random
+- Status: verified in installed regressions, including the final score-space guard.
+- Before: a two-cell normal model has 17 distinct stored fitted values but
+  only two distinct X*beta predictions. Stored fitted=y-residual introduces
+  subtraction roundoff and creates artificial points inside true cells.
+- Repair: reconstruct coordinates from coefficients and offsets, without
+  rounding the user's covariates.
+- A second issue remains after exact ties: saturated/score-constrained
+  processes are theoretically zero and contain no lack-of-fit information.
+  Roundoff alone must not be presented as a meaningful calibrated test.
+- Derivation: fitted score equations are X' diag(h) r=0. If h is nonzero and
+  constant within each ordering cell, and design columns constant in those
+  cells span all cell indicators, every cumulative residual sum is constrained
+  to zero. Check that design condition, not the observed p-value or a fitted
+  numerical cancellation. Return zero curves, p=1 and informative=FALSE;
+  plots label the absence of information.
+- Final review identified a second class: a rotated design [1,x,x+group]
+  spans the group indicators although no individual nonconstant column is
+  constant inside each group. A single endpoint selected by subset.max=1
+  can also lie in the intercept score space. Numerical cancellation must not
+  acquire meaning merely because a different basis is used for the same fit.
+  Two 25-seed sweeps observed p-values changing from approximately one to
+  values between 0.23 and one under reparameterization; they did not observe
+  false rejection. The demonstrated defect is interpretation/invariance,
+  not a measured rejection-rate failure in those sweeps.
+- Extension: retain the structural certificate above, then test the actual
+  selected cumulative/window indicators against the weighted score space.
+  If all indicators are indistinguishable from that space within a machine
+  backward-error bound, return informative=NA and missing p-values, retaining
+  the computed curves. This is an explicit numerical support boundary, not a
+  claim that every small process is exactly zero. The check uses design and
+  weights only; it does not threshold residuals or tune p-values.
+- Evidence: =test-public-models.R= tests repeated designs, binary/constant
+  selections, covariate means and the structural no-information result.
+
+** R09: unsigned R/C++ conversions can silently truncate invalid arguments
+- Status: verified in installed boundary regressions.
+- Trigger: fractional/NA simulation counts, fractional evaluation positions,
+  or fractional cluster IDs reaching a typed unsigned conversion.
+- Repair: validate R module count/index arguments before conversion. Private
+  R aliases validate approximation mode, equality flag and integer cluster
+  IDs. The native C++ API retains its typed contracts and range checks.
+- Evidence: =test-default-contract.R= and =src/rinterface.cpp=.
+
+** R10: a curve object without test statistics cannot produce a coefficient table
+- Status: verified in presentation regressions.
+- Repair: return a table with one row per process and zero statistic columns.
+  Handle each absent statistic separately and retain empty-summary behavior.
+- Evidence: =test-presentation.R= also checks actual graphical argument
+  forwarding, legend content/colours, mathematical labels, legacy matrix
+  objects, PDF rendering and invisible return values (11 blocks/138 assertions).
+
+* Portability, measurement and delivery
+
+** Q01: a passing test count concealed large coverage gaps
+- Status: measured on the baseline and final frozen numerical source.
+- At 2b92bd1, tests plus examples cover 67.19% of instrumented lines overall.
+  Native glm utilities have 0% coverage, native utils 41.79%, and SEM R code
+  43.16%. These figures explain why the earlier pass was not package-wide.
+- Repair implemented: maintain an entry-point/option inventory, add meaningful
+  tests for uncovered behavior, and measure the frozen final snapshot.
+  Final covr coverage is 77.05% overall, including generated/native copies
+  unused by R. All 22 measured R functions execute; SEM 97.73%, MaxSet 100%,
+  default 95.61%, glm 92.17%, ordinal 92.13%, and plot/print/summary 100%.
+  The independent native harness executes all 26 native functions: utils
+  100%, glm 98.90%, cumres 96.75%. Line coverage is an aid to review, not a
+  proof of correctness.
+
+** Q02: portability was tested in only one environment
+- Status: local checks and nonpublishing CI configuration implemented.
+- Actual local tools: GCC 11, GCC 14 and Clang 19; one R version (4.6.1).
+  Native checks pass in C++14/17/20/23. The R package uses an explicit C++17
+  baseline and is also checked as a full Clang/C++23 build. No claim is made
+  that every native compiler/standard combination has run.
+- Repair implemented: exercise available compilers and C++ standards locally, and
+  prepare nonpublishing Linux/macOS/Windows R CI. A configured job will not be
+  reported as an executed platform test. No remote runs/pushes are authorized.
+
+** Q03: obsolete automation contains publication/notification actions
+- Status: obsolete automation removed; replacement validation jobs statically checked.
+- Source: legacy .travis.yml has Slack/GitHub Pages actions.
+- Repair implemented: remove obsolete automation and replace it with validation
+  jobs that do not publish the package or send messages. The legacy file is
+  deleted, not merely left disabled beside the new workflow.
+
+** Q04: compiler and dependency metadata no longer describes a reproducible baseline
+- Status: verified in both compiler/package gates; old R versions remain unexecuted.
+- An unqualified default standard varies with R. R 4.6 no longer selects
+  CXX14 even when the old plugin requests it: a probe actually compiled as
+  C++20. Native C++14 compatibility must not be mislabeled as an R/C++14 run.
+- Repair: pin the current package to CXX17 consistently in Makevars,
+  SystemRequirements and the sourceCpp annotation. Qualification overrides
+  update both Makevars and DESCRIPTION. The downstream client reports the
+  actual __cplusplus macro. C++23 remains a separately tested copy.
+- Minimum R/lava/Rcpp declarations now match the supported adapter/generator
+  APIs (R>=3.5, lava>=1.10, Rcpp>=1.1.2). The current CRAN index confirms
+  these versions are available; this is not a claim that old R was executed.
+- Sources: =portability/logs/clang-Rcpp-config-smoke.log=,
+  =logs/repository-dependencies.log=, installed package DESCRIPTION files,
+  https://www.stat.ethz.ch/R-manual/R-devel/doc/manual/R-exts.html
+
+** Q05: validation itself needs traceable failure and source ownership
+- Status: tooling implemented and exercised on positive and negative cases.
+- =tools/qualify.R= freezes the source, installs into an isolated library and
+  rejects an already loaded gof namespace that could mask the new build.
+  Its manifest records requested, passed, failed and omitted phases.
+- An original-1.0.4 runner test deliberately fails at the broken downstream
+  header client and retains logs; a failed exploratory run is not reported
+  as a package-wide failure in the repaired source.
+- Coverage and compiler checks use their own frozen copies; no sub-agent
+  compiles object files in the shared working tree. Superseded parent runs
+  are explicitly stopped rather than treated as final results. Generated
+  Rplots.pdf files are ignored by Git and excluded from source archives;
+  final clean archives are rechecked after that packaging-only correction.
+- Native ASan/UBSan runs pass in traced mode with leak checking disabled.
+  A separate untraced C++23 run with GOF_CHECK_LEAKS=1 now also passes the
+  30-case/553-assertion harness. This checks native allocations, not every
+  allocation in R or its dependencies.
+- Evidence: =logs/native-leaks-untraced.log=, native manifests and the
+  final qualification manifests listed below.
+
+* Support boundaries, not unresolved hidden behavior
+
+- Default and supplied-function interfaces require independent residual units
+  and a valid influence representation; callers must justify these conditions
+  for custom callbacks. They cannot be inferred from function names.
+- Gaussian SEM qualification covers complete independent-subject fits with
+  valid covariance/system parameters. FIML missing data, clustered/weighted
+  SEMs and contradictory forced exogeneity are rejected explicitly.
+- lava's ordinal fitter ignores offset/subset/weights/na.action inputs; gof
+  cannot recover an unestimated model. Preprocess rows before fitting;
+  ordinal offsets need fitting support upstream.
+- Monte Carlo p-values are finite-simulation tail estimates, not exact
+  probabilities or a universal finite-sample calibration certificate.
+- macOS/Windows and additional R versions have validation jobs configured;
+  they have not been executed by a local Linux run or by merely writing YAML.
+
+* Reproducer, regression and commit map
+
+- =9fad19a=: native repairs N01-N10. The independent harness is
+  =tests/native/helpers.cpp=; its named mathematical/property cases and
+  before/after evidence are listed in =native/REPORT.txt= and =manifest.json=.
+- =8c1d4e7=: installed-header repair N11, adapter repairs S01-S08 and R01-R10.
+  =tools/check-client.R= exercises the installed callable interface.
+  =test-sem-options.R= and =test-ordinal-options.R= cover S01-S08, with
+  =sem/design-proof.txt= explaining the Gaussian conditioning argument.
+  =test-public-models.R= covers links, weights, fitted-row selection,
+  no-parameter fits, score-constrained processes and response aliases.
+  =test-default-contract.R= covers generic callbacks and R/native input
+  contracts. =test-presentation.R= covers plotting, print and summary.
+  Their associated slow files cover weighted and SEM/ordinal calibration.
+- =9055a44=: Q01-Q05 qualification/coverage tooling, OS/R CI configuration,
+  explicit C++17 baseline delivery and source-artifact exclusions. The C++17
+  descriptor and adapter dependency declarations accompany =8c1d4e7=.
+
+The issue register is tracked in Git and excluded from the distributable
+R source archive. Frozen qualification copies may contain an earlier draft
+of its status text; the current repository note and final delivery manifest
+record the completed checks.
+
+* Evidence locations and updating this note
+
+Current package-wide artifacts are written under the course directory:
+=audits/gof-package-wide-2026-10-29/=. Native and SEM subdirectories contain
+their probes and test output. The portability subdirectory contains measured
+baseline/final coverage, compiler evidence and the final public entry-point
+inventory. =REPORT.org= is the execution register; =delivery-manifest.json=
+links the final Git revision, clean archives, source hashes and phase results.
+
+Failed exploratory runs remain diagnostic evidence. The final validation
+register identifies the authoritative logs and delivered source archive;
+earlier snapshots must not be substituted for the final source.
+
+* Final validation and limits of the result
+
+Authoritative evidence under =audits/gof-package-wide-2026-10-29/=:
+
+| Check | Result | Record |
+|-
+| GNU/C++17 package | 83 fast blocks, 691 assertions; full CRAN check 0 errors/0 warnings/1 archived note | =qualification-package/manifest.rds= |
+| Clang 19/C++23 package | Same fast result and full check; actual client __cplusplus=202302 | =portability/final-clang23-v5/manifest.rds= |
+| Calibration | 16 slow blocks, 18 assertions; combined suite 99 blocks/709 assertions | =qualification-delivery/calibration-tests.rds= |
+| Native ASan/UBSan | 30 cases/553 assertions per C++14/17/20/23 run | =qualification-release/= and =native/manifest.json= |
+| Additional native compilers | GCC 14 and Clang 19 C++23 pass | =portability/final-native-manifest.json= |
+| Native LeakSanitizer | Separate untraced C++23 run passes | =logs/native-leaks-untraced.log= |
+| Coverage | 77.05% overall; all 22 measured R functions and all 26 native functions execute | =portability/final-coverage-v4/= and native gcov records |
+| Actual lecture example | 982 eligible companies, 20 missing outcomes, 962 fitted rows; default/full grids agree exactly | =logs/company-delivery.log= |
+
+The final GNU archive excludes generated plot/object/library files. Its
+packaging gate is separate from the numerical calibration snapshot because
+artifact exclusions were corrected after that snapshot was frozen. The
+calibration, compiler and coverage snapshots have the same R/C++ code,
+regressions and numerical documentation; the C++23 copy intentionally
+changes its compiler descriptor and Makevars. The native source/harness
+hashes match the earlier sanitizer runs, so those unchanged checks were not
+repeated after an R-only numerical guard. =delivery-manifest.json= verifies
+these relationships and records archive SHA256 values and the final Git commit.
+
+The 16 calibration blocks retain the complete p-value/rejection records.
+New weighted-normal rejection rates are 0.045/0.045/0.04/0.04; weighted Poisson
+and trial-count probit rates are all 0.05. Full SEM latent Sup/L2 rates are
+0.05625/0.04375 and observed-projection rates 0.04375/0.04375. Ordinal logit
+rates are 0.025/0.025 for tied ordering and 0.075/0.05625 for predictions.
+These use 160 or 200 datasets and 199 simulations per fitted test. Original
+calibrations use the sample sizes and draws declared in =test-calibration.R=.
+Every saved calibration result is exactly equal before and after the final
+score-space guard. Passing these bounded experiments is not a general
+finite-sample theorem.
+
+The lecture model produces Sup p-values 0.138/0.131 and L2 p-values
+0.267/0.157 (seed 1001, R=1000), with six distinct evaluation points in each
+process. Both subset.max=500 and Inf use every fitted row and give exactly
+identical returned objects. Missing outcomes are omitted by the fitted model;
+they were not imputed or removed merely to stay below a package cap.
+
+No user library was replaced, and nothing was pushed or published. The
+normal library remains gof 1.0.1; the candidate was tested in isolated
+libraries. The remaining release gates are external platform/R-version
+execution and maintainer CRAN resubmission. The C++23 architecture refactor
+is still follow-on work, with this repair baseline as its reference.
+
+* Modernization sequence after this repair baseline
+
+1. Freeze this behavior and its reference/golden fixtures before reorganizing
+   native code. Retain intentional corrections for ties, weights and invalid
+   inputs; the original version is not a correct oracle for those cases.
+2. Move ownership and invariants behind the native interface, introduce clear
+   index/count types and separate numerical kernels from R/Rcpp bindings.
+   Make each step reviewable against the same numerical and boundary tests.
+3. Select the C++23 toolchain explicitly, update installed-header consumers
+   together with the package and run the configured OS/R matrix remotely.
+   Local GCC/Clang success alone does not qualify other operating systems.
+4. Measure allocation and runtime on representative fitted models before
+   optimizing. Preserve seeded behavior unless a separately documented RNG
+   change is justified. Repeat calibration for changes to numerical methods,
+   process projection, tie handling or simulation generation.
+
+These are follow-on tasks. The current work establishes a correctness and
+qualification baseline; it does not claim that a C++23 architecture refactor
+or every cross-platform gate has already been completed.
