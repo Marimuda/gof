@@ -39,10 +39,13 @@ test_that("logistic, probit and poisson glm results are unchanged from 1.0.1", {
     expect_golden(g, golden$poisson)
 })
 
-test_that("grouped binomial (unequal sizes) values are unchanged from 1.0.1", {
+test_that("the legacy grouped golden remains a record of the corrected tie bug", {
     g <- run(fx_grouped(), 16)
-    expect_golden(g, golden$grouped)
-    ## Intended change: 1.0.1 reported the internal name "X0x" instead of "x".
+    ## Do not regenerate the frozen baseline: its partial sums WITHIN groups
+    ## are invalid evaluations of sum(1{x<=t} r). The corrected grouped path
+    ## is covered by the independent indicator oracle and binomial tests.
+    expect_equal(lengths(g$W),c(8L,8L))
+    expect_gt(length(golden$grouped$W[[2]]),length(g$W[[2]]))
     expect_equal(golden$grouped$variable, c("predicted", "X0x"))
     expect_equal(g$variable, c("predicted", "x"))
 })

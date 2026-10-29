@@ -33,3 +33,4 @@ test
 *.dvi
 _region*
 symbols.rds
+testthat-problems.rds

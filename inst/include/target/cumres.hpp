@@ -33,7 +33,7 @@ namespace target {
     arma::mat sample(const arma::umat &idx = arma::umat());
     arma::mat sample(unsigned R,
 		     const arma::umat &idx = arma::umat(),
-		     bool quantiles = true);
+                     bool quantiles = false);
   };
 
 

@@ -10,9 +10,10 @@ test_that("cumres works for n > 500 (GitHub issue #1)", {
     expect_s3_class(g, "cumres")
     expect_equal(g$variable, c("predicted", "group", "z"))
     for (i in seq_along(g$W)) {
-        expect_length(g$x[[i]], 500)
-        expect_length(g$W[[i]], 500)
-        expect_equal(nrow(g$What[[i]]), 500)
+        expected <- c(500L,5L,500L)[i]
+        expect_length(g$x[[i]], expected)
+        expect_length(g$W[[i]], expected)
+        expect_equal(nrow(g$What[[i]]), expected)
     }
     expect_true(all(g$KS >= 0 & g$KS <= 1))
     expect_true(all(g$CvM >= 0 & g$CvM <= 1))
@@ -25,13 +26,8 @@ test_that("subset process equals the full process at the selected points", {
     for (i in seq_along(sub$W)) {
         pos <- match(sub$x[[i]], full$x[[i]])
         expect_false(anyNA(pos))
-        ## The 1e-12 tie-breaking jitter does not separate every tied value
-        ## (e.g. 'group' keeps a few exact duplicates), and matching by value
-        ## is ambiguous there. Compare at the values that are unique.
-        dup <- full$x[[i]] %in% full$x[[i]][duplicated(full$x[[i]])]
-        ok <- !dup[pos]
-        expect_gt(mean(ok), 0.8)
-        expect_equal(sub$W[[i]][ok], full$W[[i]][pos][ok])
+        expect_false(anyDuplicated(full$x[[i]])>0)
+        expect_equal(sub$W[[i]], full$W[[i]][pos])
     }
 })
 

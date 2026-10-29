@@ -119,7 +119,7 @@ cumres.lvmfit <- function(model,y,x,full=FALSE,
           res <- c(res,newres)
         }
       } else {
-        xname <- ifelse(is.character(j),j,"x1")          
+        xname <- "x1"
         newres <- list(eval.parent(cl))
         names(newres) <- paste(yname,xname,sep="<-")
         res <- c(res,newres)

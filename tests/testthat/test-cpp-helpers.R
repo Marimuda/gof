@@ -43,3 +43,28 @@ test_that(".clusterindex gives 1-based start and size of each run", {
     expect_equal(res[, 1], cumsum(c(1, head(rl$lengths, -1))))
     expect_equal(res[, 2], rl$lengths)
 })
+
+test_that("approximation clamps boundaries and handles exact ties and equality flags", {
+    expect_equal(drop(gof:::.fastapprox(c(1,2,2,4),c(0,2,9),type=2)),c(1,3,4))
+    expect_equal(gof:::.fastapprox(c(1,2,4),c(0,2,3),equal=TRUE),cbind(c(1,2,3),c(0,2,0)))
+    expect_equal(dim(gof:::.clusterindex(integer())),c(0L,2L))
+    expect_error(gof:::.fastapprox(numeric(),1),"nonempty")
+    expect_error(gof:::.fastapprox(c(2,1),1),"sorted")
+    expect_error(gof:::.fastapprox(c(1,2),NA_real_),"finite")
+    expect_error(gof:::.fastapprox(c(1,2),1,type=3),"type")
+    expect_error(gof:::L2Test(c(1,2),c(2,1)),"sorted")
+    expect_error(gof:::SupTest(numeric()),"nonempty")
+})
+
+test_that("the native engine rejects incompatible dimensions and grid positions", {
+    expect_error(methods::new(gof:::CumRes,1:3,matrix(1,2,1),matrix(1,3,1)),"Incompatible")
+    cr <- methods::new(gof:::CumRes,1:3,matrix(1,3,1),matrix(1,3,1))
+    expect_error(cr$order(matrix(1,2,1)),"one finite row")
+    cr$order(matrix(1:3,3,1))
+    expect_error(cr$sample1(matrix(3L,1,1)),"indices")
+    expect_error(cr$sample1(matrix(0L,1,2)),"indices")
+    expect_error(cr$samplestat(0L,matrix(integer(),0,0),FALSE),"positive")
+    expect_error(cr$samplestat(1L,matrix(integer(),0,0),TRUE),"not supported")
+    expect_no_error(gof:::gof_samplestat(cr,R=5))
+    expect_error(gof:::gof_samplestat(cr,R=5,idx=0),"1-based")
+})

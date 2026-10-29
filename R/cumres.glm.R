@@ -6,10 +6,10 @@
 ##' Calculates GoF statistics based on cumulative residual processes
 ##' 
 ##' Given the generalized linear models model \deqn{g(E(Y_i|X_{i1},...,X_{ik})) =
-##' \sum_{i=1}^k \beta_jX_{ij}} the \code{cumres}-function calculates the the
+##' \sum_{j=1}^k \beta_jX_{ij}} the \code{cumres}-function calculates the
 ##' observed cumulative sum of residual process, cumulating the residuals,
 ##' \eqn{e_i}, by the jth covariate: \deqn{W_j(t) = n^{-1/2}\sum_{i=1}^n
-##' 1_{\{X_{ij}<t\}}e_i} and Sup and L2 test
+##' 1_{\{X_{ij}\le t\}}e_i} and Sup and L2 test
 ##' statistics are calculated via simulation from the asymptotic distribution of
 ##' the cumulative residual process under the null (Lin et al., 2002).
 ##' 
@@ -19,19 +19,27 @@
 ##' @param variable List of variable to order the residuals after
 ##' @param data data.frame used to fit model (complete cases)
 ##' @param R Number of samples used in simulation
-##' @param b Moving average bandwidth (0 corresponds to infinity = standard
-##' cumulated residuals)
+##' @param b Nonnegative moving-window bandwidth. Zero gives cumulative
+##' residuals; positive values give residual sums over the window \eqn{(t-b,t]}.
 ##' @param plots Number of realizations to save for use in the plot-routine
 ##' @param ... additional arguments passed to \code{cumres.default}. In
-##' particular \code{subset.max} (default 500): for more observations the
-##' processes are evaluated at \code{subset.max} selected points only, to save
-##' time and memory. Use \code{subset.max=Inf} to evaluate at all points.
+##' particular \code{subset.max} (default 500): each process is evaluated at
+##' at most this many distinct covariate values, retaining every observation
+##' in the fitted model. Use \code{subset.max=Inf} or \code{NULL} for all
+##' distinct values. Tied observations are accumulated together. The deprecated
+##' \code{breakties} argument is accepted with a warning when nonzero; no jitter
+##' is added. A custom \code{subset} function receives sorted distinct values
+##' and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.
 ##' @return Returns an object of class 'cumres'.
-##' @note Currently linear (normal), logistic and poisson regression models with
-##' canonical links are supported.
+##' @note Unweighted normal, binomial and Poisson models are supported;
+##' noncanonical binomial links are also tested. Grouped binomial responses
+##' must contain integer success/failure counts. Diagnostics use the original
+##' maximum-likelihood fit and do not refit grouped data. Rows omitted during
+##' fitting are also omitted by the diagnostic. Monte Carlo p-values count
+##' simulated statistics greater than or equal to the observed statistic.
 ##' @author Klaus K. Holst
-##' @seealso \code{\link[timereg]{cox.aalen}} in the \code{timereg}-package for
-##' similar GoF-methods for survival-data.
+##' @seealso The \href{https://CRAN.R-project.org/package=timereg}{timereg}
+##' package provides similar GoF methods for survival data.
 ##' @references D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
 ##' Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
 ##' 
@@ -66,80 +74,59 @@
                   data=data.frame(model.matrix(model)), 
                   R=1000, b=0, plots=min(R,50),
                   ...) {
-  dginv <- function(z) 1
-  a.phi <- 1
-  ## Evaluate defaults that refer to 'model' now: grouped binomial models
-  ## are refitted below, and names should refer to the user's model.
-  force(variable)
-  response <- all.vars(formula(model))[1]
-  xnames <- NULL
-  switch(class(model)[1],
-         lm = {
-           a.phi <- summary(model)$sigma^2
-           h <- function(z) 1
-         },
-         glm = {
-           f <- family(model)
-           if (f$family=="gaussian") {
-             a.phi <- summary(model)$dispersion
-           }
-
-           w <- model.extract(model.frame(model),"weights")
-           if (!is.null(w)) {
-               stop("Weight argument not supported")
-           }
-           if (grepl("matrix",attr(terms(model),"dataClasses")[1])) {
-               ## success,failure -> refit with one 0/1 row per trial.
-               ## Built from the fitted model frame (subset= and NA handling
-               ## already applied), not by re-evaluating the original call.
-               mf <- model.frame(model)
-               y <- model.extract(mf,"response")
-               X <- model.matrix(model)
-               rows <- rep(seq_len(nrow(y)), rowSums(y[,1:2,drop=FALSE]))
-               y0 <- unlist(lapply(seq_len(nrow(y)),
-                                   function(i) rep(c(1,0), y[i,1:2])))
-               X0 <- X[rows,,drop=FALSE]
-               off0 <- model.offset(mf)
-               if (!is.null(off0)) off0 <- off0[rows]
-               xnames <- colnames(X)
-               model <- glm(y0 ~ -1+X0, family=f, offset=off0)
-           }
-           g <- f$linkfun
-           ginv <- f$linkinv
-           dginv <- f$mu.eta ## D[linkinv]
-           ##dg <- function(x) 1/dginv(g(x)) ## Dh^-1 = 1/(h'(h^-1(x)))
-           canonf <- do.call(f$family,list())           
-           caninvlink <- canonf$linkinv
-           canlink <- canonf$linkfun
-           Dcaninvlink <- canonf$mu.eta           
-           Dcanlink <- function(x) 1/Dcaninvlink(canlink(x))
-           ##gmu <- function(x) g(caninvlink(x))
-           ##invgmu <- function(z) canlink(ginv(z))
-           h <- function(z) Dcanlink(ginv(z))*dginv(z)                                
-         },
-         stop("Unsupported model!"))
-
+  if (!inherits(model,"lm")) stop("Unsupported model!")
+  if (inherits(model,"glm") && !family(model)$family %in% c("gaussian","binomial","poisson"))
+      stop("Unsupported family: ",family(model)$family)
+  if (anyNA(coef(model))) stop("Over-parametrized model")
+  if (inherits(model,"glm") && !isTRUE(model$converged)) stop("Model has not converged")
+  mf <- model.frame(model)
+  if (!is.null(model.weights(mf))) stop("Weight argument not supported")
   X <- model.matrix(model)
-  if (!is.null(xnames)) colnames(X) <- xnames
-  n <- nrow(X)  
-  r <- residuals(model, type="response") ## y-g^{-1}(Xb)
-  yhat <- predict(model, type="response") ## g^{-1}(Xb)
-  ## Xbeta <- predict(model, type="link") ## X*b
-  beta <- coef(model)
-  Xbeta <- X%*%beta
-  ## The linear predictor includes offsets (formula and argument offsets
-  ## are both stored in model$offset)
-  if (!is.null(model$offset)) Xbeta <- Xbeta + model$offset
-  if(any(is.na(beta))) stop("Over-parametrized model")
- 
-  dr <- -(as.numeric(dginv(Xbeta))*X)
-  ic <- lava::iid(model)
+  response <- all.vars(formula(model))[1]
+  force(variable)
+  y <- model.response(mf)
+  yhat <- as.numeric(model$fitted.values)
+  if (is.matrix(y)) {
+      if (!inherits(model,"glm") || family(model)$family!="binomial" || ncol(y)!=2L)
+          stop("Only two-column binomial matrix responses are supported")
+      if (any(!is.finite(y)) || any(y<0 | y!=floor(y)))
+          stop("Grouped binomial responses must be nonnegative integer counts")
+      rows <- rep(seq_len(nrow(y)),rowSums(y))
+      y0 <- unlist(lapply(seq_len(nrow(y)),function(i) rep(c(1,0),y[i,])))
+      ## Keep the actual fit, including its coefficients, controls and method.
+      ## Expand scores per Bernoulli trial; the coefficient covariance from
+      ## the grouped likelihood is the same as for the expanded likelihood.
+      X <- X[rows,,drop=FALSE]
+      yhat <- yhat[rows]
+      eta <- model$linear.predictors[rows]
+      f <- family(model)
+      dmu <- f$mu.eta(eta)
+      r <- y0-yhat
+      dr <- -X*as.numeric(dmu)
+      ic <- (X*as.numeric(r*dmu/f$variance(yhat))) %*% vcov(model)
+  } else {
+      ## Stored fit vectors contain complete cases, unlike residuals()/predict()
+      ## which pad omitted observations with NA for na.exclude fits.
+      if (inherits(model,"glm")) {
+          r <- if (is.factor(y)) as.numeric(y!=levels(y)[1])-yhat else as.numeric(y)-yhat
+          dr <- -X*as.numeric(family(model)$mu.eta(model$linear.predictors))
+      } else {
+          r <- as.numeric(model$residuals)
+          dr <- -X
+      }
+      fit <- model
+      fit$na.action <- NULL
+      ic <- lava::iid(fit)
+  }
 
   if (!is.na(match(response, variable))) variable[match(response, variable)] <- "predicted"
   variable <- unique(variable)
+  if (any(!variable %in% c("predicted",colnames(X))))
+      stop("Variable not found: ",paste(setdiff(variable,c("predicted",colnames(X))),collapse=", "))
   UsedData <- X[,na.omit(match(variable, colnames(X))),drop=FALSE]
   myvars <- colnames(UsedData)[apply(UsedData,2,function(x) length(unique(x))>2)] ## Only consider variables with more than two levels
   if ("predicted"%in%variable) myvars <- c("predicted",myvars)  
+  if (!length(myvars)) stop("No selected variable has more than two distinct values")
 
   variable <- c()
   for (v in myvars) {

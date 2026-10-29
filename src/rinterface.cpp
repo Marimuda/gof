@@ -30,7 +30,9 @@ double L2Test(const arma::vec &x, const arma::vec &t) {
 // [[Rcpp::export(name=.fastapprox)]]
 arma::umat FastApprox(arma::vec &time, arma::vec &newtime,
 		      bool equal  = false, unsigned type = 0) {
-  return target::fastapprox(time, newtime, equal, type)+1;
+  arma::umat result = target::fastapprox(time, newtime, equal, type);
+  result.col(0) += 1;
+  return result;
 }
 
 // [[Rcpp::export(name=.clusterindex)]]

@@ -54,3 +54,16 @@ fx_large_ties <- function(n = 982, seed = 6) {
     d$y <- rbinom(n, 1, plogis(-2 + 0.3 * d$group + 0.5 * d$z))
     glm(y ~ group + z, data = d, family = binomial())
 }
+
+expand_grouped <- function(d) {
+    data.frame(x=rep(d$x,d$s+d$f),
+               y=unlist(lapply(seq_len(nrow(d)),function(i) rep(c(1,0),c(d$s[i],d$f[i])))))
+}
+
+expect_same_cumres <- function(a,b) {
+    expect_equal(a$KS,b$KS)
+    expect_equal(a$CvM,b$CvM)
+    expect_equal(a$W,b$W)
+    expect_equal(a$x,b$x)
+    expect_equal(a$variable,b$variable)
+}

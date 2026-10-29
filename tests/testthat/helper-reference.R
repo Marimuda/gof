@@ -11,7 +11,7 @@
 ## R realisations, with stat = sup|W| or the L2 norm sqrt(int W(t)^2 dt).
 ##
 ## It consumes R's random number stream in exactly the same order as
-## gof:::cumres.default (tie-breaking jitter, then the R simulated processes
+## gof:::cumres.default (reserved uniform draws, then the R simulated processes
 ## sharing one g per realisation across variables, then the plotted processes),
 ## so with the same seed the results must agree with the C++ engine.
 ##
@@ -19,23 +19,33 @@
 ## (1-based) positions in the sorted order of each variable.
 
 ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
-                       breakties = 1e-12, subset.max = 500L) {
+                       breakties = 0, subset.max = 500L, b = 0) {
     r <- unname(r); dr <- unname(as.matrix(dr)); ic <- unname(as.matrix(ic))
     n <- length(r)
     variable <- unname(as.matrix(variable))
-    untie <- runif(n, 0, breakties)
-    variable <- variable + untie
+    invisible(runif(n))
     p <- ncol(variable)
     ord <- lapply(seq_len(p), function(j) order(variable[, j]))
-    idx <- rep(list(seq_len(n)), p)
-    if (n > subset.max) {
-        ## Evaluation points chosen by the package's own subset_t (it may
-        ## draw random fill-up points, so it must be called at this point of
-        ## the random stream). subset_t itself is tested in test-subset.R.
-        ns <- ceiling(subset.max / 2)
-        idx <- lapply(seq_len(p), function(j)
-            gof:::subset_t(variable[, j], n.qt = ns, n.eq = ns))
-    }
+    ## Independent grid oracle: unique values, brute-force nearest neighbours,
+    ## quantile endpoints and the same explicitly reserved random fill-up.
+    idx <- lapply(seq_len(p),function(j) {
+        s <- sort(variable[,j]); values <- unique(s)
+        ends <- which(!duplicated(s,fromLast=TRUE))
+        if (is.null(subset.max) || length(values)<=subset.max) return(ends)
+        if (subset.max==1) return(tail(ends,1))
+        nq <- floor(subset.max/2); ne <- ceiling(subset.max/2)
+        eq <- if (ne) vapply(seq(values[1],tail(values,1),length.out=ne),function(x) {
+            d <- abs(values-x); tail(which(d==min(d)),1)
+        },integer(1)) else integer()
+        qt <- if (nq) vapply(quantile(values,seq(0,1,length.out=nq)),function(x)
+            max(which(values<=x)),integer(1)) else integer()
+        selected <- sort(unique(c(eq,qt,length(values))))
+        if (length(selected)<subset.max) {
+            remaining <- setdiff(seq_along(values),selected)
+            selected <- sort(c(selected,remaining[sample.int(length(remaining),subset.max-length(selected))]))
+        }
+        ends[selected]
+    })
 
     one_process <- function(o, g) {
         w1 <- cumsum(r[o] * g)
@@ -47,13 +57,24 @@ ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
     l2_stat <- function(w, t) sqrt(sum(c(diff(t), 0) * w^2))
 
     t0 <- lapply(seq_len(p), function(j) sort(variable[, j])[idx[[j]]])
-    W <- lapply(seq_len(p), function(j) (cumsum(r[ord[[j]]]) / sqrt(n))[idx[[j]]])
+    W <- lapply(seq_len(p), function(j) {
+        if (b==0) return((cumsum(r[ord[[j]]])/sqrt(n))[idx[[j]]])
+        vapply(t0[[j]],function(t) sum(r*(variable[,j]>t-b & variable[,j]<=t))/sqrt(n),numeric(1))
+    })
+    sample_at <- function(j,g) {
+        if (b==0) return(one_process(ord[[j]],g)[idx[[j]]])
+        o <- ord[[j]]
+        vapply(t0[[j]],function(t) {
+            in_window <- variable[o,j]>t-b & variable[o,j]<=t
+            (sum(r[o]*g*in_window)+sum(colSums(dr[o,,drop=FALSE]*in_window)*colSums(ic[o,,drop=FALSE]*g)))/sqrt(n)
+        },numeric(1))
+    }
 
     sims <- matrix(0, R, 2 * p)
     for (k in seq_len(R)) {
         g <- rnorm(n)
         for (j in seq_len(p)) {
-            w <- one_process(ord[[j]], g)[idx[[j]]]
+            w <- sample_at(j,g)
             sims[k, 2 * j - 1] <- sup_stat(w)
             sims[k, 2 * j] <- l2_stat(w, t0[[j]])
         }
@@ -62,10 +83,10 @@ ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
     for (k in seq_len(plots)) {
         g <- rnorm(n)
         for (j in seq_len(p))
-            What[[j]][, k] <- one_process(ord[[j]], g)[idx[[j]]]
+            What[[j]][, k] <- sample_at(j,g)
     }
-    KS <- sapply(seq_len(p), function(j) mean(sims[, 2 * j - 1] > sup_stat(W[[j]])))
-    CvM <- sapply(seq_len(p), function(j) mean(sims[, 2 * j] > l2_stat(W[[j]], t0[[j]])))
+    KS <- sapply(seq_len(p), function(j) mean(sims[, 2 * j - 1] >= sup_stat(W[[j]])))
+    CvM <- sapply(seq_len(p), function(j) mean(sims[, 2 * j] >= l2_stat(W[[j]], t0[[j]])))
     list(W = W, What = What, x = t0, KS = KS, CvM = CvM)
 }
 

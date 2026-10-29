@@ -9,6 +9,7 @@
 
 */
 #include <target/cumres.hpp>
+#include <stdexcept>
 
 namespace target {
 
@@ -16,6 +17,10 @@ namespace target {
 		 const arma::mat &dr,
 		 const arma::mat &ic)
     : r(r), dr(dr), ic(ic) {
+    if (r.is_empty() || dr.n_rows != r.n_elem || ic.n_rows != r.n_elem ||
+        dr.n_cols == 0 || dr.n_cols != ic.n_cols ||
+        !r.is_finite() || !dr.is_finite() || !ic.is_finite())
+      throw std::invalid_argument("Incompatible or nonfinite residual, gradient or influence inputs");
 #ifndef ARMA_R
     arma::arma_rng::set_seed_random();
 #endif
@@ -28,6 +33,8 @@ namespace target {
   }
 
   void cumres::order(const arma::mat &inp) {
+    if (inp.n_rows != n || inp.n_cols == 0 || !inp.is_finite())
+      throw std::invalid_argument("Ordering variables must have one finite row per observation");
     unsigned p = inp.n_cols;
     arma::umat ord(inp.n_rows, p);
     this->inp = arma::mat(inp.n_rows, p);
@@ -52,6 +59,8 @@ namespace target {
   }
 
   arma::mat cumres::obs() {
+    if (r.n_elem != n || ord.n_rows != n || ord.n_cols != inp.n_cols || ord.max() >= n)
+      throw std::invalid_argument("Invalid cumulative process state");
     arma::mat res(n, inp.n_cols);
     for (unsigned i=0; i < inp.n_cols; i++) {
       arma::vec ri = arma::cumsum(r.elem(ord.col(i))) /
@@ -63,6 +72,11 @@ namespace target {
 
   // Sample single process
   arma::mat cumres::sample(const arma::umat &idx) {
+    if (r.n_elem != n || dr.n_rows != n || ic.n_rows != n || dr.n_cols != ic.n_cols ||
+        ord.n_rows != n || ord.n_cols != inp.n_cols || ord.max() >= n)
+      throw std::invalid_argument("Invalid cumulative process state");
+    if (!idx.is_empty() && (idx.n_cols != ord.n_cols || idx.max() >= n))
+      throw std::invalid_argument("Evaluation indices have invalid dimensions or positions");
     arma::vec g = rnorm();
     unsigned N = n;
     unsigned p = ord.n_cols;
@@ -103,6 +117,8 @@ namespace target {
   arma::mat cumres::sample(unsigned R,             // Number of samples
 			   const arma::umat &idx,  // subset of 'time-points' of process to sample
 			   bool quantiles) {
+    if (R == 0) throw std::invalid_argument("R must be positive");
+    if (quantiles) throw std::invalid_argument("Quantile output is not supported; use quantiles=false");
     unsigned p = ord.n_cols;
     arma::mat res(R, 2*p);
     // qt.fill(0);

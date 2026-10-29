@@ -1,5 +1,26 @@
 # -*- mode: org -*-
 
+* Version 1.0.4 <2026-10-29 Thu>
+ - Tied covariates are evaluated at complete tie groups, without numerical
+   jitter. This fixes severe false rejection for grouped data at large
+   covariate scales. Results for tied data intentionally change; the frozen
+   1.0.1 golden fixture is retained as historical evidence, not regenerated.
+ - Grouped binomial diagnostics retain the actual fitted coefficients and
+   covariance rather than refitting with different controls or methods.
+ - Fixed na.exclude alignment, plots=0, odd/single-point subset.max limits,
+   custom subset selectors, named plot indices and col=NULL.
+ - Restored moving-window residual sums over (t-b,t], including simulation
+   and exact lower endpoints on reduced evaluation grids.
+ - Ordinal regression now returns consistent list-based processes and has
+   shared print/plot support, L2 tests and tested category aggregation.
+   Added structural-equation-model reference and interface tests.
+ - Monte Carlo comparisons include equality, so zero-width L2 integrals
+   have p-value one. Added count, dimension and finite-value validation.
+ - Fixed native approximation boundaries, tied left endpoints, equality
+   flags, empty clusters and integer arithmetic in CramerVonMises.
+ - Removed an unused suggested logger and a committed testthat cache.
+   Updated the required testthat version to match the test API in use.
+
 * Version 1.0.3 <2026-10-29 Thu>
  - Fixed crash in cumres() for more than 500 observations, 'number of
    items to replace is not a multiple of replacement length' (#1).

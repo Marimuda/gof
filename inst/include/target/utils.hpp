@@ -45,7 +45,7 @@ namespace target {
   double L2Test(const arma::vec &D,
 		const arma::vec &t);
   double CramerVonMises(const arma::vec &x,
-			const arma::vec &G);
+                       arma::vec G);
 
   extern arma::mat const EmptyMat;
   extern arma::vec const EmptyVec;

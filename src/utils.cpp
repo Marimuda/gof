@@ -9,6 +9,7 @@
 */
 #include <target/utils.hpp>
 #include <algorithm>
+#include <stdexcept>
 
 namespace target {
 
@@ -34,6 +35,7 @@ namespace target {
 
   // Find index of clusters/ids in sorted integer vector
   arma::umat clusterid(const arma::uvec &id) {
+    if (id.is_empty()) return arma::umat(0, 2);
     unsigned ncl = 1;
     unsigned n = id.size();
     unsigned id0 = id(0);
@@ -137,33 +139,28 @@ namespace target {
 			bool equal,
 			// type: (0: nearedst, 1: right, 2: left)
 			unsigned type) {
+    if (time.is_empty() || !time.is_finite() || !newtime.is_finite())
+      throw std::invalid_argument("Approximation times must be finite and time must be nonempty");
+    if (!time.is_sorted() || type > 2)
+      throw std::invalid_argument("time must be sorted and type must be 0, 1 or 2");
     arma::uvec idx(newtime.n_elem);
     arma::uvec eq(newtime.n_elem);
 
-    double vmax = time(time.n_elem-1);
-    arma::mat::iterator it;
-    double upper = 0.0;
-    int pos;
     for (unsigned i=0; i < newtime.n_elem; i++) {
-      eq[i] = 0;
-      if (newtime(i) > vmax) {
-	pos = time.n_elem-1;
+      auto it = std::lower_bound(time.begin(), time.end(), newtime(i));
+      arma::uword pos;
+      if (type == 2) {
+        auto after = std::upper_bound(time.begin(), time.end(), newtime(i));
+        pos = after == time.begin() ? 0 : static_cast<arma::uword>(after-time.begin()-1);
+      } else if (it == time.end()) {
+        pos = time.n_elem-1;
       } else {
-	it = std::lower_bound(time.begin(), time.end(), newtime(i));
-	upper = *it;
-	if (it == time.begin()) {
-	  pos = 0;
-	  if (equal && (newtime(i) == upper)) { eq(i) = 1; }
-	} else {
-	  pos = static_cast<int>(it-time.begin());
-	  if (type == 0 && std::fabs(newtime(i)-time(pos-1)) <
-                            std::fabs(newtime(i)-time(pos)))
-	    pos -= 1;
-	  if (equal && (newtime(i) == upper)) { eq[i] = pos+1; }
-	}
+        pos = static_cast<arma::uword>(it-time.begin());
+        if (type == 0 && pos > 0 && std::fabs(newtime(i)-time(pos-1)) <
+            std::fabs(newtime(i)-time(pos))) --pos;
       }
-      if (type == 2 && newtime(i) < upper) pos--;
       idx(i) = pos;
+      eq(i) = time(pos) == newtime(i) ? pos+1 : 0;
     }
     if (equal) {
       return( arma::join_horiz(idx, eq) );
@@ -173,10 +170,14 @@ namespace target {
 
 
   double SupTest(const arma::vec &D) {
+    if (D.is_empty() || !D.is_finite())
+      throw std::invalid_argument("Process must be nonempty and finite");
     return arma::max(arma::abs(D));
   }
 
   double L2Test(const arma::vec &D, const arma::vec &t) {
+    if (D.is_empty() || D.n_elem != t.n_elem || !D.is_finite() || !t.is_finite() || !t.is_sorted())
+      throw std::invalid_argument("Process and sorted times must have equal nonzero lengths and finite values");
     arma::vec delta(t.n_elem);
     for (unsigned i=0; i < t.n_elem-1; i++) delta(i) = t[i+1]-t[i];
     delta(delta.n_elem-1) = 0;
@@ -186,13 +187,16 @@ namespace target {
   // Comparison of ECDF of (x1,...,xn) with null CDF
   // evaluated in G = (G(x1),...,G(xn))
   double CramerVonMises(const arma::vec &x, arma::vec G) {
+    if (x.is_empty() || x.n_elem != G.n_elem || !x.is_finite() || !G.is_finite() ||
+        arma::any(G < 0) || arma::any(G > 1))
+      throw std::invalid_argument("Supply nonempty matching observations and CDF values in [0,1]");
     // back to original order of input data:
     arma::uvec ord = arma::stable_sort_index(x);
     G = G.elem(ord);
-    unsigned n = G.n_elem;
-    double res = 1/(12*n);
-    for (unsigned i=0; i < G.n_elem; i++) {
-      double val = (2*i-1)/(2*n)-G(i);
+    const double n = static_cast<double>(G.n_elem);
+    double res = 1.0/(12.0*n);
+    for (arma::uword i=0; i < G.n_elem; i++) {
+      double val = (2.0*static_cast<double>(i)+1.0)/(2.0*n)-G(i);
       res += val*val;
     }
     return res;

@@ -40,12 +40,12 @@ test_that("engine matches reference with several variables (n <= 500)", {
 
 test_that("engine matches reference on the subset path (n > 500, issue #1)", {
     g <- compare_glm(fx_large_ties(), c("group", "z"), seed = 25)
-    expect_equal(lengths(g$W), c(500L, 500L, 500L))
+    expect_equal(lengths(g$W), c(500L, 5L, 500L))
 })
 
 test_that("engine matches reference with subsetting switched off (n > 500)", {
     g <- compare_glm(fx_large_ties(), c("group", "z"), seed = 26, subset.max = Inf)
-    expect_equal(lengths(g$W), c(982L, 982L, 982L))
+    expect_equal(lengths(g$W), c(982L, 5L, 982L))
 })
 
 test_that("cumres() on a glm matches the reference, including offsets", {

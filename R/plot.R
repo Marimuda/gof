@@ -40,6 +40,11 @@ plot.cumres <- function(x, idx=seq_along(x$W),
     ylim. <- ylim
     newylab <- missing(ylab)
     newxlab <- missing(xlab)
+    if (is.character(idx)) {
+        idx <- match(idx,x$variable)
+        if (anyNA(idx)) stop("Unknown process name in idx")
+    }
+    if (anyNA(idx) || any(idx!=floor(idx) | idx<1 | idx>length(x$W))) stop("Invalid process index")
     for (i in idx) {
         legendtxt <- c(); legendpch <- c(); legendcol <- c(); legendlty <- c(); legendlwd <- c(); legendcex <- c()
         if (is.null(ylim)) {
@@ -65,7 +70,7 @@ plot.cumres <- function(x, idx=seq_along(x$W),
 
         sampleproc <- function() {
             ## Sample processes
-            if (col!="none" && !is.null(col)) {
+            if (!is.null(col) && col!="none" && ncol(x$What[[i]])>0L) {
                 legendtxt <- c(legendtxt, "Sample process under null"); legendpch <- c(legendpch,-1); legendcol <- c(legendcol,col); legendlty <- c(legendlty,1); legendlwd <- c(legendlwd,1); legendcex <- c(legendcex,1);
                 graphics::matplot(x0, x$What[[i]], type="s", col=lava::Col(col,col.alpha), lwd=1, add=TRUE, lty=1)
             }

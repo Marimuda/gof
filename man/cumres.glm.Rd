@@ -25,31 +25,39 @@
 
 \item{R}{Number of samples used in simulation}
 
-\item{b}{Moving average bandwidth (0 corresponds to infinity = standard
-cumulated residuals)}
+\item{b}{Nonnegative moving-window bandwidth. Zero gives cumulative
+residuals; positive values give residual sums over the window \eqn{(t-b,t]}.}
 
 \item{plots}{Number of realizations to save for use in the plot-routine}
 
 \item{...}{additional arguments passed to \code{cumres.default}. In
-particular \code{subset.max} (default 500): for more observations the
-processes are evaluated at \code{subset.max} selected points only, to save
-time and memory. Use \code{subset.max=Inf} to evaluate at all points.}
+particular \code{subset.max} (default 500): each process is evaluated at
+at most this many distinct covariate values, retaining every observation
+in the fitted model. Use \code{subset.max=Inf} or \code{NULL} for all
+distinct values. Tied observations are accumulated together. The deprecated
+\code{breakties} argument is accepted with a warning when nonzero; no jitter
+is added. A custom \code{subset} function receives sorted distinct values
+and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.}
 }
 \value{
 Returns an object of class 'cumres'.
 }
 \description{
 Given the generalized linear models model \deqn{g(E(Y_i|X_{i1},...,X_{ik})) =
-\sum_{i=1}^k \beta_jX_{ij}} the \code{cumres}-function calculates the the
+\sum_{j=1}^k \beta_jX_{ij}} the \code{cumres}-function calculates the
 observed cumulative sum of residual process, cumulating the residuals,
 \eqn{e_i}, by the jth covariate: \deqn{W_j(t) = n^{-1/2}\sum_{i=1}^n
-1_{\{X_{ij}<t\}}e_i} and Sup and L2 test
+1_{\{X_{ij}\le t\}}e_i} and Sup and L2 test
 statistics are calculated via simulation from the asymptotic distribution of
 the cumulative residual process under the null (Lin et al., 2002).
 }
 \note{
-Currently linear (normal), logistic and poisson regression models with
-canonical links are supported.
+Unweighted normal, binomial and Poisson models are supported;
+noncanonical binomial links are also tested. Grouped binomial responses
+must contain integer success/failure counts. Diagnostics use the original
+maximum-likelihood fit and do not refit grouped data. Rows omitted during
+fitting are also omitted by the diagnostic. Monte Carlo p-values count
+simulated statistics greater than or equal to the observed statistic.
 }
 \examples{
 
@@ -82,8 +90,8 @@ in a generalized linear model}. Journal. Amer. Statist. Assoc., Volume 86,
 Number 414, pp 420-426.
 }
 \seealso{
-\code{\link[timereg]{cox.aalen}} in the \code{timereg}-package for
-similar GoF-methods for survival-data.
+The \href{https://CRAN.R-project.org/package=timereg}{timereg}
+package provides similar GoF methods for survival data.
 }
 \author{
 Klaus K. Holst
