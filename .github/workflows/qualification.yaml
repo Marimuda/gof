@@ -1,0 +1,131 @@
+# Based on the maintained r-lib/actions check-standard example.
+# These checks do not publish the package, deploy a website, or notify Slack.
+name: Package qualification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: R ${{ matrix.config.r }} / ${{ matrix.config.os }} / ${{ matrix.config.cpp }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-latest, r: release, cpp: default}
+          - {os: macos-latest, r: release, cpp: default}
+          - {os: windows-latest, r: release, cpp: default}
+          - {os: ubuntu-latest, r: devel, cpp: default}
+          - {os: ubuntu-latest, r: oldrel-1, cpp: default}
+          - {os: ubuntu-latest, r: release, cpp: CXX23}
+          - {os: macos-latest, r: release, cpp: CXX23}
+          - {os: windows-latest, r: release, cpp: CXX23}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: "yes"
+      GOF_SLOW_TESTS: "false"
+      _R_CHECK_FORCE_SUGGESTS_: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+      - name: Select integration compiler standard
+        if: matrix.config.cpp != 'default'
+        env:
+          GOF_CI_CPP: ${{ matrix.config.cpp }}
+        shell: Rscript {0}
+        run: |
+          cat("\nCXX_STD = ", Sys.getenv("GOF_CI_CPP"), "\n",
+              file = "src/Makevars", append = TRUE, sep = "")
+          fields <- read.dcf("DESCRIPTION")
+          fields[1, "SystemRequirements"] <- sub("C\\+\\+ ?[0-9]+",
+              sub("^CXX", "C++", Sys.getenv("GOF_CI_CPP")), fields[1, "SystemRequirements"])
+          write.dcf(fields, "DESCRIPTION")
+      - uses: r-lib/actions/check-r-package@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          args: 'c("--as-cran", "--no-manual")'
+          build_args: 'c("--no-manual", "--no-build-vignettes")'
+          error-on: '"warning"'
+          upload-results: "true"
+      - name: Exercise installed downstream C++ API
+        env:
+          GOF_CXX_STD: ${{ matrix.config.cpp }}
+        shell: Rscript {0}
+        run: |
+          if (Sys.getenv("GOF_CXX_STD") == "default") Sys.setenv(GOF_CXX_STD = "CXX17")
+          check_library <- normalizePath(file.path("check", "gof.Rcheck"), mustWork = TRUE)
+          stopifnot(dir.exists(file.path(check_library, "gof")))
+          .libPaths(c(check_library, .libPaths()))
+          library(gof)
+          source("tools/check-client.R")
+
+  calibration:
+    name: Seeded model calibration
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GOF_SLOW_TESTS: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+      - name: Run installed-package acceptance tests
+        shell: Rscript {0}
+        run: |
+          dir.create("qualification/lib", recursive = TRUE)
+          status <- system2(file.path(R.home("bin"), "R"),
+                            c("CMD", "INSTALL", "--library=qualification/lib", "."))
+          stopifnot(status == 0L)
+          .libPaths(c(normalizePath("qualification/lib"), .libPaths()))
+          library(gof)
+          Sys.setenv(GOF_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                       "calibration-rates.rds"),
+                     GOF_SEM_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                           "calibration-sem-ordinal.rds"),
+                     GOF_WEIGHT_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                              "calibration-weights.rds"))
+          result <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = TRUE)
+          saveRDS(result, "qualification/calibration-tests.rds")
+          capture.output(sessionInfo(), file = "qualification/session-info.txt")
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: calibration
+          path: qualification/*.rds
+          if-no-files-found: ignore
+
+  native:
+    name: Native ${{ matrix.compiler }} / ${{ matrix.standard }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+        standard: [c++14, c++17, c++20, c++23]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install native development dependencies
+        run: sudo apt-get update && sudo apt-get install -y g++ clang libarmadillo-dev
+      - name: Compile and run sanitizer regressions
+        env:
+          CXX: ${{ matrix.compiler }}
+          GOF_CI_STD: ${{ matrix.standard }}
+          GOF_CHECK_LEAKS: "1"
+        run: |
+          "$CXX" --version
+          bash tools/check-native.sh "$GOF_CI_STD"

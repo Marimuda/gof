@@ -9,3 +9,6 @@ TODO
 ^doc$
 ^Meta$
 testthat-problems\.rds$
+^\.github$
+^AUDIT\.org$
+(^|/)Rplots[.]pdf$

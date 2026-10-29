@@ -1,0 +1,60 @@
+Package qualification tools
+
+Rscript tools/qualify.R [new-output-directory]
+
+Creates a frozen source snapshot and isolated package library, builds the source
+archive, installs it, exercises the installed downstream C++ header/callable API,
+runs acceptance tests, native sanitizer checks and a full
+R CMD check --as-cran including the manual. Logs, test result objects, the source
+archive and a manifest survive failure. No user library is modified. Dependencies
+must already be installed; the runner does not download or install them.
+
+Options (environment variables):
+  GOF_SLOW_TESTS=true          Include seeded calibration tests (default false).
+  GOF_NATIVE_COMPILERS=g++,clang++
+                              Native compiler paths, separated by commas.
+  GOF_CXX_STD=CXX23            Select an integration standard in the COPY ONLY.
+                              CXX14, CXX17, CXX20 and CXX23 are accepted.
+                              DESCRIPTION and Makevars are updated together.
+  GOF_RUN_NATIVE=false         Omit native checks; recorded as not requested.
+  GOF_RUN_CHECK=false          Omit R CMD check; recorded as not requested.
+
+Native C++14/17/20/23 checks require Bash, a suitable C++ compiler, system Armadillo development
+files and sanitizer runtimes. The R package itself uses RcppArmadillo. Run the
+native script independently with:
+  CXX=clang++ bash tools/check-native.sh c++23
+
+A full manual check also needs LaTeX, HTML Tidy and the V8 R package. Incoming
+checks need network access to CRAN. Standard _R_CHECK_* environment settings are
+respected and recorded; the runner does not quietly disable dependency or
+documentation checks. Check notes are retained; errors and warnings fail the
+qualification. Tests and manifests identify phases which were not requested.
+
+Rscript tools/measure-coverage.R [new-output-directory]
+
+Uses covr on a separate source snapshot (tests, examples and installed C++ client).
+It saves expression/
+line counts, per-file and per-R-function summaries and uncovered locations. Set
+GOF_SLOW_TESTS=true to include calibration paths. Install covr in a development
+library first. This command writes no external coverage service. Native helpers
+which are not used by R need the independent C++ harness as well.
+
+The GitHub Actions workflow is a runnable portability matrix, not evidence that
+those remote jobs have executed. It covers R release on Linux/macOS/Windows,
+Linux R devel/oldrel-1, C++23 package integration on each OS, one seeded calibration
+job, and GCC/Clang native C++14/17/20/23 sanitizer jobs. It is based on the maintained r-lib
+example and uses pinned action commits, read-only repository permissions and
+no publication or notification steps. Maintainer-triggered remote runs are still
+required before claiming macOS/Windows or additional-R-version validation.
+
+Primary workflow reference:
+  https://github.com/r-lib/actions/blob/v2/examples/check-standard.yaml
+
+The R-package baseline is C++17. Native utilities are additionally tested under
+C++14. R4.6 ignores a C++14 request and uses its newer default; the installed
+client tool reports actual __cplusplus so this fallback is not mislabeled as
+a genuine C++14 build. Explicit C++23 clients must compile above C++20.
+
+GOF_CHECK_LEAKS=1 enables LeakSanitizer in the native harness. It defaults to 0
+for traced local environments; the CI native jobs explicitly enable it. Local
+disabled leak checks do not establish absence of memory leaks.
