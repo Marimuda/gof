@@ -1,7 +1,8 @@
 subset_t <- function(t, n.qt=250L, n.eq=250L) {
     if (length(t)<= n.qt+n.eq) return(seq_along(t))
     t <- sort(t)
-    t1a <- t[.fastapprox(t, seq(t[1], t[length(t)], length.out=n.eq))[,1]+1]
+    ## .fastapprox already returns 1-based indices
+    t1a <- t[.fastapprox(t, seq(t[1], t[length(t)], length.out=n.eq))[,1]]
     t1b <- quantile(t, seq(0,1,length.out=n.qt))
     t1 <- sort(union(t1a, t1b))
     pos <- 1
