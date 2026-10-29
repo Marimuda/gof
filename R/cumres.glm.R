@@ -124,6 +124,9 @@
   ## Xbeta <- predict(model, type="link") ## X*b
   beta <- coef(model)
   Xbeta <- X%*%beta
+  ## The linear predictor includes offsets (formula and argument offsets
+  ## are both stored in model$offset)
+  if (!is.null(model$offset)) Xbeta <- Xbeta + model$offset
   if(any(is.na(beta))) stop("Over-parametrized model")
  
   dr <- -(as.numeric(dginv(Xbeta))*X)

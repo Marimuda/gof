@@ -48,6 +48,16 @@ test_that("type I error is controlled for grouped binomial data", {
     expect_calibrated(rate)
 })
 
+test_that("type I error is controlled for poisson with an offset", {
+    set.seed(65)
+    rate <- reject_rate(function() {
+        x <- runif(300, 0, 2); e <- runif(300, 0.5, 20)
+        y <- rpois(300, e * exp(-1 + 0.5 * x))
+        glm(y ~ x + offset(log(e)), family = poisson())
+    })
+    expect_calibrated(rate)
+})
+
 test_that("a missing quadratic term is detected, n > 500 (subset path)", {
     set.seed(64)
     rate <- reject_rate(function() {

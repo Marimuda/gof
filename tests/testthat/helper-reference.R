@@ -69,10 +69,21 @@ ref_cumres <- function(r, dr, ic, variable, R = 100, plots = 5,
     list(W = W, What = What, x = t0, KS = KS, CvM = CvM)
 }
 
-## The inputs that cumres.glm passes on to cumres.default, for a 0/1 glm.
+## The inputs that cumres.glm should pass on to cumres.default (ungrouped
+## glm). The derivative of the residual r_i = y_i - mu_i wrt beta is
+## -mu.eta(eta_i) x_i, where eta_i is the full linear predictor, offsets
+## included.
 glm_inputs <- function(model) {
     X <- model.matrix(model)
+    eta <- predict(model, type = "link")
     list(r = residuals(model, type = "response"),
-         dr = -(as.numeric(family(model)$mu.eta(X %*% coef(model))) * X),
+         dr = -(as.numeric(family(model)$mu.eta(eta)) * X),
          ic = lava::iid(model))
+}
+
+fx_poisson_offset <- function(n = 300, seed = 7) {
+    set.seed(seed)
+    d <- data.frame(x = runif(n, 0, 2), exposure = runif(n, 0.5, 20))
+    d$y <- rpois(n, d$exposure * exp(-1 + 0.5 * d$x))
+    glm(y ~ x + offset(log(exposure)), data = d, family = poisson())
 }

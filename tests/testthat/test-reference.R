@@ -47,3 +47,18 @@ test_that("engine matches reference with subsetting switched off (n > 500)", {
     g <- compare_glm(fx_large_ties(), c("group", "z"), seed = 26, subset.max = Inf)
     expect_equal(lengths(g$W), c(982L, 982L, 982L))
 })
+
+test_that("cumres() on a glm matches the reference, including offsets", {
+    ## Full path through cumres.glm, so its residual derivative is checked
+    for (m in list(fx_logistic(), fx_poisson(), fx_poisson_offset())) {
+        inp <- glm_inputs(m)
+        variable <- cbind(fitted(m), model.matrix(m)[, "x"])
+        set.seed(27); g <- cumres(m, R = 60, plots = 4)
+        set.seed(27); ref <- ref_cumres(inp$r, inp$dr, inp$ic, variable,
+                                        R = 60, plots = 4)
+        expect_equal(g$W, ref$W)
+        expect_equal(g$What, ref$What)
+        expect_equal(g$KS, ref$KS)
+        expect_equal(g$CvM, ref$CvM)
+    }
+})
