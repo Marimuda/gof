@@ -65,6 +65,11 @@
                   ...) {
   dginv <- function(z) 1
   a.phi <- 1
+  ## Evaluate defaults that refer to 'model' now: grouped binomial models
+  ## are refitted below, and names should refer to the user's model.
+  force(variable)
+  response <- all.vars(formula(model))[1]
+  xnames <- NULL
   switch(class(model)[1],
          lm = {
            a.phi <- summary(model)$sigma^2
@@ -81,16 +86,21 @@
                stop("Weight argument not supported")
            }
            if (grepl("matrix",attr(terms(model),"dataClasses")[1])) {
-               ## success,failure -> refit
-               y <- model.extract(model.frame(model),"response")               
+               ## success,failure -> refit with one 0/1 row per trial.
+               ## Built from the fitted model frame (subset= and NA handling
+               ## already applied), not by re-evaluating the original call.
+               mf <- model.frame(model)
+               y <- model.extract(mf,"response")
                X <- model.matrix(model)
-               y0 <- unlist(apply(y[,1:2],1,function(x) rep(c(1,0),as.vector(x))))
-               X0 <- as.matrix(X[rep(seq(nrow(y)),rowSums(y[,1:2])),,drop=FALSE])
-               cl <- model$call
-               cl$formula <- y0 ~ -1+X0
-               cl$data <- NULL
-               model <- eval(cl)
-           }                  
+               rows <- rep(seq_len(nrow(y)), rowSums(y[,1:2,drop=FALSE]))
+               y0 <- unlist(lapply(seq_len(nrow(y)),
+                                   function(i) rep(c(1,0), y[i,1:2])))
+               X0 <- X[rows,,drop=FALSE]
+               off0 <- model.offset(mf)
+               if (!is.null(off0)) off0 <- off0[rows]
+               xnames <- colnames(X)
+               model <- glm(y0 ~ -1+X0, family=f, offset=off0)
+           }
            g <- f$linkfun
            ginv <- f$linkinv
            dginv <- f$mu.eta ## D[linkinv]
@@ -106,8 +116,8 @@
          },
          stop("Unsupported model!"))
 
-  response <- all.vars(formula(model))[1]
   X <- model.matrix(model)
+  if (!is.null(xnames)) colnames(X) <- xnames
   n <- nrow(X)  
   r <- residuals(model, type="response") ## y-g^{-1}(Xb)
   yhat <- predict(model, type="response") ## g^{-1}(Xb)
