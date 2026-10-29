@@ -1,0 +1,24 @@
+bibentry(
+  bibtype = "Manual",
+  title = paste0("gof: ", meta$Title),
+  author = person("Klaus K.", "Holst"),
+  year = substr(meta$Date, 1L, 4L),
+  note = paste("R package version", meta$Version,
+               "(maintenance snapshot; record the accompanying source revision)."),
+  url = "https://github.com/kkholst/gof",
+  header = "To cite the software, record its version and source revision:"
+)
+
+bibentry(
+  bibtype = "Article",
+  title = "Model-Checking Techniques Based on Cumulative Residuals",
+  author = c(person(c("D.", "Y."), "Lin"),
+             person(c("L.", "J."), "Wei"), person("Z.", "Ying")),
+  journal = "Biometrics",
+  year = "2002",
+  volume = "58",
+  number = "1",
+  pages = "1--12",
+  doi = "10.1111/j.0006-341X.2002.00001.x",
+  header = "For the cumulative-residual method, also cite:"
+)

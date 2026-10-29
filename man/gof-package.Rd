@@ -2,29 +2,36 @@
 % Please edit documentation in R/gof-package.R
 \docType{package}
 \name{gof-package}
-\alias{gof-package}
 \alias{gof}
-\title{Model-diagnostics based on cumulative residuals}
+\alias{gof-package}
+\title{Model diagnostics based on cumulative residuals}
 \description{
-Model-diagnostics based on cumulative residuals
+The \pkg{gof} package checks fitted mean structures using cumulative
+residual processes, multiplier simulations and Sup/L2 tests. Start with
+\code{\link{cumres}} for a model-to-diagnostic workflow, then use the
+model-specific help for its assumptions and available options.
 }
-\examples{
-example(cumres)
-
+\details{
+Supported adapters cover normal/binomial/Poisson regression, Gaussian
+structural equation models and ordinal regression fitted with \pkg{lava}.
+The low-level default method accepts custom residual and influence
+contributions when their statistical assumptions can be justified.
 }
 \references{
-D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
-Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
+D. Y. Lin, L. J. Wei and Z. Ying (2002).
+\emph{Model-Checking Techniques Based on Cumulative Residuals}.
+Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
 
-John Q. Su and L.J. Wei (1991) \emph{A lack-of-fit test for the mean function
-in a generalized linear model}. Journal. Amer. Statist. Assoc., Volume 86,
-Number 414, pp 420-426.
+John Q. Su and L. J. Wei (1991). \emph{A lack-of-fit test for the mean
+function in a generalized linear model}. Journal of the American
+Statistical Association 86, 420--426.
 }
 \seealso{
-\code{\link[timereg]{cox.aalen}} in the \code{timereg}-package for
-similar GoF-methods for survival-data.
+\code{\link{cumres}}, \code{\link{cumres.glm}},
+\code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
+\code{\link{plot.cumres}}, \code{\link{surgunit}}.
 }
 \author{
-Klaus K. Holst <klaus@holst.it>
+Klaus K. Holst \href{mailto:klaus@holst.it}{klaus@holst.it}
 }
-\keyword{package}
+\keyword{internal}

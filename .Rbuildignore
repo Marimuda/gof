@@ -12,3 +12,11 @@ testthat-problems\.rds$
 ^\.github$
 ^AUDIT\.org$
 (^|/)Rplots[.]pdf$
+^README\.Rmd$
+^_pkgdown\.yml$
+^DEVELOPMENT\.md$
+^CONTRIBUTING\.md$
+^PACKAGE_POLISH\.md$
+^README\.html$
+^STATISTICAL_REVIEW\.org$
+^docs$

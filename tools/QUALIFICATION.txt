@@ -3,11 +3,14 @@ Package qualification tools
 Rscript tools/qualify.R [new-output-directory]
 
 Creates a frozen source snapshot and isolated package library, builds the source
-archive, installs it, exercises the installed downstream C++ header/callable API,
+archive INCLUDING its executable vignettes, installs it, exercises the installed
+R help/vignette/pipe/table interface and downstream C++ header/callable API,
 runs acceptance tests, native sanitizer checks and a full
 R CMD check --as-cran including the manual. Logs, test result objects, the source
 archive and a manifest survive failure. No user library is modified. Dependencies
 must already be installed; the runner does not download or install them.
+Building the vignettes needs the declared knitr/rmarkdown development packages
+and Pandoc. The installed-interface phase fails when those guides were omitted.
 
 Options (environment variables):
   GOF_SLOW_TESTS=true          Include seeded calibration tests (default false).
@@ -39,9 +42,36 @@ GOF_SLOW_TESTS=true to include calibration paths. Install covr in a development
 library first. This command writes no external coverage service. Native helpers
 which are not used by R need the independent C++ harness as well.
 
+Rscript tools/check-documentation.R [new-output-directory]
+
+Checks documentation in a COPY, leaving the repository untouched. Install
+roxygen2, rmarkdown, pkgdown and the package's development dependencies in an
+isolated development library first. The command regenerates all roxygen help
+and NAMESPACE, checks those files and the recorded generator version,
+renders README.Rmd against the copied source and checks README.md freshness,
+then builds a complete pkgdown site locally. It writes source snapshots,
+phase logs, captured input hashes, a manifest and the HTML site under the requested output directory.
+No website is deployed and no user library is replaced. A fresh R session
+prevents an old loaded namespace from concealing source changes.
+The final source-unchanged phase rejects input changes made during the run;
+freshness comparisons use captured inputs rather than a moving working tree.
+The website phase fails on Pandoc rendering warnings, including mathematics
+which would otherwise appear as unconverted TeX. A canonical website URL is
+optional for a local preview and must not be invented before hosting is chosen.
+
+README text is compared after normalizing line endings and trailing spaces.
+Generated README figure filenames and nonempty files are checked; image bytes
+are not compared across graphics devices or operating systems. Set
+GOF_DOCS_BUILD_SITE=false to omit the local site explicitly; the manifest
+records that omission. The recorded generator version (Config/roxygen2/version,
+or the legacy RoxygenNote field) must match the version used to regenerate the
+committed documentation. Install that version for an
+exact replay, or update all generated documentation together when upgrading.
+
 The GitHub Actions workflow is a runnable portability matrix, not evidence that
 those remote jobs have executed. It covers R release on Linux/macOS/Windows,
-Linux R devel/oldrel-1, C++23 package integration on each OS, one seeded calibration
+Linux R devel/oldrel-1/the R4.1 minimum, C++23 package integration on each OS,
+generated-documentation/README/local-site checks, one seeded calibration
 job, and GCC/Clang native C++14/17/20/23 sanitizer jobs. It is based on the maintained r-lib
 example and uses pinned action commits, read-only repository permissions and
 no publication or notification steps. Maintainer-triggered remote runs are still

@@ -35,3 +35,9 @@ _region*
 symbols.rds
 testthat-problems.rds
 Rplots.pdf
+
+# Generated documentation preview and R build products
+docs/
+*.Rcheck/
+gof_*.tar.gz
+README.html

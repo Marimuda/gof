@@ -1,0 +1,171 @@
+
+<!-- README.md is generated from README.Rmd. Edit README.Rmd and regenerate. -->
+
+# gof
+
+**Model diagnostics based on cumulative residuals.**
+
+`gof` checks fitted mean relationships by accumulating residuals along a
+covariate or the fitted predictions. It compares the observed curve with
+simulated null curves and reports Sup and L2 test p-values. This can
+help identify a missing nonlinear term or another systematic pattern
+that a coefficient table does not describe.
+
+The package provides methods for `lm`, Gaussian/binomial/Poisson `glm`,
+Gaussian structural equation models fitted with `lava`, and `lava`
+ordinal regression. It also has an interface for supplied residuals,
+gradients and coefficient influences. Each method has explicit
+assumptions and support limits in its help page.
+
+## A complete diagnostic workflow
+
+This example deliberately fits a straight line to a curved relationship.
+The random seed makes the data and Monte Carlo calculation reproducible.
+
+``` r
+library(gof)
+
+set.seed(42)
+d <- data.frame(x = seq(-2, 2, length.out = 200))
+d$y <- 1 + 0.5 * d$x + 0.7 * d$x^2 + rnorm(nrow(d))
+
+diagnostic <- lm(y ~ x, data = d) |>
+  cumres(variable = "x", R = 499, plots = 25)
+
+diagnostic |> as.data.frame()
+#>   variable test statistic p.value   n nobs   R informative aggregation
+#> 1        x  Sup  2.990672       0 200  200 499        TRUE        <NA>
+#> 2        x   L2  3.887833       0 200  200 499        TRUE        <NA>
+```
+
+``` r
+diagnostic |> plot(idx = "x", legend = "type2")
+```
+
+<img src="man/figures/README-diagnostic-plot-1.png" alt="Observed cumulative residual curve compared with 25 simulated null curves along x; the curved mean omitted from the fitted model produces a systematic residual pattern." width="100%" />
+
+A small p-value indicates that this aspect of the fitted model deserves
+attention. A large p-value does not establish that the model is correct.
+Sup and L2 summarize the same residual process in different ways. The
+p-values are Monte Carlo estimates; a reported zero means none of the
+simulated statistics reached the observed value, rather than an exact
+probability of zero. Increase `R` when more simulation precision is
+needed.
+
+The base-R table contains explicit `variable`, `test`, `statistic`,
+`p.value`, `n`, `nobs`, `R`, `informative` and `aggregation` columns. No
+tidyverse package is needed for native `|>` pipelines. Optional
+`broom::tidy(diagnostic)` or `generics::tidy(diagnostic)` returns the
+same columns as a tibble when the corresponding optional packages are
+installed. Existing `coef(diagnostic)` calls retain their historical
+wide p-value table.
+
+## Installation
+
+This is a local maintenance snapshot of Klaus K. Holst’s [original gof
+project](https://github.com/kkholst/gof). The changes in this checkout
+have not been published to CRAN or the upstream repository. Installing
+the upstream version does not install these repairs.
+
+To install a supplied source archive, first install its runtime and
+compiler interface dependencies, then install that archive:
+
+``` r
+install.packages(c("lava", "Rcpp", "RcppArmadillo", "numDeriv", "lpSolve"))
+install.packages("gof_1.1.0.tar.gz", repos = NULL, type = "source")
+```
+
+From the root of a checkout, this also builds the installed guides:
+
+``` r
+install.packages("remotes")
+remotes::install_local(".", dependencies = TRUE, build_vignettes = TRUE)
+```
+
+R 4.1 or later and a C++17 toolchain are required. Source installation
+needs the development tools appropriate to your R installation; Windows
+users need the matching Rtools, and macOS users need the command-line
+developer tools. C++23 is a separately tested integration configuration,
+ahead of the planned native-code modernization.
+
+## Help and worked guides
+
+The same function reference is available in RStudio’s Help pane and
+other R interfaces:
+
+``` r
+?gof
+?cumres
+?cumres.glm
+?cumres.lvmfit
+?cumres.ordreg
+?`cumres-object`
+
+vignette("getting-started", package = "gof")
+vignette("statistical-details", package = "gof")
+```
+
+The ordinal default combines the joint cutpoint process for one
+ordering; `aggregate="score"` retains the older category-score-mean
+check, and `aggregate="cutpoints"` exposes signed components.
+Mean-preserving changes in category probabilities can be missed by the
+score sum.
+
+The guides cover weighted and grouped responses, offsets, missing rows,
+moving windows, reproducibility and the assumptions behind custom
+models.
+
+`subset.max = 500` limits the number of distinct **evaluation points**
+in the default/linear/GLM/SEM process. It does not reduce the fitted
+sample to 500 observations. Tied observations enter the process
+together. Use `subset.max = Inf` for every distinct value; ordinal
+diagnostics use their own full distinct-value grid. Moving-window grids
+include entry and exit events over the complete window support; a finite
+cap approximates that full-domain statistic.
+
+## Scope of inference
+
+The implemented multiplier process assumes independent residual units
+and a valid coefficient influence representation. Normal/Poisson weights
+describe response-mean precision; binomial weights must define integer
+trial counts. The SEM method requires complete independent-subject
+Gaussian fits; clustered, weighted and incomplete-data SEMs are
+rejected. The ordinal method rejects fitting options that the upstream
+fitter ignores. Arbitrary callback or ordering functions require a
+statistical justification from the caller, including the stronger
+conditions for estimated orderings. Numerical convergence alone does not
+establish a regular interior mean fit; separation, recession and
+numerical local-root checks reject unqualified GLMs. Ordinal score
+constraints are checked as well.
+
+Recognized zero-information linear/GLM processes are marked `informative
+= FALSE`. Numerically unresolved score-space cases have missing p-values
+and retain their curves for inspection. An unavailable information flag
+in another adapter is distinct from that numerical case; see
+`?"cumres-object"`.
+
+These are directed checks for a selected ordering, not a joint global
+test over all covariates. Saved null curves from different orderings
+cannot be combined as a joint draw. The approximation can fail with rare
+events, severe imbalance or little effective information despite a large
+nominal sample; it is not an exact small-count procedure.
+
+Regression tests, independent numerical references, calibration
+experiments and native sanitizers support the recorded implementation
+checks. They do not establish correctness for every supplied model or
+finite sample.
+
+## Citation and development
+
+Use `citation("gof")` for the software and the Lin, Wei and Ying (2002)
+method reference. The original authorship and license are retained. The
+SEM help page also cites the relevant structural-model method paper.
+
+`NEWS.md` records user-visible changes. `DEVELOPMENT.md` explains
+reproducible documentation and package checks; `CONTRIBUTING.md`
+describes how to report or propose a change. The repository audit
+records distinguish statistical support boundaries, passed local checks
+and platform jobs still to run.
+
+The documentation site can be built locally with
+`pkgdown::build_site(preview = FALSE)`. Building it does not publish it.

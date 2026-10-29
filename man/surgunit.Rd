@@ -3,16 +3,38 @@
 \docType{data}
 \name{surgunit}
 \alias{surgunit}
-\title{Surgical Unit Data}
+\title{Surgical unit data}
+\format{
+A data frame with 54 rows and five variables:
+\describe{
+\item{\code{bloodclot}}{Numeric blood-clotting measure.}
+\item{\code{prognostic}}{Integer prognostic measure.}
+\item{\code{enzyme}}{Integer enzyme measure.}
+\item{\code{liver function}}{Numeric liver-function measure. Its name
+contains a space; use backticks in formulas or \code{[[} for extraction.}
+\item{\code{survival}}{Integer survival-time measure.}
+}
+}
 \source{
 Neter, J., Kutner, M. H., Nachtsheim, C. J., and Wasserman, W.
-(1996), Applied Linear Statistical Models, 4th edition. Chicago: Irwin
+(1996), \emph{Applied Linear Statistical Models}, 4th edition. Chicago: Irwin.
 }
 \description{
-Surgical Unit Data used in the paper by Lin et al. (2002).  Survival time and
-covariates for 54 patients undergoing liver surgery.
+Survival time and four covariates for 54 patients undergoing liver surgery.
+This is the surgical unit example used by Lin, Wei and Ying (2002).
+}
+\details{
+Measurement units and fuller variable definitions are not stored
+as metadata in the distributed data. Consult the cited original sources
+before interpreting these measurements in substantive analyses.
+}
+\examples{
+data(surgunit)
+names(surgunit)
+head(surgunit[["liver function"]])
 }
 \references{
-D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
-Techniques Based on Cumulative Residuals}. Biometrics, Volume 58, pp 1-12.
+D. Y. Lin, L. J. Wei and Z. Ying (2002).
+\emph{Model-Checking Techniques Based on Cumulative Residuals}.
+Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
 }

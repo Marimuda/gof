@@ -56,7 +56,8 @@ main <- function() {
     on.exit(setwd(previous),add=TRUE)
     on.exit({
         manifest <- list(source=package,snapshot=snapshot,output=output,
-                         requested=list(calibration=slow,native=native,check=check,cpp=cpp,
+                         requested=list(vignettes=TRUE,r_interface=TRUE,
+                             calibration=slow,native=native,check=check,cpp=cpp,
                              native_compilers=Sys.getenv("GOF_NATIVE_COMPILERS",Sys.getenv("CXX","c++")),
                              native_leak_check=Sys.getenv("GOF_CHECK_LEAKS","0")),
                          completed=complete,phases=records,
@@ -101,13 +102,15 @@ main <- function() {
             print(system2(rbin,c("CMD","config",compiler),stdout=TRUE,stderr=TRUE))
         }
     })
-    run("build",function(log) command(rbin,c("CMD","build","--no-build-vignettes",snapshot),log))
+    run("build",function(log) command(rbin,c("CMD","build",snapshot),log))
     archive <- list.files(output,pattern="[.]tar[.]gz$",full.names=TRUE)
     if (length(archive)!=1L) stop("Expected exactly one source package archive")
     run("install",function(log) command(rbin,c("CMD","INSTALL",paste0("--library=",lib),archive),log))
     library("gof",lib.loc=lib,character.only=TRUE)
     run("installed-cpp-client",function(log)
         source(file.path(snapshot,"tools","check-client.R"),local=new.env(parent=globalenv())))
+    run("installed-r-interface",function(log)
+        source(file.path(snapshot,"tools","check-r-interface.R"),local=new.env(parent=globalenv())))
     test <- function(label,slow) run(label,function(log) {
         Sys.setenv(GOF_SLOW_TESTS=if (slow) "true" else "false",
                    GOF_CALIBRATION_REPORT=file.path(output,"calibration-rates.rds"),

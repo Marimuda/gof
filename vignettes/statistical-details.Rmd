@@ -1,0 +1,354 @@
+---
+title: "Statistical details and reproducibility"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Statistical details and reproducibility}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+library(gof)
+```
+
+The cumulative residual approach implemented by `gof` follows the
+model-checking work of Lin, Wei and Ying (2002). This guide describes the
+package's calculations and support boundaries. It complements the
+[getting started guide](getting-started.html); it is not a substitute for
+checking the assumptions of a particular analysis.
+
+## The process and its null simulations
+
+For residuals $e_i$ and an ordering covariate $z_i$, the cumulative process is
+
+\[
+W(t) = n^{-1/2} \sum_{i=1}^{n} 1\{z_i \leq t\}e_i.
+\]
+
+The selected indicators must have centered residuals under the null.
+Residuals from an estimated model also depend on its fitted parameters.
+The simulated process therefore combines residual multiplier sums with
+an adjustment based on residual gradients and coefficient influence
+contributions. Supplying residuals alone does not generally reproduce the
+null distribution for an estimated model.
+
+At selected sorted grid values $t_1,\ldots,t_m$, the implemented statistics are
+
+\[
+T_{\mathrm{Sup}} = \max_j |W(t_j)|, \qquad
+T_{\mathrm{L2}} = \left\{\sum_{j=1}^{m-1}
+       W(t_j)^2(t_{j+1}-t_j)\right\}^{1/2}.
+\]
+
+The L2 calculation is the norm of the left-step process on this grid.
+The legacy result field `CvM` stores its p-value. A grid with one point
+has zero L2 width. The `KS` field stores the Sup p-value. The data frame
+method exposes the test names without requiring those historical field names.
+
+With a positive bandwidth `b`, each cumulative indicator is replaced by
+the window indicator $1\{t-b < z_i \leq t\}$. All observations at a tied
+value enter together. Reducing `subset.max` changes the evaluation grid,
+not the observations contributing to the sums. Full moving-window grids
+include both entry events $z_i$ and exit events $z_i+b$, through the final
+zero tail. A finite cap approximates this full-domain statistic. Choose
+bandwidth and ordering/grid rules before inspecting responses for formal
+testing; response-driven selection needs its own adjustment.
+
+## Supported model paths
+
+| Input | Supported interpretation and main conditions |
+|:--|:--|
+| `lm` and Gaussian `glm` | Independent observations or response means; precision weights allowed; positive residual degrees of freedom. |
+| Binomial `glm` | Bernoulli responses or grouped/trial-weighted responses defining integer successes and failures; grouped contributions expand without refitting. |
+| Poisson `glm` | Independent counts or response means with prior precision weights; fitted offsets are retained. |
+| `lava::ordreg` | Converged ordinal fits on explicitly preprocessed complete data; category residuals are aggregated by the selected function. |
+| `lava` Gaussian SEM | Independent subjects, complete data, valid structural covariance and invertible structural system. |
+| `cumres.default` | User-supplied centered residuals, gradients and coefficient influences for independent residual units. |
+
+Gaussian, binomial and Poisson adapters support their standard family links.
+They retain the fitted coefficients and fitted rows. A converged numerical
+fit is not necessarily a regular finite mean estimate. The GLM adapter checks
+binomial separation and Poisson recession directions with linear programming,
+and noncanonical/constrained links require numerical local interior-root
+qualification. These checks reject boundary or unresolved cases before
+returning p-values. They are numerical qualifications, not formally
+outward-rounded interval proofs, proof of global optimality or proof that
+a loose/custom fitter estimated coefficients accurately.
+
+Weight interpretation
+depends on the family: binomial weights specify trials, while normal and
+Poisson weights specify response-mean precision. These interpretations are
+not interchangeable with an arbitrary survey or cluster weighting scheme.
+
+The implemented independent-unit multiplier scheme does not cover clustered,
+weighted or incomplete/FIML SEM fits. These paths are rejected explicitly.
+Custom residual functions and additional ordering covariates need their own
+conditional-centering and influence justification; the interface cannot
+deduce that justification from a numeric array.
+
+## Structural equation models
+
+This example fits a latent variable measured by three observed outcomes.
+The diagnostic checks the residual for `y1`, ordered by a prediction of the
+latent variable `eta`.
+
+```{r sem}
+set.seed(201)
+sem <- lava::lvm(list(c(y1, y2, y3) ~ eta, eta ~ x))
+lava::latent(sem) <- ~eta
+sem_data <- lava::sim(sem, 180)
+sem_fit <- lava::estimate(sem, sem_data)
+
+set.seed(202)
+sem_diagnostic <- sem_fit |>
+  cumres(y1 ~ eta, full = TRUE, R = 99, plots = 6)
+sem_diagnostic |> as.data.frame()
+```
+
+With `full = TRUE`, the adapter constructs a prediction using manifest
+variables with no structural covariance path from the selected residual's
+error. Under the Gaussian model this supplies the independence needed for
+the centering argument. The selection uses structural paths, rather than
+fitted coefficients happening to cancel. It is conservative when exact
+path cancellations would allow additional conditioning variables.
+
+With `full = FALSE`, observed named orderings must themselves satisfy the
+structural safe-set check. A predictor that carries the selected outcome's
+error is rejected, with advice to use `full = TRUE`. Explicitly forcing
+exogeneity while retaining an incompatible error covariance is also rejected.
+
+Multiple outcome/predictor requests can return a list of separately named
+`cumres` diagnostics. Inspect or extract each member; it is not a single
+joint test of the whole collection.
+
+## Ordinal models
+
+The ordinal method forms category cumulative residuals, then applies the
+chosen aggregation across cumulative cutpoints. Since version 1.1.0,
+`aggregate="omnibus"` is the default: it takes the Euclidean norm of the
+whole cutpoint vector at each ordering value. Sup is the maximum norm;
+L2 is the square root of the integral of the sum of squared components.
+The same subject multipliers are used across cutpoints, preserving their
+joint covariance. Continuity of this norm transfers the joint process
+approximation to the combined statistics. The norm curves are nonnegative,
+not zero-centered signed Gaussian curves.
+
+This combines cutpoints for one chosen ordering. It is not an omnibus test
+over all covariates or every possible model defect. Use
+`aggregate="cutpoints"` (or `identity`) for signed component diagnostics.
+Use `aggregate="score"` (or `sum`) for the former default, which checks the
+integer-coded category-score mean only. Conditional category probabilities
+can change while that score mean stays fixed, so a score-sum test can miss
+important ordinal misspecification. The `aggregation` result/table field
+records which interpretation applies.
+
+```{r ordinal}
+set.seed(203)
+ordinal_data <- data.frame(x = rnorm(180))
+latent_response <- 0.6 * ordinal_data$x + rlogis(nrow(ordinal_data))
+ordinal_data$level <- ordered(cut(latent_response,
+                                 breaks = c(-Inf, -0.7, 0.7, Inf)))
+ordinal_data <- ordinal_data[complete.cases(ordinal_data), , drop = FALSE]
+ordinal_fit <- lava::ordreg(level ~ x, data = ordinal_data,
+                            family = binomial(link = "logit"))
+
+set.seed(204)
+ordinal_fit |> cumres(variable = "x", R = 99, plots = 0) |> as.data.frame()
+ordinal_fit |> cumres(variable = "x", aggregate = "cutpoints", R = 99,
+                      plots = 0) |> as.data.frame()
+```
+
+The supported `lava::ordreg` implementation ignores fitting arguments such
+as `offset`, `subset`, `weights` and `na.action`. `gof` rejects fits that
+record these options rather than diagnosing a different model from the one
+the caller intended. Subset and complete the data before fitting. Adding
+an offset to the diagnostic cannot supply an offset that the fitter did
+not estimate. The diagnostic restores the ordinal fit's internal state
+after evaluating predictions and numerical derivatives.
+
+## Supplying residual gradients and influences
+
+The default method is a lower-level interface for model developers. The
+following unweighted linear example makes its inputs explicit:
+
+```{r custom-interface}
+set.seed(205)
+custom_data <- data.frame(x = rnorm(140))
+custom_data$y <- 1 + 0.4 * custom_data$x + rnorm(nrow(custom_data))
+custom_fit <- lm(y ~ x, data = custom_data)
+X <- model.matrix(custom_fit)
+residual <- residuals(custom_fit)
+gradient <- -X
+influence <- (X * as.numeric(residual)) %*% solve(crossprod(X))
+
+set.seed(206)
+custom_diagnostic <- cumres(
+  NULL,
+  variable = cbind(x = custom_data$x),
+  r = residual,
+  dr = gradient,
+  ic = influence,
+  coef = coef(custom_fit),
+  R = 99,
+  plots = 0
+)
+custom_diagnostic |> as.data.frame()
+```
+
+Rows of `r`, `dr`, `ic` and `variable` must refer to the same independent
+units. The columns of `dr` and `ic` must refer to the same fitted parameters.
+Here `ic` is scaled so that $\hat\beta-\beta_0$ is approximated by
+$\sum_i IC_i$. For a likelihood score, this is typically
+$IC_i=I_n^{-1}s_i$, with total sample information $I_n$.
+A conventional order-one influence function $\psi_i$ must be divided by
+$n$ before it is supplied here. Multiplying these contributions by another
+sample-size factor changes the simulation adjustment. For a different estimator, derive its
+own influence representation rather than copying this OLS formula.
+
+Residual and gradient functions can receive `coef` and additional named
+arguments. A residual function may carry a `grad` attribute. If an
+estimated model has no supplied gradient, numerical differentiation needs
+`numDeriv`. A genuinely known mean with no estimated parameters uses
+matching zero-column gradient and influence matrices; setting these
+matrices to zero is not appropriate for parameters estimated from the data.
+
+## No-information and numerically indeterminate processes
+
+For `lm` and `glm` diagnostics, fitted score constraints can make an entire
+selected process zero. For example, a two-cell model has no remaining
+mean lack-of-fit information when ordered only by its fitted cells.
+
+```{r no-information}
+set.seed(207)
+cells <- data.frame(group = rep(0:1, each = 40), y = rnorm(80))
+cell_fit <- lm(y ~ group, data = cells)
+cell_diagnostic <- cumres(cell_fit, variable = "group", R = 49, plots = 0)
+cell_diagnostic$informative
+cell_diagnostic |> as.data.frame()
+```
+
+When the structural detector certifies this case, `informative = FALSE`,
+the curves are zero and the p-values are one by convention. That is not
+evidence that the model has passed a more informative test.
+
+A different parameterization can hide the same score constraints in
+combinations of design columns. When every selected indicator is
+numerically indistinguishable from score space, but exact structural
+saturation is not certified, the adapter returns `informative = NA` and
+withholds the p-values. It retains the computed curves for inspection.
+
+```{r numerical-indeterminacy}
+cells$x <- rep(seq_len(40), 2)
+cells$hidden <- cells$x + cells$group
+hidden_fit <- lm(y ~ x + hidden, data = cells)
+
+set.seed(208)
+hidden_diagnostic <- cumres(hidden_fit, variable = "group", data = cells,
+                            R = 49, plots = 0)
+hidden_diagnostic |> summary()
+```
+
+This check depends on the design and machine precision, not on a threshold
+chosen from observed p-values or residual magnitudes. It is a sufficient
+numerical diagnostic, not exact-arithmetic membership testing for arbitrary
+ill-conditioned models. Ordinal intercept-only and saturated binary
+score processes also have structural no-information detection: the underlying
+CDF vector is set to zero before aggregation and p-values are one. For a
+custom aggregator, this returns its value at the zero vector, which need
+not itself be zero. Other adapters may omit the `informative` metadata;
+missing metadata alone does not invalidate their returned p-values.
+
+## What these checks do not establish
+
+Each ordering defines a marginal residual-process check. Multiple selected
+orderings are not a joint global goodness-of-fit test. The native engine
+pairs reused multipliers to sorted ranks separately for different orderings;
+saved curve columns must not be combined as joint cross-variable draws.
+The ordinal cutpoint combination is different: it uses shared subject
+multipliers across its cutpoints and is valid for that joint functional.
+
+For parameter-dependent custom orderings $x_\theta$, conditional centering
+only at $\theta_0$ is insufficient. An ordering-derivative term vanishes
+under the stronger condition
+$E[r_{\theta_0}\partial_\theta x_\theta\mid x_{\theta_0}=t]=0$.
+A sufficient construction uses fixed admissible data $Z$ for both the
+ordering and its parameter derivatives, with $E[r_{\theta_0}\mid Z]=0$,
+along with the required smoothness and stochastic-equicontinuity conditions.
+The adapter differentiates residuals, not arbitrary ordering callbacks.
+Named safe SEM predictions provide a structured construction; other
+callbacks require the caller's derivation. The SEM endpoint implements
+mean/linearity diagnostics, not the separate normality-testing suite in
+Sánchez, Houseman and Ryan (2009).
+
+This is an asymptotic Gaussian multiplier approximation. Rare events,
+severe imbalance, high leverage and little effective information can make
+it unreliable even with a large nominal sample and a numerically regular
+fit. For example, a known Poisson mean of $10^{-12}$ with 1,000 observations
+has almost no expected events; the empirical residual multiplier does not
+supply exact small-count inference. No universal count cutoff or exact
+finite-sample calibration is claimed. A model-based exact or parametric
+procedure for such regimes would be a separate method.
+
+## Reproduce the simulation, not just the fit
+
+Set the seed immediately before `cumres()` when reproducing an analysis.
+Keep the same fitted object, data, ordering variables, grid, bandwidth,
+simulation count and other diagnostic options.
+
+```{r reproducibility}
+set.seed(209)
+first <- cumres(custom_fit, variable = "x", R = 99, plots = 3)
+set.seed(209)
+second <- cumres(custom_fit, variable = "x", R = 99, plots = 3)
+identical(first, second)
+```
+
+For a fixed observed statistic, the implemented Monte Carlo p-value is
+the fraction of simulated statistics greater than or equal to it. A
+reported zero means that none of the `R` draws reached the observed
+statistic; it does not establish a zero tail probability. Near an
+underlying tail probability of 0.05, the binomial Monte Carlo standard
+error is approximately:
+
+```{r monte-carlo-error}
+draws <- c(199L, 999L, 4999L)
+data.frame(R = draws, approximate_se_at_0.05 = sqrt(0.05 * 0.95 / draws))
+```
+
+Different orderings and test statistics need not be independent. The
+package does not provide automatic joint or familywise calibration.
+Its regression, reference and bounded simulation checks support the
+implemented paths; they do not prove finite-sample calibration for every
+possible fitted model or user-supplied residual function.
+
+For an analysis archive, retain data and model provenance alongside the
+diagnostic. A record can be created explicitly when saving your work:
+
+```{r save-record, eval=FALSE, purl=FALSE}
+analysis_record <- list(
+  data = custom_data,
+  model = custom_fit,
+  diagnostic = first,
+  seed = 209L,
+  rng_kind = RNGkind(),
+  options = list(variable = "x", R = 99L, plots = 3L,
+                 subset.max = 500L, b = 0),
+  session = sessionInfo()
+)
+saveRDS(analysis_record, "gof-analysis.rds")
+```
+
+Exact reproduction across different R, dependency, compiler or linear
+algebra versions is not guaranteed merely by recording an integer seed.
+Keep those versions with the analysis so that any changes can be investigated.
+
+## References
+
+Lin, D. Y., Wei, L. J. and Ying, Z. (2002). Model-Checking Techniques Based
+on Cumulative Residuals. *Biometrics* **58**, 1--12.
+<https://doi.org/10.1111/j.0006-341X.2002.00001.x>.
+
+Sanchez, B. N., Houseman, E. A. and Ryan, L. M. (2009). Residual-Based
+Diagnostics for Structural Equation Models. *Biometrics* **65**, 104--115.
+See also the model-specific help pages for the package's support conditions.

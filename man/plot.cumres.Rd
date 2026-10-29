@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{plot.cumres}
 \alias{plot.cumres}
-\title{Plot cumulative residuals from a 'cumres' object}
+\title{Plot observed and simulated cumulative residual processes}
 \usage{
 \method{plot}{cumres}(
   x,
@@ -19,42 +19,58 @@
 )
 }
 \arguments{
-\item{x}{Object produced by the function \code{cumres}.}
+\item{x}{An object produced by \code{cumres}.}
 
-\item{idx}{vector of numbers (or variable names) indicating which processes
-from the \code{x} to plot.}
+\item{idx}{Numeric process indices or character labels from
+\code{x$variable}. An empty vector draws no processes.}
 
-\item{col}{Color of the sample processes. By setting this parameter to "none"
-or \code{NULL} no realizations will be drawn. The number of realizations is
-determined by the \code{cumres}-object.}
+\item{col}{Colour or vector of colours for saved null processes. Use
+\code{"none"}, \code{NULL} or an empty vector to suppress simulated lines.}
 
-\item{col.alpha}{Transparency-level of plotted sample processes}
+\item{col.alpha}{Transparency of saved null-process lines, between zero
+and one. The observed curve uses the current graphical foreground colour.}
 
-\item{legend}{Type of legend where "type1" gives p-values of GoF-tests and
-"type2" gives usual type of legends.}
+\item{legend}{Legend style: \code{"type1"} displays available p-values
+and information-status annotations; \code{"type2"} identifies observed
+and simulated lines; \code{"none"} suppresses the legend.}
 
-\item{xlab}{Optional label of x-axis}
+\item{xlab}{Optional horizontal-axis label.}
 
-\item{ylab}{Optional label of y-axis}
+\item{ylab}{Optional vertical-axis label.}
 
-\item{vs}{Label of predictor}
+\item{vs}{Logical; use the ordering-variable coordinates when \code{TRUE}
+(the default), or sequential evaluation-point indices when \code{FALSE}.}
 
-\item{ylim}{Range of y axis}
+\item{ylim}{Optional numeric vertical-axis limits.}
 
-\item{title}{Main title}
+\item{title}{Optional plot title, overriding a supplied \code{main}.}
 
-\item{...}{Additional arguments passed to the plot-routine.}
+\item{...}{Named graphical arguments passed to \code{graphics::plot},
+such as \code{xlim}, \code{axes}, \code{cex.axis} or \code{main}.}
+}
+\value{
+The original \code{cumres} object, invisibly, so plotting can
+appear within a pipeline without replacing its diagnostic result.
 }
 \description{
-\code{plot} displays the observed cumulative residual process with
-realizations under the null.
+Display the observed residual process together with saved realizations
+under the null. These curves provide a visual comparison and are not
+simultaneous confidence bands.
 }
 \examples{
+set.seed(16)
+d <- data.frame(x = seq(-2, 2, length.out = 100))
+d$y <- 1 + d$x + rnorm(nrow(d))
+fit <- lm(y ~ x, data = d)
+diagnostic <- cumres(fit, variable = "x", R = 99, plots = 5)
+plot(diagnostic, idx = "x", legend = "type2")
+plot(diagnostic, col = NULL, legend = "none", vs = FALSE)
 
-n <- 500; x <- abs(rnorm(n,sd=0.2))+0.01; y <- sqrt(x) + rnorm(n,sd=0.2)
-l <- lm(y ~ x)
-g <- cumres(l, R=500)
-plot(g, idx=1, legend="type2")
+# Plotting returns the diagnostic invisibly.
+invisible(diagnostic |> plot(legend = "type1"))
+}
+\seealso{
+\code{\link{cumres}}.
 }
 \author{
 Klaus K. Holst

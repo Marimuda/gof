@@ -24,41 +24,46 @@
 the outcome specified as a function or a string with the name of the outcome
 in the model. Lists of formulas retain a list of results. Multiple named
 outcomes or lists of residual functions are crossed with the requested
-predictors to produce separately named diagnostics. A residual function may
-attach a matrix or function-valued \code{grad} attribute.}
+predictors to produce separately named diagnostics. A residual function
+may attach a matrix or function-valued \code{grad} attribute.}
 
 \item{x}{Predictor name, numeric vector, or function of \code{p}. Character
 vectors and lists request separate diagnostics for each predictor. Explicit
-numeric/function predictors must satisfy conditional centering of the selected
-residual; the caller is responsible for that property.}
+numeric/function predictors must satisfy conditional centering of the
+selected residual, as well as the estimated-ordering conditions in the
+details; pointwise conditional centering alone is insufficient.}
 
-\item{full}{If FALSE, named latent predictors use conditional means given
-exogenous covariates and observed predictors use their data values. If TRUE,
-named predictors are projected onto all manifest variables with no structural
-covariance path from the selected residual's error. These are guaranteed
-uncorrelated with that error for every admissible parameter value. Selection
-is conservative in models with exact path cancellations. Numeric/function
-predictors are used directly.}
+\item{full}{If FALSE, named latent predictors use their conditional means
+given the exogenous covariates; observed predictors use their data values.
+If TRUE, named predictors are projected onto all manifest variables with no
+structural covariance path from the selected residual's error. These
+variables are guaranteed uncorrelated with that error for every admissible
+parameter value. The selection is conservative in models with exact path
+cancellations. Supplied numeric/function predictors are used directly.}
 
 \item{data}{Complete finite numeric model data (default \code{model.frame(model)}).
 Residuals, predictions, scores and information all use these same rows.}
 
-\item{p}{Optional parameter vector with names matching fitted coefficients.
-It is used consistently throughout, without refitting. Calibrated inference
-assumes the parameters were estimated from these data using the model's
-estimation procedure.}
+\item{p}{Optional parameter vector, with names matching the fitted
+coefficients. It is used consistently in all diagnostic quantities; no
+refitting is performed. Calibrated inference assumes these parameters were
+estimated from the supplied data using the model's estimation procedure.}
 
-\item{R}{Number of processes to simulate}
+\item{R}{Positive whole number of multiplier simulations.}
 
-\item{b}{Moving average parameter}
+\item{b}{Nonnegative moving-window bandwidth. Zero gives cumulative
+residuals; positive values give residual sums over \eqn{(t-b,t]}.}
 
-\item{plots}{Number of processes to save for use with the plot method}
+\item{plots}{Nonnegative whole number of null processes to retain for plotting.}
 
-\item{\dots}{Additional arguments parsed on to lower-level functions}
+\item{...}{Additional arguments passed to \code{cumres.default}, including
+\code{subset.max}, which limits grid values without discarding data rows.}
 }
 \value{
-A \code{cumres} object with \code{plot}, \code{print} and \code{coef}
-methods, or a list when multiple diagnostics are requested.
+A \code{cumres} object for one residual/predictor pair, a named
+list for multiple pairs, or a list of results when \code{y} is a list of
+formulas. See \code{\link{cumres}} for each diagnostic's common result
+components; normal/GLM-specific metadata are not added by this method.
 }
 \description{
 Calculates GoF statistics based on cumulative residual processes for
@@ -68,41 +73,23 @@ structural equation models fitted with the \code{lava} package.
 With \code{y} and \code{x} given as functions the user can decide which
 variables to use in the prediction of the outcome and predictor (use the
 \code{predict} method as below).
-}
-\examples{
 
-\donttest{
-library(lava)
-m <- lvm(list(c(y1,y2,y3)~eta,eta~x)); latent(m) <- ~eta
-## simulate some data with non-linear covariate effect
-functional(m,eta~x) <- function(x) 0.3*x^2
-d <- sim(m,100)
-
-e <- estimate(m,d)
-## Checking the functional form of eta on x
-g <- cumres(e,eta~x,R=1000)
-plot(g)
-
-x <- function(p) predict(e,x=~y2+y3,p=p)[,"eta"]
-## Checking the functional form of y1 on eta
-cumres(e,y1~eta,R=1000)
-g <- cumres(e,"y1",x=x,R=1000)
-plot(g)
-
+This method implements mean/linearity residual-process diagnostics;
+it does not implement the separate normality-diagnostic suite in the SEM
+reference. For a parameter-dependent callback \eqn{x_\theta}, its indicator
+derivative contributes unless
+\eqn{E[r_{\theta_0}\partial_\theta x_\theta\mid x_{\theta_0}=t]=0}.
+A sufficient construction uses the same fixed admissible conditioning data
+\eqn{Z} for the ordering and its parameter derivatives, with
+\eqn{E[r_{\theta_0}\mid Z]=0}. Named predictions use structural safe sets;
+arbitrary callbacks are not automatically certified. Smoothness, moment
+and stochastic-equicontinuity conditions for estimated orderings are also
+required. The adapter differentiates residuals, not arbitrary ordering
+callbacks. The caller must justify these stronger conditions or supply a
+different, fully derived influence process through the default interface.
 }
-}
-\references{
-B.N. Sanchez and E. A. Houseman and L. M. Ryan (2009)
-\emph{Residual-Based Diagnostics for Structural Equation Models}. Biometrics
-Volume 65 (1), pp 104-115.
-}
-\author{
-Klaus K. Holst
-}
-\keyword{models}
-\keyword{regression}
-
-\note{The residual process assumes a Gaussian SEM with independent subjects
+\note{
+The residual process assumes a Gaussian SEM with independent subjects
 and complete data, a positive semidefinite structural error covariance and
 an invertible structural system. With \code{full=FALSE}, named observed predictors with a
 covariance path from the selected structural error are rejected; use
@@ -110,6 +97,35 @@ covariance path from the selected structural error are rejected; use
 Declared exogenous variables must have structurally zero error covariance
 with endogenous/latent variables; contradictory forced declarations are
 rejected because all lava predictions condition on the exogenous set.
-Clustered, weighted and incomplete-data SEM fits require different influence
-processes and are rejected explicitly. Collections are evaluated directly from
-the supplied objects, including models fitted inside functions.}
+Clustered, weighted and incomplete-data SEM fits need different influence
+processes and are rejected explicitly. Collections are evaluated directly
+from the supplied objects, including models fitted inside functions.
+}
+\examples{
+if (requireNamespace("numDeriv", quietly = TRUE)) {
+  set.seed(14)
+  model <- lava::lvm(y ~ x)
+  d <- lava::sim(model, 100)
+  fit <- lava::estimate(model, d)
+  diagnostic <- cumres(fit, y ~ x, R = 49, plots = 3)
+  coef(diagnostic)
+
+  # A named collection retains one diagnostic for each formula.
+  diagnostics <- cumres(fit, list(check_x = y ~ x), R = 49, plots = 0)
+  names(diagnostics)
+}
+}
+\references{
+B.N. Sanchez and E. A. Houseman and L. M. Ryan (2009)
+\emph{Residual-Based Diagnostics for Structural Equation Models}. Biometrics
+Volume 65 (1), pp 104-115.
+}
+\seealso{
+\code{\link{cumres}}, \code{\link{cumres.default}},
+\code{\link{plot.cumres}}.
+}
+\author{
+Klaus K. Holst
+}
+\keyword{models}
+\keyword{regression}

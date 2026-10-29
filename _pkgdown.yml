@@ -1,0 +1,32 @@
+template:
+  bootstrap: 5
+development:
+  mode: unreleased
+destination: docs
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search]
+reference:
+  - title: Model diagnostics
+    desc: Cumulative residual processes and model-specific assumptions.
+    contents:
+      - cumres
+      - cumres.glm
+      - cumres.lvmfit
+      - cumres.ordreg
+      - cumres.default
+  - title: Results and visualization
+    contents:
+      - cumres-object
+      - plot.cumres
+  - title: Package and example data
+    contents:
+      - gof-package
+      - surgunit
+articles:
+  - title: Guides
+    navbar: ~
+    contents:
+      - getting-started
+      - statistical-details
