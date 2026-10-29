@@ -1,0 +1,504 @@
+#+TITLE: Independent statistical-methods assessment of gof
+#+DATE: 2026-10-29
+
+* Assessment and evidence boundary
+
+Evidence file names and relative paths in this report refer to the course
+audit directory =audits/gof-r-package-polish-2026-10-29/statistical-review/=.
+This repository copy preserves the method assessment; the separate execution
+manifest links it to the delivered source revision and package archive.
+
+A final installed-candidate replay of gof 1.1.0 is recorded in the last
+section. All 13 focused post-repair checks pass. The baseline findings below
+are retained as provenance; they are not a claim that those reproduced
+failures remain present in the repaired candidate.
+
+The independent review found substantive defects in the previously
+qualified numerical baseline: nonregular GLM fits can receive ordinary
+p-values, moving-window statistics omit exit events and part of their
+mathematical domain, and score-constrained ordinal processes can turn numerical
+error into a significant test. It also found an insufficient contract for arbitrary
+parameter-dependent ordering callbacks and an important loss of ordinal
+distribution information under the default category-sum aggregation.
+
+These findings demonstrate why software tests and a few successful null
+calibration designs do not establish that every advertised statistical path
+implements its intended method. Conversely, an explicitly limited feature
+set is not itself a statistical error when the implemented test and its
+assumptions are clear. This assessment distinguishes those cases.
+
+The executable probes use the isolated installed gof 1.0.5 from the preceding
+qualification, at commit =7fc29b89cc729c5e26ac79fda5ca4d171b1a6723=.
+=baseline-source/= and =baseline-manifest.json= freeze the mathematical
+source and its hashes. The baseline review ran alongside the version 1.1.0 maintenance work;
+findings below describe that frozen baseline unless an
+explicit post-repair addendum states otherwise. The reviewer did not edit
+production source or commit changes.
+
+This is an evidence-based computational/statistical review, not an approval
+by a human statistician or a proof covering arbitrary user-supplied models.
+
+* Primary literature actually inspected
+
+The following full papers were downloaded from author or institutional
+repositories, retained here, and inspected beyond their abstracts:
+
+- Lin, Wei and Ying (2002), Biometrics 58, 1-12:
+  https://dlin.web.unc.edu/wp-content/uploads/sites/1568/2013/04/LinWeiYing02.pdf
+  =lin-wei-ying-2002.pdf=. Section 2.1, p. 3, defines the score estimator and
+  its regular asymptotic expansion. Equations (2.4)-(2.6), pp. 3-4, define
+  cumulative residuals and multiplier adjustment. Equations (2.7)-(2.9),
+  p. 4, define moving sums. Section 4, p. 10, distinguishes component checks
+  from omnibus tests and discusses prespecified bandwidths. The Appendix,
+  pp. 11-12, supplies moment, equicontinuity and estimated-ordering conditions.
+- Sánchez, Houseman and Ryan (2009), Biometrics 65, 104-115:
+  https://sph.umich.edu/cehc/research/docs/33.%20PMID%2018373712.pdf
+  =sanchez2009.pdf=. Section 3.1, pp. 106-107, treats distribution diagnostics.
+  Section 3.2, pp. 107-108, equations (12)-(17), treats projected residual
+  cumulative sums and their subject-level multiplier approximation. The
+  derivative/information/score correction in (17) is the relevant comparison.
+- Pan and Lin (2005), Biometrics 61, 1000-1009:
+  https://dlin.web.unc.edu/wp-content/uploads/sites/1568/2013/04/PanLin05.pdf
+  =pan-lin-2005.pdf=. Section 3.5 and the appendices provide the related
+  mixed-model residual-process development cited by Sánchez et al.
+
+Bibliographic existence/separation evidence also comes from Albert and
+Anderson (1984), DOI https://doi.org/10.1093/biomet/71.1.1, and Santner and
+Duffy (1986), DOI https://doi.org/10.1093/biomet/73.3.755. Their publisher
+records were inspected; they are not represented here as fully rechecked
+proofs from an inaccessible paper. The elementary boundary counterexamples
+below can also be proved directly from their likelihoods.
+
+* Endpoint-by-endpoint assessment of the frozen baseline
+
+| Endpoint/path | Statistical status | Qualification |
+|-
+| cumres.default | Conditional extension interface | Correct first-order residual/influence construction for supplied valid contributions; the function cannot establish their scientific validity. |
+| lm / Gaussian identity | Matches mean-process construction | Independent units, identified mean coefficients and an appropriate asymptotically linear estimator; positive residual degrees of freedom alone is not a general asymptotic theorem. |
+| Gaussian log/inverse | Confirmed regularity gap | Finite numerical convergence can conceal an excluded mean-boundary optimum; see F1. |
+| Bernoulli and grouped/trial binomial | Construction justified under stated unit model; regularity gap | Trial expansion requires genuinely independent homogeneous Bernoulli trials. Finite interior mean-parameter estimator must exist; see F1. |
+| Poisson log | Construction justified under regular independent rows; regularity gap | Score/influence adjustment is correct, but no-event and recession cases require admissibility checks; see F1. |
+| Poisson identity/sqrt and binomial log | Conditional on an interior mean-domain solution | A separation check for canonical links does not establish admissibility of every constrained-link optimum. |
+| Prior precision weights | Qualified estimating-equation extension | Weights describe the stated independent response-mean precision, not survey/cluster sampling or arbitrary replicated observations. |
+| Offsets | Justified known contribution | Full fitted predictor is used; supplied offsets are treated as known covariate information. |
+| Ties and cumulative all-point grid | Correct indicator interpretation | Complete tie groups implement I(X <= t); jitter is unnecessary. |
+| Reduced grid | A discretized diagnostic | Validity is for that preselected/covariate-only grid, not identity with the continuum supremum. |
+| Moving windows | Confirmed implementation/domain defect | Correct values at selected points, but incomplete event grid and support; see F2. |
+| Gaussian SEM named residual/orderings | Conditional justification, not the entire published SEM suite | The Gaussian safe-set argument establishes centering; score/information/residual derivatives match the generic expansion under regularity. |
+| SEM parameter-dependent callbacks | Insufficiently specified | Centering only at the true ordering is not sufficient to ignore ordering derivatives; see F3. |
+| Ordinal category vector | Justified multivariate extension under regular ordinal ML | Cumulative category indicators, all nuisance derivatives and common subject multipliers are present. A literature citation for a broad GLM method is not a dedicated ordinal-method theorem. |
+| Ordinal default sum | Valid score-mean diagnostic, incomplete CDF check | Can miss conditional distribution changes preserving category-score mean; see F4. |
+| Sup statistic | Correct on its actual evaluation grid | It is max(abs(W)); domain defects matter independently of this arithmetic. |
+| L2 statistic | Correct left-step norm on the supplied grid | It is sqrt(sum(W_i^2 * delta_t)); the square root is monotone, so it gives the same tail comparisons as the squared norm. |
+| Multiple ordering variables / saved draws | Marginal inference only | Cross-variable multiplier coupling is not a joint process realization; see F5. |
+| Monte Carlo comparisons | Consistent simulated-tail estimate | >= includes equality; b/R has finite simulation uncertainty and can equal zero. It is not an exact finite-simulation or finite-sample certificate. |
+| coef / summary / plotting | Presentation of the tests, not additional estimators | coef historically contains p-values; saved curves are not simultaneous confidence bands. |
+
+Unsupported Gamma/quasi/survival/mixed/clustered/FIML paths must not be
+presented as implemented merely because the cited papers cover a wider
+class. The inspected adapters reject several such inputs explicitly. There
+is also no implementation here of Sánchez et al.'s normality ECDF tests.
+
+* Findings requiring correction or a precise support contract
+
+** F1, high: numerical convergence does not establish a regular estimator
+
+The multiplier adjustment presupposes a valid first-order representation of
+the estimated mean parameters. A =converged=TRUE= flag and finite machine
+coefficients do not establish that the statistical estimator exists in the
+interior of the mean parameter space.
+
+=probes.R= and =probes.log= reproduce the following with 100 rows and 199
+null draws:
+
+- An intercept-only all-zero Bernoulli fit reports convergence and coefficient
+  -26.56607. Its fitted probability is about 2.9e-12. Diagnostics ordered by
+  an independent covariate return Sup/L2 p-values 0/0 and informative=TRUE.
+- An intercept-only all-zero Poisson fit reports convergence and coefficient
+  -27.30259. Its mean is about 1.39e-12; the same diagnostic returns 0/0.
+- Completely separated logistic observations, with maxit=100, report convergence
+  with slope 2230.8 and ordinary p-values around 0.337/0.899.
+
+For all-zero Poisson data the log likelihood in an intercept beta is
+-n exp(beta); it has its supremum only as beta tends to minus infinity. The
+all-failure binomial likelihood has the same nonattainment property. The
+small positive fitted means are stopping artifacts, not finite interior MLEs.
+Their tiny constant residual drift can look extreme relative to the simulated
+projected bridge. More Monte Carlo draws do not repair that problem.
+
+=regularity-extensions.R= and its log show the same issue for Gaussian links:
+negative observations with the log link converge numerically to a clipped
+near-zero mean and return 0/0; an inverse-link fit with sample mean zero
+returns a large finite eta although mean zero has no finite inverse-link eta.
+
+Repair requirement: test the relevant existence/interiority conditions or
+fail explicitly as numerically unresolved. Link-domain checks and separation
+geometry must be distinguished. A coefficient-magnitude or fitted-p-value
+threshold is not a proof. A constrained optimum can satisfy nearly zero
+score with positive observed curvature while still lying on the mean boundary.
+
+The maintenance work accepted this finding for implementation. The proposed LP
+and numerical interior-root checks must be assessed link by link; ordinary
+floating point interval bounds must not be called formal outward-rounded
+certification. This report does not pre-approve unseen repaired code.
+
+Gaussian exact mean fits are a different case. For ordinary least squares,
+J=X'WX can remain nonsingular while every empirical residual and coefficient
+influence contribution is zero. The resulting zero multiplier process is
+well-defined as a degenerate mean-process limit. The separate Gaussian
+variance MLE boundary does not require inventing a nonzero residual process
+or rejecting an otherwise identified finite mean coefficient vector.
+
+** F2, high for literal method equivalence: incomplete moving-window domain
+
+The full window process changes when observations enter at X_i and leave at
+X_i+b. It can remain nonzero until max(X)+b. The baseline evaluates only
+observed covariate values, even with subset.max=Inf.
+
+=window-domain.R= supplies a deterministic counterexample:
+
+- Ordering values: 0,1,3; residuals: -8,10,-2; bandwidth: 2; no fitted parameters.
+- Baseline grid: 0,1,3; complete event grid: 0,1,2,3,5.
+- Baseline Sup: 4.618802; full Sup: 5.773503.
+- Baseline L2: 4.898979; full L2: 7.659417.
+
+Observed and simulated processes evaluated on the same incomplete grid can
+still produce well-calibrated tests of that *different discretized statistic*.
+This is why the earlier calibration suite did not establish full equality
+with the stated moving-window method.
+
+Repair requirement: evaluate the union of entry and exit events, use exact
+upper/lower residual and derivative prefixes, and then apply any explicitly
+requested evaluation cap to that event grid. Preserve the half-open interval
+at exits and include its terminal support. Unrepresentable exit times or a
+bandwidth smaller than coordinate resolution need an explicit numerical
+handling policy, not silent erasure of the process.
+
+The correction was assigned separately from this independent review.
+
+** F3, high if arbitrary callback inference is advertised: omitted ordering term
+
+Suppose Y=theta_0+theta_1 X+epsilon, with true theta_0=0, theta_1=1,
+E(epsilon|X)=0 and conditional variance sigma^2. Define an ordering callback
+x(theta)=X+c theta_0 Y. At the true parameter it equals X and therefore
+satisfies E(epsilon|x(theta_true))=0.
+
+Nevertheless, differentiating the population truncated-residual moment with
+respect to theta_0 gives
+
+  d E[(Y-theta_0-theta_1 X) I(x(theta)<=t)] / d theta_0
+    = -F_X(t) - c sigma^2 f_X(t).
+
+The implemented derivative of residuals alone supplies the first term and
+misses the second. In a seeded 500-row example, the safe ordering gives
+p-values 0.447/0.276, while c=100 in this callback gives 0/0. This single
+example illustrates the missing term; it is not a rejection-rate experiment.
+
+A sufficient contract is that the ordering and its parameter derivatives
+are functions of data Z for which E(r(theta_true)|Z)=0, together with the
+usual smoothness/equicontinuity conditions. Equivalently, the relevant
+ordering-derivative term must be zero or must be included in the influence
+expansion. Named fitted predictions based on exogenous covariates, and the
+structurally safe Gaussian SEM projections, have such a justification.
+
+Repair requirement: document this stronger condition on the advanced callback
+interface, or restrict it to justified fixed/structurally safe orderings.
+Checking numeric dimensions and centering at just one parameter value is
+insufficient. No generic runtime validator can prove an arbitrary callback's
+statistical assumptions from its name.
+
+** F4, important estimand/scope issue: default ordinal sum discards information
+
+For categories coded 1 through K,
+
+  sum_{j=1}^{K-1} [I(Y<=j)-Pr(Y<=j|X)] = E(Y|X)-Y.
+
+Thus the default aggregate=sum tests the conditional mean of that category
+score. It is not a full check of the conditional categorical distribution or
+the proportional-odds/probit specification.
+
+=ordinal-scope.R= has two groups with probabilities (0.4,0.2,0.4) and
+(0.1,0.8,0.1). Their ordinal-score means are both 2, while their CDFs differ.
+The exact 2000-row construction gives default p-values 1/1, but the two
+separate cutpoint processes give p-values 0/0 for both statistics.
+
+A principled joint alternative uses ||W(t)||_2 across cutpoints before the
+sup or L2 functional. The norm map is 1-Lipschitz, so the multivariate
+conditional process convergence transfers by the continuous mapping theorem.
+Sup is max_t ||W(t)||_2 and L2 is sqrt(integral sum_j W_j(t)^2 dt). The
+existing ordinal sampler uses common subject multipliers and the full
+nuisance-parameter influence adjustment across categories, as required.
+
+The resulting norm process is nonnegative and not Gaussian or centered at
+zero. Its plot and labels must say so. It is omnibus over cutpoints for a
+*selected ordering*, not over every covariate or every model assumption.
+Signed component displays remain useful for explaining the misspecification.
+Version 1.1.0 adopts this joint default, retaining the
+old score-sum method as an explicit compatibility option.
+
+** F5, scope boundary: saved multi-variable columns are not joint draws
+
+The native engine reuses a normal vector after reordering residuals and
+influences separately for each ordering variable. Each marginal distribution
+is correct, but the multiplier is then associated with sorted rank rather
+than the same subject across variables.
+
+=joint-coupling.R= uses complementary orderings X and -X with an intercept
+projection. Complementary observed prefixes sum to approximately zero, as
+they must. The corresponding saved simulation prefixes instead sum to
+0.348, -0.091 and 1.137 in three draws, although each terminal process is
+approximately zero. They cannot be parts of the same subject-level draw.
+
+No existing one-variable p-value is invalidated by this observation.
+However, the saved collection cannot support a new joint cross-variable
+maximum statistic or simultaneous familywise bands. A future joint API must
+index a common multiplier by subject through each ordering permutation, or
+generate the full process once and reindex it. Marginal multiplicity methods
+that do not require this simulated joint law are a separate option.
+
+** F6, high: ordinal intercept-only processes are structurally uninformative
+
+With no covariate columns, freely estimated ordinal cutpoints saturate the
+marginal category CDF. The complete-grid cumulative residual process has
+only a terminal point, constrained to zero by the fitted score equations.
+Floating point stopping/derivative error is not lack of fit.
+
+=ordinal-no-information.R= uses 150 observations and three categories. It
+gives Sup/L2 p-values 0/1 for both the old score sum and a Euclidean norm
+aggregation, from tiny observed residual totals versus still smaller null
+numerical errors. =ordinal-current-before-noinfo.R= and its log additionally
+freeze/replay the new norm default before the structural correction.
+
+Repair requirement: recognize this model structure, set informative=FALSE
+and p-values to one, and use the exact zero CDF process. Built-in sum/norm/
+cutpoint transformations of zero are zero; a custom transformation should
+be applied to that zero vector, which need not produce a zero constant.
+The additional binary design is also reproduced in
+=ordinal-binary-saturated.R= and its log: two groups of 100 observations,
+with category counts (80,20) and (30,70), fit by an ordinal logit with an
+intercept cutpoint and group slope. This saturates both group probabilities.
+It nevertheless returns Sup/L2 p-values 0/0, with observed norm about 1e-7
+and simulated norms about 1e-12. Thus an intercept-only guard by itself is
+insufficient. For binary ordinal fits the augmented design [1,X] and link
+score weight admit the same exact score-cell span argument as the GLM
+adapter. A general symbolic detector for every reparameterized ordinal
+model has not been established by these examples.
+
+* Why the supported core construction is defensible
+
+Write the truncated residual moment at an index t as a_i(t) r_i(beta).
+Suppose beta_hat-beta_true = sum_i ic_i+o_p(n^-1/2), with ic_i the
+coefficient *contributions* (usually order 1/n), and a valid centered
+independent-unit influence representation. Let eta(t)=sum_i a_i(t) dr_i.
+Here the representation refers to population influence values; the supplied
+rows are their fitted estimates. Their unweighted sum can be zero by the
+fitted score equations without implying zero uncertainty. Then the
+first-order process has contributions
+
+  n^-1/2 [a_i(t) r_i + eta(t)' ic_i].
+
+The engine multiplies those two contributions by the SAME subject normal
+within each ordering, and sums them. Its plus sign is correct because dr
+is the derivative of the residual, which is negative for an ordinary mean
+model. For a GLM, dr_i=-X_i mu'_i, and ic_i is the score contribution times
+the inverse total information. This recovers the residual-process expansion.
+For noncanonical links, expected Fisher and observed information are not
+identical in finite samples, but have the same regular null limit because
+the residual-dependent difference has conditional mean zero.
+
+For precision-weighted rows, the score contribution contains the prior
+weight while the raw residual remains one independent response-mean unit.
+For independent binomial trials, expanding their indicator residuals and
+using the original group fit's inverse information gives the appropriate
+trial-level representation. This justification is stricter than a claim of
+robustness to arbitrary within-group trial correlation; grouped overdispersion
+needs group-level influence/multiplier handling.
+
+For Gaussian SEMs, Cov(epsilon,V)=P(I-A)^-1 identifies structurally safe
+manifest variables. Joint Gaussianity makes zero covariance independence.
+With r=E(epsilon|all manifest data), iterated expectation gives E(r|Z)=0
+for a safe Z. A smooth conditional prediction from this fixed safe set has
+the required centering and ordering-derivative property. This supports the
+named full-prediction extension under identified, regular Gaussian fits.
+It does not establish a largest possible safe set under exact path cancellations,
+or validate arbitrary nonlinear callbacks or non-Gaussian zero-covariance claims.
+
+* Conditions that must accompany a sharable research interface
+
+- State the actual target: conditional mean/functional form checks, and for
+  ordinal joint mode, category-CDF checks along the chosen ordering. A large
+  p-value is not proof that every aspect of the model is correct.
+- State independent sampling units. Precision weights, trial counts, survey
+  weights and cluster sampling are different statistical designs.
+- State coefficient-influence normalization explicitly: raw scores or an
+  O(1) influence function psi_i are not ic_i; usually ic_i=psi_i/n and their
+  sum approximates the coefficient error.
+- Explain mean-parameter domain and regularity failures. Exact Gaussian
+  zero empirical influences and nonattainment of a finite mean estimator
+  are different cases.
+- Prespecify formal-test bandwidths, orderings and statistics. Searching for
+  the smallest p-value over residual-selected bandwidths/grids or many
+  covariates requires a selection/multiplicity procedure not supplied here.
+- Distinguish fixed-grid approximations from the complete jump process.
+  The default cap affects computational evaluation, not the number of
+  observations, and can alter power/statistic values.
+- Existence checks do not make Gaussian approximations uniformly accurate
+  for rare-event designs. Even a legitimate known tiny Poisson mean can
+  generate almost exclusively zero observations at practical sample sizes;
+  empirical residual multipliers then poorly estimate the sampling variance.
+  Large nominal n alone is not sufficient information. Severe imbalance,
+  small expected counts and leverage need separate judgment or a justified
+  family-specific calibration method, not an arbitrary universal cutoff.
+- Report Monte Carlo resolution and precision. For an ideal conditional tail
+  probability p, b/R has binomial simulation variance p(1-p)/R. A zero count
+  is evidence of limited tail resolution, not an impossible null event.
+  An exact randomized Monte Carlo p-value is a different claim; adding one
+  does not remove the underlying asymptotic approximation of this method.
+- Keep the scope of published methods honest: ordinary component checks
+  are not the multivariate process in Lin's (2.5), and the SEM normality,
+  missing-data weighting and GEE extensions require additional implementations.
+
+* Evidence and completion status
+
+All reproduction scripts are self-contained and seeded, except deterministic
+likelihood/score and event-grid identities. Their logs preserve the original
+1.0.5 behavior. They are diagnostic counterexamples and small algebraic
+probes, not a new calibration campaign or a claim of independent human review.
+
+The maintenance work was implementing corrections for qualification of the resulting
+version separately. The software's scientific support statement should not
+be sealed merely by copying this baseline matrix: the changed mean-domain
+guard, complete window grid and ordinal joint default need their own
+post-repair tests and documented limits. A post-repair addendum can record
+which reproduced failures are resolved without erasing the original evidence.
+
+* Mathematical review of proposed corrections (before final integration)
+
+The independent source review of =R/mle-validity.R= found the nonlinear
+score/Hessian formulas correct for binomial/log, Poisson/identity and sqrt,
+and Gaussian/log and inverse. Gaussian curvature bounds include the required
+interior stationary points, rather than relying on endpoint monotonicity
+that does not hold. Direct original-design eta evaluation, scaled-design
+comparison and explicit endpoint arithmetic allowances address the reviewed
+normalization issue. This is a numerical Krawczyk-style local root qualification,
+not a formal outward-rounded interval proof, proof of global optimality or
+proof that an arbitrarily inaccurate fitted centre equals that root.
+
+The proposed ordinal separation direction also has a sufficient proof.
+For each observed category j, require nonnegative upper-bound movement
+(delta alpha_j-X_i delta beta) and nonpositive lower-bound movement
+(delta alpha_(j-1)-X_i delta beta), omitting infinite boundaries. A strict
+movement for at least one observation makes every category-probability
+likelihood contribution nondecreasing and at least one strictly increasing
+when the CDF density is positive at its legal finite boundaries. Thus no
+finite interior zero-score solution exists in that direction. If every
+category is represented, adjacent threshold-gap directions are nonnegative
+and preserve ordering. An empty estimated category instead requires a
+cutpoint-gap/extreme-threshold boundary. The converse existence assertion
+has not been proved here, and numerical LP infeasibility must not be described
+as a universal global-MLE theorem for arbitrary ordinal links.
+
+The proposed joint ordinal norm follows from the continuous mapping theorem
+as described in F4. The proposed complete window-event grid follows directly
+from the indicator endpoints in F2. Final integration must verify these
+properties on the delivered source; this mathematical review does not
+substitute for that implementation check.
+
+* Bounded SEM constant-order check
+
+A final two-seed check of the correlated-error SEM with an empty safe
+conditioning set did not reproduce a new rejection error. Seeds 6080 and
+911 give Sup/L2 p-values 1/1, with observed residual totals about 1e-15 and
+numerical null totals about 1e-12 to 1e-10. The fixed-mean control deliberately
+retains an overall-mean discrepancy and gives Sup=0, which is meaningful.
+Evidence is =sem-constant.R= and =sem-constant.log=.
+
+There is a sufficient mean-score no-information certificate. Write
+V=L nu+L epsilon and use the conditional structural residual
+r_t=e_t' P L' J' Sigma^-1(V_observed-mu). If free pure-intercept directions
+can span P e_t without changing regression or covariance parameters, a
+linear combination of fitted Gaussian mean scores is sum_i r_t. It is then
+constrained to zero. A stronger easily checked structural condition is that
+the pure intercept derivative basis spans every unit direction e_j allowed
+by the structural pattern P[target,j]. The S08 example has both mean
+intercepts free and meets that condition. A fixed mean need not meet it.
+
+Such a certificate must refer to a named structural residual and the actual
+fitted parameters/data. It must not silently erase a custom residual, an
+explicit alternate parameter evaluation or a fixed-mean test merely because
+the ordering is constant. Since neither bounded SEM probe produced a false
+rejection, this observation is recorded as a no-information interpretation/
+robustness consideration rather than an additional confirmed failing path.
+
+* Final installed-candidate replay: gof 1.1.0
+
+** Candidate and reproducibility boundary
+
+The independent reviewer reran the bounded counterexamples against a fresh R
+namespace using the installed candidate at
+=../qualification-final/lib/gof=, with =lpSolve 5.6.23= from the private
+qualification library. The executable evidence is =post-repair-checks.R=,
+=post-repair-checks.log=, =post-repair-checks.json= and
+=post-repair-checks.rds=. All 13 checks pass. The initial replay required
+harness corrections for an accidentally masked base =sample= function and
+rendered-help whitespace/formula text; those were harness defects rather
+than candidate statistical failures. The original diagnostic log is retained
+as =post-repair-harness-before.log=.
+
+=post-repair-source-manifest.json= records SHA256 hashes for all 24 R, C++
+and public-header source files in the frozen final qualification source.
+At verification these all matched the working package source exactly.
+This comparison concerns those numerical/API source files; it is not a
+claim that every packaging tool or documentation file in the working tree
+is identical to the snapshot. Package checks, documentation
+rendering and calibration runs have separate evidence and are not inferred
+from this small independent replay.
+
+** Finding disposition
+
+| Finding | Final focused evidence | Disposition and remaining boundary |
+|---------+------------------------+------------------------------------|
+| F1: nonregular fitted means | All-zero Bernoulli/Poisson, complete logistic separation, Gaussian/log mean-boundary and Gaussian/inverse zero-mean-boundary examples are explicitly rejected. A known Poisson mean without fitted parameters still yields a meaningful tail test. | Reproduced false-qualification paths repaired. Numerical local mean-root qualification is not a proof of arbitrary optimizer accuracy, global MLE existence, or finite-sample calibration. |
+| F2: incomplete window domain | Exact event grid (0,1,2,3,5), Sup=10/sqrt(3), L2=sqrt(176/3), all 19 simulated statistics and all 3 retained curves match an independent direct-indicator reconstruction. | Reproduced domain/statistic error repaired for both observed and null paths. Bandwidth and evaluation-grid choices remain part of the prespecified test. |
+| F3: parameter-dependent ordering | Installed SEM help explicitly states that pointwise conditional centering alone is insufficient and describes the safe-conditioning requirement. | Contract corrected. Arbitrary user callbacks are an advanced assumption-bearing interface; their mathematical validity is not established by accepting them at runtime. |
+| F4: ordinal score aggregation loses distribution information | With equal group score means but different category distributions, the new joint norm gives Sup/L2 p=0/0 and explicit score aggregation gives 1/1. Observed and retained norm processes equal the Euclidean norm of jointly generated cutpoint processes. | Joint cutpoint diagnostic now the default. It is omnibus over cutpoints for the selected ordering, not a global test over all model departures. |
+| F5: cross-variable marginal simulation | Installed generic help distinguishes marginal processes and the absence of joint cross-variable simulation. | Scope clarified; shared-column simultaneous inference remains unsupported. The joint ordinal cutpoint construction is a separate supported coupling. |
+| F6: ordinal constrained zero processes | Intercept-only ordinal and saturated binary group examples now expose informative=FALSE, exact zero CDF processes and p=1. A custom aggregation with A(0)=1 retains that transformed value and p=1. | Reproduced numerical-rejection defects repaired by structural no-information handling before aggregation. |
+
+The ordinal separation check also detects the explicit three-category
+separating direction in the actual threshold/slope coordinates. Its
+sufficient mathematical proof is given above; the LP's failure to find a
+direction is not promoted to a necessary-and-sufficient existence theorem
+for arbitrary ordinal links.
+
+The last SEM control distinguishes a constant ordering with an estimated
+free mean (Sup/L2 p=1/1) from a genuinely incorrect fixed mean (Sup p=0,
+L2 p=1). This preserves a meaningful overall mean test rather than erasing
+every constant-order process. The zero L2 statistic on a one-point
+integration grid does not contradict a nonzero Sup statistic.
+
+Rendered installed help is retained as =installed-sem-help.txt=,
+=installed-generic-help.txt= and =installed-default-help.txt=. The last
+explicitly states the required normalization
+=beta_hat-beta_0 = sum_i IC_i + o_p(n^(-1/2))= and explains that an unscaled
+order-one influence function must be divided by n. This is an essential
+custom-interface requirement, not cosmetic documentation.
+
+** Acceptance statement
+
+No reproduced candidate failure remains in this bounded final replay.
+The concrete code defects identified by this review have repairs with
+independent counterexample evidence; the callback and cross-variable
+limitations are now explicit contracts/scope. The literature comparison,
+source derivations and seeded probes support these stated endpoints and
+assumptions. They do not establish that the package has no possible bugs,
+that every arbitrary user extension is valid, or that a human statistician
+has approved it.
+
+The general limitations above still apply: regular independent units,
+correct influence normalization, sufficient event information, valid
+conditional centering, component versus global inference, and asymptotic
+rather than exact finite-sample Monte Carlo calibration. In particular,
+a displayed zero Monte Carlo tail fraction has finite simulation
+resolution; it does not denote an impossible null event. These are
+scientific use conditions rather than C++ modernization tasks.

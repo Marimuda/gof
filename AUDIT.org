@@ -3,6 +3,11 @@
 
 * Purpose and current status
 
+This is the historical 1.0.5 repair record. Subsequent R-package maturity
+work and an independent literature audit found additional issues; see
+=PACKAGE_POLISH.md= and =STATISTICAL_REVIEW.org= for the 1.1.0 follow-on.
+The results below describe their original bounded baseline.
+
 This note records what has been inspected, what failed, why it matters, and
 what was changed. It is maintained alongside the source so that the
 reason for a change is not lost when the implementation is modernized.
