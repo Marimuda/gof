@@ -30,7 +30,10 @@ cumulated residuals)}
 
 \item{plots}{Number of realizations to save for use in the plot-routine}
 
-\item{...}{additional arguments}
+\item{...}{additional arguments passed to \code{cumres.default}. In
+particular \code{subset.max} (default 500): for more observations the
+processes are evaluated at \code{subset.max} selected points only, to save
+time and memory. Use \code{subset.max=Inf} to evaluate at all points.}
 }
 \value{
 Returns an object of class 'cumres'.

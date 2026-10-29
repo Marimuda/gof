@@ -1,5 +1,25 @@
 # -*- mode: org -*-
 
+* Version 1.0.3 <2026-10-29 Thu>
+ - Fixed crash in cumres() for more than 500 observations, 'number of
+   items to replace is not a multiple of replacement length' (#1).
+   When it did not crash, the observed process was shifted by one
+   observation relative to the simulated processes.
+ - Fixed off-by-one in the selection of evaluation points for more than
+   500 observations (equidistant grid points).
+ - Fixed cumres() for grouped binomial responses, cbind(successes,
+   failures): equal group sizes, models fitted with subset= or an offset,
+   and models fitted inside functions failed. Variables are now reported
+   and selected by their original names (previously e.g. 'X0x').
+ - Offsets are now included in the linear predictor used for the
+   simulated null processes. Previously p-values were invalid for models
+   with an offset (e.g. Poisson rate models).
+ - Regenerated RcppExports.cpp (failed to compile with
+   -Werror=format-security).
+ - Test suite: golden values from 1.0.1, a pure-R reference
+   implementation compared with the C++ engine, regression tests, and
+   opt-in Monte Carlo calibration tests (GOF_SLOW_TESTS=true).
+
 * Version 1.0.2 <2020-04-01 Wed>
  - New c++ functions with R-wrappers:
    .fastapprox, .clusterindex, ...

@@ -7,7 +7,7 @@
 skip_if_not(identical(Sys.getenv("GOF_SLOW_TESTS"), "true"),
             "slow tests: set GOF_SLOW_TESTS=true")
 
-reject_rate <- function(sim_fit, nsim = 200, R = 200) {
+reject_rate <- function(sim_fit, nsim = 400, R = 200) {
     p <- replicate(nsim, {
         g <- cumres(sim_fit(), R = R, plots = 1)
         c(g$KS, g$CvM)
@@ -15,10 +15,12 @@ reject_rate <- function(sim_fit, nsim = 200, R = 200) {
     rowMeans(p < 0.05)
 }
 
-## With nsim = 200 the rejection rate under H0 lies in [0.015, 0.09] with
-## probability > 99%.
+## Each test checks 4 rejection rates (Sup and L2 test for 2 variables).
+## With nsim = 400 a single rate under H0 has SE 0.011 and lies in
+## [0.01, 0.10] with probability > 99.9%, so all rates of all tests pass
+## jointly with high probability, while gross miscalibration is caught.
 expect_calibrated <- function(rate) {
-    expect_true(all(rate > 0.015 & rate < 0.09), info = paste(round(rate, 3), collapse = " "))
+    expect_true(all(rate >= 0.01 & rate <= 0.10), info = paste(round(rate, 3), collapse = " "))
 }
 
 test_that("type I error is controlled, n <= 500 (all points)", {
@@ -35,7 +37,7 @@ test_that("type I error is controlled, n > 500 (subset path)", {
     rate <- reject_rate(function() {
         x <- rnorm(1500); y <- rbinom(1500, 1, plogis(-0.5 + x))
         glm(y ~ x, family = binomial())
-    }, nsim = 200)
+    })
     expect_calibrated(rate)
 })
 

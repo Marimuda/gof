@@ -22,7 +22,10 @@
 ##' @param b Moving average bandwidth (0 corresponds to infinity = standard
 ##' cumulated residuals)
 ##' @param plots Number of realizations to save for use in the plot-routine
-##' @param ... additional arguments
+##' @param ... additional arguments passed to \code{cumres.default}. In
+##' particular \code{subset.max} (default 500): for more observations the
+##' processes are evaluated at \code{subset.max} selected points only, to save
+##' time and memory. Use \code{subset.max=Inf} to evaluate at all points.
 ##' @return Returns an object of class 'cumres'.
 ##' @note Currently linear (normal), logistic and poisson regression models with
 ##' canonical links are supported.

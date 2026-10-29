@@ -1,8 +1,8 @@
 Package: gof
 Type: Package
 Title: Model Diagnostics Based on Cumulative Residuals
-Version: 1.0.1
-Date: 2020-03-15
+Version: 1.0.3
+Date: 2026-10-29
 Author: Klaus K. Holst
 Maintainer: Klaus. K. Holst <klaus@holst.it>
 Description: Implementation of model-checking techniques for generalized linear
@@ -22,7 +22,6 @@ License: Apache License (== 2.0) | file LICENSE
 LinkingTo: Rcpp, RcppArmadillo
 LazyLoad: yes
 NeedsCompilation: yes
-SystemRequirements: C++11
 ByteCompile: yes
 RcppModules: gofmod
 Encoding: UTF-8
