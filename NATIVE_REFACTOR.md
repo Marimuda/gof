@@ -372,3 +372,38 @@ the following map connects those records to the published history.
 | `bd473e8de74b493a8069984b0f686a10a6545380` | `4de560a5b40255174e06bd449c8df7d79ee45ee1` |
 
 | `e4ac923606086a9fb221a7f2100bec0ae1f003ea` | `86f7cec51182392f55142e572ad20cde5a38e53f` |
+
+## macOS score-reference follow-up
+
+The first check of publication source `9775bc49a24fb26b70948971ee7282d6c3c91906`
+passed all 19 non-macOS jobs. The macOS C++23 check failed only the simulated
+SEM curve comparison in the explicit parameter/data option test; 1,160
+assertions passed. The default macOS job was cancelled because a hosted
+runner was unavailable. The failed/cancelled jobs were requested again;
+a passing Ubuntu run is not a substitute for macOS qualification.
+
+The reference formed observed information by finite-differencing
+`colSums(score(..., indiv=TRUE))`. lava 1.10's `IC.default` differentiates
+`score(..., indiv=FALSE)` instead. Its Gaussian individual and aggregate
+score implementations use different arithmetic paths. On Ubuntu/R 4.6.1,
+their values at the test parameters differ by at most 1.64e-14, but the
+default Richardson derivatives differ by as much as 2.41e-7. The reference
+curve then differs from the adapter by 2.29e-9. Increasing the differentiation
+step reduces the information-path discrepancy, consistent with amplified
+rounding. This is evidence about numerical evaluation, not a new statistical
+method or a claim that either derivative is exact.
+
+The corrected reference differentiates the aggregate-score contract at
+explicit `p` and `data`, still uses a separate `solve()` inversion and the
+plain-R residual-process oracle, and checks the aggregate score against
+the summed individual scores at 1e-12. The original process tolerance of
+1e-8 is retained. On the same Ubuntu case, the simulated-curve discrepancy
+is 1.60e-15 after this correction; Sup/L2 p-values were identical for both
+score paths. No package R/C++ behavior, golden fixture or tolerance changed.
+Both qualified GNU/C++17 and Clang/C++23 builds pass 146 fast blocks / 1,162
+assertions. Corrected-source macOS results must still be recorded before
+final sign-off.
+
+Reproduction scripts, original failed macOS artifacts, score-path measurements
+and test records are retained in `audits/gof-macos-2026-10-30/` in the course
+workspace. The normal host installation remains unchanged.

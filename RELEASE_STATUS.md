@@ -37,6 +37,26 @@ Pandoc/qpdf build-tool requirements and proper optional compiler-probe
 reporting. The workflow now pins its qualified Pandoc versions and supplies
 qpdf for Linux package checks. Remote execution is recorded separately above.
 
+## macOS qualification follow-up
+
+The documentation publication run at source `9775bc49a24fb26b70948971ee7282d6c3c91906`
+finished with 19 successful jobs. Its macOS C++23 job reached the package
+tests and failed one SEM reference comparison (1,160 assertions passed);
+the default macOS job could not acquire a hosted runner. This supersedes
+the earlier pending status for that run.
+
+The SEM test differentiated a sum of individual scores, whereas lava's
+influence calculation differentiates its aggregate-score implementation.
+The formulas are algebraically equivalent, but finite differences amplify
+their rounding differences. The reference now uses the aggregate-score
+contract, checks it against the individual-score sum at tolerance 1e-12,
+and retains the original process tolerance of 1e-8. Package R/C++ code,
+statistical methods and golden fixtures are unchanged. Both qualified
+Ubuntu GNU/C++17 and Clang/C++23 builds pass all 146 fast blocks / 1,162
+assertions with the corrected test. See NATIVE_REFACTOR.md for the measured
+score-path differences. Corrected-source remote macOS qualification is
+still required before the final release tag.
+
 ## Remaining sign-off
 
 The authorized publication destination is [Marimuda/gof](https://github.com/Marimuda/gof),

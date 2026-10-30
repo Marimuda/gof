@@ -1,6 +1,6 @@
 # gof 1.2.1
 
-This is a local release candidate. The source checkout records platform
+This is a maintenance release candidate. The source checkout records platform
 sign-off in `RELEASE_STATUS.md`; the final release tag awaits that sign-off.
 
 * Separated cumulative kernels, randomness and utility components while
@@ -9,6 +9,10 @@ sign-off in `RELEASE_STATUS.md`; the final release tag awaits that sign-off.
   consistent native formatting. Fixed a narrowing boundary in R normal draws
   and avoided two uninitialized-argument paths in lazy matrix expressions.
   Valid seeded results are checked against the tagged baseline.
+* Corrected the SEM option-test reference to differentiate lava's aggregate
+  score. Differentiating a separately summed score amplified rounding
+  differences on macOS. Existing comparison tolerances and package
+  calculations are unchanged.
 
 # gof 1.2.0
 

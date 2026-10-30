@@ -107,8 +107,14 @@ test_that("explicit SEM parameter and data options affect every calculation", {
     rf <- function(q) predict(e,x=lava::vars(e),residual=TRUE,p=q,data=d)[,"y1"]
     dr <- numDeriv::jacobian(rf,p,method=lava::lava.options()$Dmethod)
     score <- lava::score(e,p=p,data=d,indiv=TRUE)
-    information <- -numDeriv::jacobian(function(q) colSums(lava::score(e,p=q,data=d,indiv=TRUE)),p,
-                                      method=lava::lava.options()$Dmethod)
+    total_score <- function(q) as.numeric(lava::score(e,p=q,data=d,indiv=FALSE))
+    expect_equal(total_score(p),unname(colSums(score)),tolerance=1e-12)
+    ## lava's influence contract differentiates its aggregate score. Although
+    ## summing individual scores is algebraically equivalent, the two score
+    ## paths round differently, and finite differences amplify that difference.
+    ## Use the aggregate score here without relaxing the process tolerance;
+    ## explicit p/data evaluation, solve() and the R process remain the oracle.
+    information <- -numDeriv::jacobian(total_score,p,method=lava::lava.options()$Dmethod)
     influence <- score %*% solve(information)
     variable <- predict(e,x=~1,p=p,data=d)[,"eta",drop=FALSE]
     set.seed(431); actual <- cumres(e,"y1",x="eta",p=rev(p),data=d,R=20,plots=3)
