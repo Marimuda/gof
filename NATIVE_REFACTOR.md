@@ -407,3 +407,19 @@ final sign-off.
 Reproduction scripts, original failed macOS artifacts, score-path measurements
 and test records are retained in `audits/gof-macos-2026-10-30/` in the course
 workspace. The normal host installation remains unchanged.
+
+The requested original-source retry reproduced the same SEM comparison
+failure on both default/C++17 and C++23 macOS. After correction, the
+[run at source 5520e67](https://github.com/Marimuda/gof/actions/runs/41111882886)
+passed the real Apple Silicon C++23 package and installed-client checks:
+`Status: OK`, 1,162 passing assertions, actual `__cplusplus=202302`. All 19
+non-macOS jobs also passed. The remaining default macOS job never reached
+the package: GitHub cancelled it because no ARM runner could acquire it.
+
+To complete default-standard coverage and cover both Mac architectures,
+the C++17 job now uses `macos-26-intel`; the C++23 job retains
+`macos-latest`/Apple Silicon. Both labels are standard supported hosted
+runners in [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+No package source or test input changes accompany this runner allocation.
+The full local corrected-source archive check passed with zero errors,
+zero warnings and one CRAN archival/new-submission note, including manuals.

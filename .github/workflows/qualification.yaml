@@ -41,7 +41,8 @@ jobs:
       matrix:
         config:
           - {os: ubuntu-latest, r: release, cpp: default}
-          - {os: macos-latest, r: release, cpp: default}
+          # Cover Intel C++17 and Apple Silicon C++23 in the two Mac jobs.
+          - {os: macos-26-intel, r: release, cpp: default}
           - {os: windows-latest, r: release, cpp: default}
           - {os: ubuntu-latest, r: devel, cpp: default}
           - {os: ubuntu-latest, r: oldrel-1, cpp: default}

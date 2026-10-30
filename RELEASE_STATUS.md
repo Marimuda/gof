@@ -57,6 +57,16 @@ assertions with the corrected test. See NATIVE_REFACTOR.md for the measured
 score-path differences. Corrected-source remote macOS qualification is
 still required before the final release tag.
 
+The corrected-source run at `5520e673d732e01ed24dd7b0f21c91014e39aff4`
+passed all 19 non-macOS jobs and the real Apple Silicon macOS C++23 job,
+including its installed downstream client (`__cplusplus=202302`). Its
+package check reported `Status: OK` and all 1,162 assertions passed. The
+remaining default macOS job was cancelled before execution because GitHub
+could not allocate an ARM runner. The matrix now targets the supported
+`macos-26-intel` runner for the default C++17 check and retains Apple Silicon
+for C++23, covering both architectures. This changes CI allocation only;
+the tested package inputs remain identical to the corrected source.
+
 ## Remaining sign-off
 
 The authorized publication destination is [Marimuda/gof](https://github.com/Marimuda/gof),
