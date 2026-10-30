@@ -8,70 +8,16 @@
 */
 #pragma once
 
-#ifndef ARMA_R
-#include <armadillo>
-#endif
-#if defined(ARMA_R)
-#include <RcppArmadillo.h>
-#endif
+// Compatibility umbrella. Focused implementations include only the headers
+// they use; existing clients retain declarations and historical includes.
+#include <gof/detail/armadillo.hpp>
 #include <cmath>
 #include <complex>
-#include <cfloat>      // precision of double (DBL_MIN)
-#include <functional>  // std::bind for using non-static member function as argument to free function
+#include <cfloat>
+#include <functional>
 
-
-namespace target {
-  using cx_dbl  = std::complex<double>;
-  using cx_func = std::function<arma::cx_mat(arma::cx_vec theta)>;
-
-  // Real Jacobian of a holomorphic extension that is real-valued at theta;
-  // rows follow column-major vectorization of the returned matrix.
-  arma::mat deriv(cx_func f,
-                  arma::vec theta);
-
-  arma::umat clusterid(const arma::uvec &id);
-  // Cluster starts are zero-based, strictly increasing and begin at zero.
-  arma::mat groupsum(const arma::mat &x,
-                     const arma::uvec &cluster,
-                     bool reduce = true);
-  // Distinct rows in first-seen order, with zero-based group membership.
-  // categories must be positive; category labels themselves may be arbitrary.
-  void fastpattern(const arma::umat &y,
-                   arma::umat &pattern,
-		   arma::uvec &group,
-		   unsigned categories = 2);
-  arma::umat fastapprox(arma::vec &time,  // sorted times
-                        const arma::vec &newtime,
-                        bool equal = false,
-			// type: (0: nearedst, 1: right, 2: left)
-                        unsigned type = 0);
-
-  double SupTest(const arma::vec &D);
-  double L2Test(const arma::vec &D,
-		const arma::vec &t);
-  double CramerVonMises(const arma::vec &x,
-                       arma::vec G);
-
-  extern arma::mat const EmptyMat;
-  extern arma::vec const EmptyVec;
-
-  extern const char* COL_RESET;
-  extern const char* COL_DEF;
-  extern const char* BLACK;
-  extern const char* RED;
-  extern const char* MAGENTA;
-  extern const char* YELLOW;
-  extern const char* GREEN;
-  extern const char* BLUE;
-  extern const char* CYAN;
-  extern const char* WHITE;
-  extern const char* GRAY;
-  extern const char* LRED;
-  extern const char* LGREEN;
-  extern const char* LYELLOW;
-  extern const char* LBLUE;
-  extern const char* LMAGENTA;
-  extern const char* LCYAN;
-  extern const char* LWHITE;
-
-}  // namespace target
+#include <target/differentiation.hpp>
+#include <target/grouping.hpp>
+#include <target/index.hpp>
+#include <target/statistics.hpp>
+#include <target/legacy_constants.hpp>

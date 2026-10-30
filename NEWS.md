@@ -1,3 +1,12 @@
+# Development (after the v1.2.0 baseline)
+
+* Separated cumulative kernels, randomness and utility components while
+  retaining the installed native interfaces and C++17 package requirement.
+* Added compiler-backed static checks, header compatibility tests and
+  consistent native formatting. Fixed a narrowing boundary in R normal draws
+  and avoided two uninitialized-argument paths in lazy matrix expressions.
+  Valid seeded results are checked against the tagged baseline.
+
 # gof 1.2.0
 
 * Added joint multiplier diagnostics across prespecified ordering variables,

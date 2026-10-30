@@ -10,22 +10,19 @@
 namespace gof {
 namespace detail {
 
-arma::mat observed_cumulative_process(const arma::vec& residuals,
-                                      const arma::umat& ordering) {
+arma::mat observed_cumulative_process(const arma::vec &residuals, const arma::umat &ordering) {
     const arma::uword n = residuals.n_elem;
     arma::mat result(n, ordering.n_cols);
     for (arma::uword j = 0; j < ordering.n_cols; ++j) {
-        const arma::vec prefix = arma::cumsum(residuals.elem(ordering.col(j))) /
-            std::sqrt(static_cast<double>(n));
+        const arma::vec prefix =
+            arma::cumsum(residuals.elem(ordering.col(j))) / std::sqrt(static_cast<double>(n));
         result.col(j) = prefix;
     }
     return result;
 }
 
-arma::mat legacy_multiplier_process(cumulative_process_view data,
-                                    const arma::vec& rank_multipliers,
-                                    const arma::umat& indices,
-                                    arma::mat& derivative_prefix) {
+arma::mat legacy_multiplier_process(cumulative_process_view data, const arma::vec &rank_multipliers,
+                                    const arma::umat &indices, arma::mat &derivative_prefix) {
     const arma::uword n = data.residuals.n_elem;
     if (rank_multipliers.n_elem != n || !rank_multipliers.is_finite())
         throw std::invalid_argument("Supply one finite multiplier per sorted rank");
@@ -36,7 +33,8 @@ arma::mat legacy_multiplier_process(cumulative_process_view data,
         arma::vec residual_prefix = arma::cumsum(data.residuals.elem(order) % rank_multipliers);
         if (data.influences.n_cols == 0) {
             derivative_prefix.set_size(n, 0);
-            if (!indices.is_empty()) residual_prefix = residual_prefix.elem(indices.col(j));
+            if (!indices.is_empty())
+                residual_prefix = residual_prefix.elem(indices.col(j));
             result.col(j) = residual_prefix / std::sqrt(static_cast<double>(n));
             continue;
         }
@@ -50,7 +48,8 @@ arma::mat legacy_multiplier_process(cumulative_process_view data,
         if (!indices.is_empty()) {
             residual_prefix = residual_prefix.elem(indices.col(j));
             for (arma::uword i = 0; i < rows; ++i)
-                correction(i) = arma::as_scalar(coefficient_draw * derivative_prefix.row(indices(i, j)).t());
+                correction(i) =
+                    arma::as_scalar(coefficient_draw * derivative_prefix.row(indices(i, j)).t());
         } else {
             for (arma::uword i = 0; i < n; ++i)
                 correction(i) = arma::as_scalar(coefficient_draw * derivative_prefix.row(i).t());

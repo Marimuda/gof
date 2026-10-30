@@ -88,9 +88,41 @@ with `generics` only when it is available and return tibbles when requested.
 
 ## CI and release scope
 
+Native code uses the committed `.clang-format` and `.clang-tidy` policies.
+Use matching Clang tools (locally qualified with LLVM 19), Python 3 and the
+actual Clang package installation log, rather than guessed include paths:
+
+```sh
+python3 tools/check-static.py \
+  --source ../qualification/source \
+  --install-log ../qualification/logs/install.log \
+  --output ../native-static-new
+```
+
+Use the raw source snapshot, which retains the development configuration
+files excluded from the built R archive. Wait for installation to complete
+first. The log must contain expanded
+Clang compile commands for every source unit. The runner creates a standard
+`compile_commands.json`, checks each owned installed header in isolation,
+checks formatting, runs clang-tidy and the Clang Static Analyzer, and records
+tool versions, exact commands, diagnostics and source hashes. It does not
+rewrite source or apply suggested fixes. Generated Rcpp bindings remain in
+the compilation database but are excluded from owned-code analysis.
+
+Analyzer and portability diagnostics fail the gate, except the opt-in
+`UninitializedObject` checker. That checker also flags unused auxiliary fields
+in Armadillo expression templates; its output remains visible for review.
+Core uninitialized-read checks still fail the gate. Other enabled tidy
+checks are retained as advisories for review. A successful exit alone is
+not evidence of zero findings. Resolve defects individually; document
+compatibility constraints on deliberate public signatures before changing
+them to satisfy performance suggestions. Sanitizers, independent numerical
+tests, exact RNG/result replay and installed-client checks remain separate
+requirements: static analysis does not establish statistical correctness.
+
 The workflow checks the declared R minimum, current R release/devel/oldrel,
 available operating systems, a C++23 integration copy, calibration,
-documentation and native sanitizers. It has no package publication or
+documentation, native static analysis and native sanitizers. It has no package publication or
 website deployment step. Writing the workflow is not evidence that a
 platform job has passed; inspect the actual run before making that claim.
 

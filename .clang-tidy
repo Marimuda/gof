@@ -1,0 +1,15 @@
+Checks: >-
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  modernize-deprecated-headers,
+  modernize-use-nullptr,
+  modernize-use-override
+# Armadillo expression templates intentionally leave operation-specific unused
+# auxiliary fields uninitialized. Keep this opt-in check visible for review;
+# actual uninitialized reads remain covered by the core analyzer diagnostics.
+WarningsAsErrors: 'clang-analyzer-*,portability-*,-clang-analyzer-optin.cplusplus.UninitializedObject'
+HeaderFilterRegex: '(^|/)(src/|inst/include/(target/|gof/detail/))'
+FormatStyle: file

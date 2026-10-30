@@ -85,6 +85,28 @@ C++14. R4.6 ignores a C++14 request and uses its newer default; the installed
 client tool reports actual __cplusplus so this fallback is not mislabeled as
 a genuine C++14 build. Explicit C++23 clients must compile above C++20.
 
+python3 tools/check-static.py --source ../qualification/source \
+  --install-log ../qualification/logs/install.log --output ../native-static-new
+
+Requires Python 3, matching clang-tidy/clang-check/clang-format tools (locally
+qualified with LLVM 19), and a completed Clang installation log containing
+expanded commands for every translation unit. Use the raw source snapshot;
+the built R archive excludes the development .clang-format/.clang-tidy files.
+The runner rebases actual R-backed compiler commands into compile_commands.json,
+checks owned formatting and header isolation, and runs clang-tidy and the
+Clang Static Analyzer. Commands, diagnostics, multi-file analyzer reports,
+suggested fixes and source hashes are retained. Source is never rewritten.
+Generated Rcpp bindings remain in the database but are not manually analyzed
+or formatted. The CI workflow has a matching static-analysis job.
+
+Analyzer and portability diagnostics fail the gate, including clang-check
+findings emitted with a zero process exit status. The opt-in constructor
+UninitializedObject check remains advisory because it flags unused auxiliary
+storage in Armadillo templates. Actual uninitialized-read diagnostics still
+fail. Other enabled tidy advisories remain visible and require review;
+successful exit alone does not mean zero findings. Numerical/RNG replay,
+sanitizers and scientific calibration are separate validation activities.
+
 GOF_CHECK_LEAKS=1 enables LeakSanitizer in the native harness. It defaults to 0
 for traced local environments; the CI native jobs explicitly enable it. Local
 disabled leak checks do not establish absence of memory leaks.

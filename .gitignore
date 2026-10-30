@@ -41,3 +41,5 @@ docs/
 *.Rcheck/
 gof_*.tar.gz
 README.html
+__pycache__/
+*.pyc

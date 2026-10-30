@@ -21,6 +21,9 @@ testthat-problems\.rds$
 ^DEFERRED_STATISTICAL_EXTENSIONS\.md$
 ^NATIVE_REFACTOR\.md$
 ^CPP_COMPATIBILITY\.md$
+^\.clang-format$
+^\.clang-tidy$
+(__pycache__|[.]pyc$)
 ^README\.html$
 ^STATISTICAL_REVIEW\.org$
 ^docs$

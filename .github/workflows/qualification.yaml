@@ -152,6 +152,50 @@ jobs:
           path: qualification/*.rds
           if-no-files-found: ignore
 
+  static:
+    name: Compiler-backed native static analysis
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+      - name: Install matching Clang tools
+        run: sudo apt-get update && sudo apt-get install -y clang clang-tools clang-tidy clang-format
+      - name: Build frozen source and retain actual compiler commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gof-static/source" "$RUNNER_TEMP/gof-static/lib"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/gof-static/source"
+          cat > "$RUNNER_TEMP/gof-static/Makevars" <<'EOF'
+          CXX = clang++
+          CXX17 = clang++
+          SHLIB_CXXLD = clang++
+          SHLIB_CXX17LD = clang++
+          SHLIB_OPENMP_CXXFLAGS =
+          EOF
+          export R_MAKEVARS_USER="$RUNNER_TEMP/gof-static/Makevars"
+          R CMD INSTALL --preclean --library="$RUNNER_TEMP/gof-static/lib" \
+            "$RUNNER_TEMP/gof-static/source" > "$RUNNER_TEMP/gof-static/install.log" 2>&1
+      - name: Analyze using the R-backed compilation database
+        run: |
+          python3 tools/check-static.py \
+            --source "$RUNNER_TEMP/gof-static/source" \
+            --install-log "$RUNNER_TEMP/gof-static/install.log" \
+            --output "$RUNNER_TEMP/gof-static/analysis" \
+            --clang-tidy clang-tidy --clang-check clang-check --clang-format clang-format
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: native-static-analysis
+          path: ${{ runner.temp }}/gof-static
+          if-no-files-found: ignore
+
   native:
     name: Native ${{ matrix.compiler }} / ${{ matrix.standard }}
     runs-on: ubuntu-latest

@@ -63,6 +63,10 @@ test_that("the native engine rejects incompatible dimensions and grid positions"
     cr$order(matrix(1:3,3,1))
     expect_error(cr$sample1(matrix(3L,1,1)),"indices")
     expect_error(cr$sample1(matrix(0L,1,2)),"indices")
+    for (position in c(-1, 0.5, NA_real_, NaN, -Inf, Inf, 2^32)) {
+        expect_error(cr$sample1(matrix(position,1,1)),"whole valid zero-based")
+    }
+    expect_equal(dim(cr$sample1(matrix(c(0,2),2,1))),c(2L,1L))
     expect_error(cr$samplestat(0L,matrix(integer(),0,0),FALSE),"positive")
     expect_error(cr$samplestat(1L,matrix(integer(),0,0),TRUE),"not supported")
     expect_no_error(gof:::gof_samplestat(cr,R=5))

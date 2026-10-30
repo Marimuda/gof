@@ -9,51 +9,21 @@
 
 #pragma once
 
+// Preserve the historical standalone macro and global aliases for clients.
 #ifndef ARMA_R
 #define MATHLIB_STANDALONE
-#include <armadillo>
 #endif
-#if defined(ARMA_R)
-#include <RcppArmadillo.h>
-#endif
+#include <gof/detail/armadillo.hpp>
+#include <gof/detail/types.hpp>
 #include <cmath>
 #include <complex>
-#include <cfloat>     // precision of double (DBL_MIN)
-#include <functional>  // std::bind for using non-static member function as argument to free function
+#include <cfloat>
+#include <functional>
 #include <vector>
 
-using cx_dbl  = std::complex<double>;
-using cx_func = std::function<arma::cx_mat(arma::cx_vec theta)>;
-using matlist = std::vector<arma::mat>;
+#include <target/probability.hpp>
+#include <target/influence.hpp>
 
-namespace target {
-
-  // Row-wise probabilities; the matrix overload optionally adds a reference
-  // category or returns log probabilities. Inputs must be finite.
-  arma::vec softmax(arma::vec u);
-  arma::mat softmax(arma::mat lp, bool ref = true, bool log = false);
-
-  // Real expit includes the limits at +/-infinity. The complex overload
-  // supports finite analytic arguments, including complex-step perturbations.
-  arma::mat expit(arma::mat x);
-  arma::cx_mat expit(arma::cx_mat x);
-
-  class IID {
-  public:
-    arma::mat iid;
-    arma::mat vcov;
-    IID(): iid(arma::zeros(1, 1)), vcov(arma::zeros(1, 1)) {}
-    IID(arma::mat score, arma::mat v);
-  };
-
-  IID logistic_iid(const arma::vec &y,
-		   const arma::vec &p,
-		   const arma::mat &x,
-		   const arma::vec &w);
-
-  IID linear_iid(const arma::vec &y,
-		 const arma::vec &p,
-		 const arma::mat &x,
-		 const arma::vec &w);
-
-}  // namespace target
+using cx_dbl = gof::detail::complex_scalar;
+using cx_func = gof::detail::complex_function;
+using matlist = gof::detail::matrix_list;

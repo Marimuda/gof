@@ -38,10 +38,10 @@ The compatibility constraints are substantive:
 | Stage | Change | State |
 |:--|:--|:--|
 | N1 | Extract deterministic cumulative-process kernels and a separate RNG boundary, preserving the legacy facade. | Implemented and locally qualified. |
-| N2 | Separate grouping/index/statistic, probability/derivative and information helpers; centralize dependency selection while preserving installed compatibility headers and symbols. | Planned. |
-| N3 | Review index types, ownership and error contracts across native/bridge code. Introduce narrowly justified modern interfaces without breaking existing clients implicitly. | Planned. |
+| N2 | Separate grouping/index/statistic, probability/derivative and information helpers; centralize dependency selection while preserving installed compatibility headers and symbols. | Implemented; final qualification recorded below. |
+| N3 | Review index types, ownership and error contracts across native/bridge code. Introduce narrowly justified modern interfaces without breaking existing clients implicitly. | Boundary fixes and static gates implemented; public compatibility retained. |
 | N4 | Review R/CRAN compatibility policy and qualify actual compiler/library support. Any higher standard or R minimum requires a separate justified decision. | Policy recorded in CPP_COMPATIBILITY.md; C++17 baseline retained. |
-| N5 | Compare performance/allocation behavior against the frozen implementation and finish full package, native, platform and scientific qualification. | Planned; local first-stage evidence recorded below. |
+| N5 | Compare performance/allocation behavior against the frozen implementation and finish full package, native, platform and scientific qualification. | Local runtime/heap and package checks completed; remote platform/minimum-R execution remains pending. |
 
 N1 is structural work, not a claim that selecting a C++23 compilation flag
 completes modernization. Keeping its kernels compatible with the existing
@@ -136,6 +136,126 @@ snapshot rejected a source change as designed; the final run is recorded
 separately. Source hashes, replay comparisons, compiler logs and the final
 documentation result are bound in the audit directory's validation summary.
 
-This is the first development checkpoint, not completion of stages N2--N5
+That was the first development checkpoint, not completion of stages N2--N5
 or a new release tag. No publishing or ordinary user-library installation
 is part of this local refactor. Remote platform/minimum-R CI is still pending.
+
+## N2/N3: focused components and compiler-backed review
+
+The next checkpoint separates the old `utils.cpp` and `glm.cpp` into
+grouping, index lookup, statistics, differentiation, probability transforms,
+influence calculation and legacy constants. Each unit includes its own
+focused declaration header. Historical `target/utils.hpp` and
+`target/glm.hpp` remain compatibility umbrellas, including their aliases,
+defaults and historical dependency includes. Shared complex/function/list
+types live under `gof/detail/`. Neither public class layout is changed.
+
+Build flags now use `PKG_CPPFLAGS` for preprocessing and package-local
+include paths. The unused include path outside the package was removed.
+The C++17 floor, optional OpenMP behavior and BLAS/LAPACK linkage are retained.
+Generated Rcpp bindings are not hand-edited. The bridge now carries
+Armadillo dimensions in `arma::uword`, avoiding an unnecessary narrowing
+before checking evaluation positions.
+
+The recorded analysis uses LLVM 19's clang-tidy and Clang Static Analyzer,
+with a standard compilation database reconstructed from the expanded
+**actual Clang R installation commands**. Every source unit must be present
+in that log. The database preserves R/Rcpp/RcppArmadillo includes, macros,
+standard and compiler flags, rebased onto the retained source snapshot.
+It is available to other Clang tools as `compile_commands.json`.
+An independent installation captured with LLVM's `intercept-build` confirms
+the same source bytes and compiler flag sets for all 12 units. The analyzed
+database retains the actual Clang driver; the interception tool normalizes
+that executable name to generic `c++`.
+
+`tools/check-static.py` checks owned formatting, compiles installed headers
+individually, analyzes each owned source unit, saves fix suggestions without
+applying them, and retains tool versions, exact commands, diagnostics and
+hashes. Generated bindings remain in the database but are excluded from
+owned-code analysis. Analyzer reports use multi-file plist output so paths
+through dependency headers survive. Analyzer findings fail even when
+`clang-check` itself exits zero. CI has a corresponding job; writing that
+job is not evidence of a remote run.
+
+### Findings and decisions
+
+| Finding | Resolution and reason |
+|:--|:--|
+| The RNG boundary passed unsigned `arma::uword` to Rcpp's signed `int` normal-vector count. | Check the range before casting, allocation or entering RNG scope. The conversion helper is tested at zero, one, `INT_MAX` and `INT_MAX+1` without huge allocation. A separate R-backed probe fails against the preceding source and passes after the fix, including exact valid draws and unchanged RNG state on rejection. |
+| `SupTest`'s lazy `max(abs(D))` path passed an uninitialized Armadillo auxiliary scalar by value. | Compute the maximum absolute value directly over validated finite scalars, without a lazy expression or temporary. Tests cover signed zero, subnormal values and the largest finite double. This retains the exact supremum rather than changing summation or statistical scaling. |
+| The bridge's lazy `floor()` expression reached the same uninitialized-argument path. | Check each supplied position directly for finiteness, nonnegativity, range and integrality. Regression checks include fractional, missing, infinite, negative and very large positions, plus valid endpoint indices. Error messages and zero-based contracts are retained. |
+| The opt-in constructor-initialization checker flags auxiliary fields in Armadillo expression-template constructors. | Retain these warnings for review. This opt-in checker alone is advisory; actual uninitialized-read/call diagnostics remain fatal. Dependency files are not patched, and the two actual argument-read paths above are corrected in owned code. |
+| Four performance warnings suggest changing existing by-value derivative/IID arguments to references. | Retain public signatures and their mangled symbols. A reference-signature change needs an explicit API transition; applying an automatic fix here would break existing clients. |
+| Three advisory warnings concern adjacent same-type arguments in the constructor, R callback and private dimension checker. | Retain established constructor/callback conventions. The private checker's two calls explicitly pass observation and ordering counts from the same engine; installed bridge tests exercise both dimensions. The cumulative kernel already uses a named borrowed-input view internally. No automatic signature rewrite is applied. |
+| An exception advisory points at the implicit `IID` move constructor. | The member Armadillo matrices have potentially throwing moves. Compiler type-trait probes confirm `IID` correctly inherits that exception specification, remains copyable/movable, and has nonthrowing destruction. Do not falsely promise `noexcept` to silence the suggestion. |
+| A Python bytecode cache entered an early local source archive. | Remove the cache and exclude bytecode/cache paths in Git and R build rules. Final delivery artifacts are rebuilt and inspected; the earlier archive is retained as intermediate evidence. |
+
+The constructor checker distinguishes unused uninitialized storage from
+actual reads; it is not a reason to disable core analyzer checks. Its
+scope/options are documented in the
+[LLVM checker reference](https://clang.llvm.org/docs/analyzer/checkers.html#optin-cplusplus-uninitializedobject-c).
+All advisory diagnostics remain in the raw logs rather than being counted
+as zero findings. No `--fix` pass or blanket source suppression is used.
+
+### Checkpoint evidence and limits
+
+The audit directory is `audits/gof-cpp-refactor-n2-2026-10-30/`.
+Early snapshots and failures are retained separately from delivery checks.
+Its `validation-summary.json` and `delivery-manifest.json` bind the results,
+source/archive hashes and documentation gate to the local checkpoint.
+
+* The complete static pass covers **12 compiler commands, 11 owned source
+  units and 14 isolated installed headers**, with formatting checks on the
+  owned native sources, headers and test clients. It has zero failed commands
+  and zero blocking analyzer findings. Its **27 advisory diagnostics** comprise
+  19 repeated dependency constructor-initialization warnings, four retained
+  by-value signature suggestions, three same-type-argument suggestions and
+  one implicit-move exception advisory. The decisions above apply to each.
+* All **35 native cases / 631 assertions** pass under GCC 14 in C++14/17/20/23
+  and Clang 19 in C++17/23. Address/undefined-behavior sanitizers are enabled
+  throughout; both Clang runs additionally enable LeakSanitizer outside the
+  traced sandbox. The standalone utility replay also passes Valgrind Memcheck
+  with zero reported errors and no heap blocks remaining at exit.
+* Both native replay probes are byte-identical to v1.2.0: 24 cumulative-engine
+  combinations, plus utility/probability/derivative/influence/group/index
+  probes and invalid-input contracts. **45 R result/RNG records match exactly**.
+  The R-backed oversized-count probe is a separate expected failure before
+  the fix and a pass afterwards; valid draws and subsequent RNG states match.
+* All **46 exported `target` symbols** are retained. Clang's record layouts
+  match for `target::cumres` and `target::IID` under both standalone and actual
+  R/RcppArmadillo flags. Separate consumer compilation checks both legacy
+  header inclusion orders and links the historical interfaces. This is
+  bounded compatibility evidence, not a general ABI certification tool run.
+* GNU/C++17 and Clang/C++17 package qualification each passes **146 fast
+  blocks / 1,161 assertions**, installed R/C++ interface checks, vignettes,
+  examples, and PDF/HTML manuals. Each full `R CMD check --as-cran` reports
+  **zero errors, zero warnings and the archived-package note**. GCC/Clang
+  C++17 strict standalone diagnostics also pass with
+  `-Wall -Wextra -Wpedantic -Werror`. The workflow passes `actionlint` locally;
+  its remote jobs have not been executed here.
+
+The local performance screen uses a synthetic n=982, three-parameter,
+three-ordering engine and 300 draws, with full and 100-point grids. Twenty
+alternating paired process runs follow warmup, using GCC 14/C++17 `-O2`,
+standalone Armadillo and one BLAS/OpenMP thread. Median elapsed times are
+0.1112 vs 0.1146 seconds for the full grid and 0.0543 vs 0.0560 seconds for
+the subset (baseline vs candidate): approximately **3.1% higher elapsed time**
+in this local screen. Combined process CPU medians are 0.1803 vs 0.1838 seconds.
+This is a structure/correctness refactor; no speed improvement is claimed.
+These measurements do not establish performance across R workloads, other
+sizes, compilers, platforms or build flags.
+
+Valgrind Massif reports the same sampled peak requested heap for both
+implementations: **395,456 bytes**, or **396,232 bytes** including allocator
+overhead. That peak is not a total allocation count or a proof that every
+allocation path is unchanged. Raw profiles and all paired timing/checksum
+records are retained in `performance-allocation.json` and adjacent files.
+
+The R statistical algorithms, assumptions and supported endpoints are not
+extended in this checkpoint. Full slow calibration is not repeated after
+the exact result/RNG replays and independent reference tests: the supremum
+remains the same exact maximum, and the two boundary changes only alter
+validation/implementation paths. New scientific claims or algorithm changes
+would require renewed affected calibration. Remote Windows/macOS and
+minimum-R execution still require actual CI runs. No baseline tag is moved,
+and no publishing or ordinary-library installation is part of this work.
