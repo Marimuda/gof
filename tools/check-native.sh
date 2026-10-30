@@ -11,7 +11,8 @@ trap 'rm -rf -- "$gof_tmp"' EXIT
 "$gof_cxx" -std="$gof_standard" -O1 -g -fsanitize=address,undefined \
     -fno-omit-frame-pointer -I "$gof_root/inst/include" \
     "$gof_root/tests/native/helpers.cpp" "$gof_root/src/utils.cpp" "$gof_root/src/glm.cpp" \
-    "$gof_root/src/cumres.cpp" -larmadillo -o "$gof_tmp/native"
+    "$gof_root/src/cumres.cpp" "$gof_root/src/cumulative_kernel.cpp" \
+    "$gof_root/src/random.cpp" -larmadillo -o "$gof_tmp/native"
 # LSan cannot inspect threads in the traced local environment; untraced CI
 # enables it with GOF_CHECK_LEAKS=1. ASan/UBSan errors remain fatal in both modes.
 ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_leaks=$gof_leaks:halt_on_error=1" \

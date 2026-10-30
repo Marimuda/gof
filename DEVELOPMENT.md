@@ -7,6 +7,10 @@ to install a built package. The statistical repair baseline is recorded in
 review findings and qualification. User-facing changes belong in `NEWS.md`.
 Deferred statistical extensions and the agreed C++-first sequence are recorded
 in [DEFERRED_STATISTICAL_EXTENSIONS.md](DEFERRED_STATISTICAL_EXTENSIONS.md).
+The native refactor's staged architecture and compatibility/validation gates
+are recorded in [NATIVE_REFACTOR.md](NATIVE_REFACTOR.md).
+The R/CRAN language and portability constraints for that work are in
+[CPP_COMPATIBILITY.md](CPP_COMPATIBILITY.md).
 
 ## Development dependencies
 

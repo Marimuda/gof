@@ -9,6 +9,8 @@
 
 */
 #include <target/cumres.hpp>
+#include <gof/detail/cumulative.hpp>
+#include <gof/detail/random.hpp>
 #include <stdexcept>
 #include <limits>
 
@@ -77,68 +79,20 @@ namespace target {
 
   arma::vec cumres::rnorm() {
     validate_inputs();
-#ifdef ARMA_R
-    Rcpp::RNGScope scope;
-    return Rcpp::as<arma::vec>(Rcpp::rnorm(n));
-#else
-    return arma::randn<arma::vec>(n);
-#endif
+    return gof::detail::normal_draw(n);
   }
 
   arma::mat cumres::obs() {
     validate_order();
-    arma::mat res(n, inp.n_cols);
-    for (arma::uword i=0; i < inp.n_cols; i++) {
-      arma::vec ri = arma::cumsum(r.elem(ord.col(i))) /
-	std::sqrt(static_cast<double>(n));
-      res.col(i) = ri;
-    }
-    return res;
+    return gof::detail::observed_cumulative_process(r, ord);
   }
 
   // Sample single process
   arma::mat cumres::sample(const arma::umat &idx) {
     validate_order();
     validate_indices(idx);
-    arma::vec g = rnorm();
-    arma::uword N = n;
-    arma::uword p = ord.n_cols;
-    if (!idx.is_empty()) {
-	N = idx.n_rows;
-    }
-    arma::mat res(N, p);
-    for (arma::uword i=0; i < p; i++) {
-      arma::uvec curord = ord.col(i);
-      arma::vec w1 = arma::cumsum(r.elem(curord)%g);
-      if (ic.n_cols == 0) {
-        eta.set_size(n,0);
-        if (!idx.is_empty()) w1 = w1.elem(idx.col(i));
-        res.col(i) = w1/std::sqrt(static_cast<double>(n));
-        continue;
-      }
-      // Fields are public in the legacy API. Recompute the derivative prefix
-      // after mutation rather than using a stale single-variable cache.
-      eta = arma::cumsum(dr.rows(curord), 0);
-      arma::rowvec B(ic.n_cols);
-      for (arma::uword j=0; j < ic.n_cols; j++) {
-	arma::vec tmp = ic.col(j);
-       	B(j) = sum(tmp.elem(curord)%g);
-      }
-      arma::vec w2(N);
-      if (!idx.is_empty()) {
-	w1 = w1.elem(idx.col(i));
-        for (arma::uword j=0; j < N; j++) {
-	  w2(j) = arma::as_scalar(B*eta.row(idx(j, i)).t());
-	}
-      } else {
-        for (arma::uword j=0; j < n; j++) {
-	  w2(j) = arma::as_scalar(B*eta.row(j).t());
-	}
-      }
-      res.col(i) = (w1+w2)/std::sqrt(static_cast<double>(n));
-    }
-
-    return res;
+    const arma::vec draw = rnorm();
+    return gof::detail::legacy_multiplier_process({r, dr, ic, ord}, draw, idx, eta);
   }
 
   // Sample 'r' processes

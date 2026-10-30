@@ -1,8 +1,9 @@
 // Standalone independent algebra/property tests for the entire native surface.
-// Build with src/utils.cpp, src/glm.cpp, src/cumres.cpp and -larmadillo.
+// Build with the native sources listed in tools/check-native.sh and -larmadillo.
 #include <target/utils.hpp>
 #include <target/glm.hpp>
 #include <target/cumres.hpp>
+#include <gof/detail/cumulative.hpp>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -395,6 +396,53 @@ int main() {
     rejects([&]{engine.sample(std::numeric_limits<unsigned>::max(),arma::umat(),false);});
     rejects([&]{engine.sample(1,arma::umat(),true);});
     rejects([&]{engine.sample(1,arma::umat(arma::uvec{2,0}),false);});
+  });
+  test("deterministic cumulative kernels match the independent multiplier oracle",[] {
+    auto engine=fixture();
+    engine.order(arma::mat{{3,0},{1,2},{2,1},{0,3}});
+    const arma::vec draw={.3,-1.2,2,.7};
+    arma::mat prefix(1,1,arma::fill::value(not_a_number));
+    const gof::detail::cumulative_process_view input={engine.r,engine.dr,engine.ic,engine.ord};
+    const arma::mat expected=manual_process(engine,draw);
+    same(gof::detail::observed_cumulative_process(engine.r,engine.ord),engine.obs(),0);
+    same(gof::detail::legacy_multiplier_process(input,draw,arma::umat(),prefix),expected);
+    const arma::umat idx={{0,1},{2,3}};
+    arma::mat selected(2,2);
+    for(arma::uword j=0;j<2;++j) for(arma::uword i=0;i<2;++i) selected(i,j)=expected(idx(i,j),j);
+    same(gof::detail::legacy_multiplier_process(input,draw,idx,prefix),selected);
+    arma::mat expected_prefix(engine.n,engine.dr.n_cols,arma::fill::zeros);
+    arma::rowvec total(engine.dr.n_cols,arma::fill::zeros);
+    for(arma::uword i=0;i<engine.n;++i) {
+      total+=engine.dr.row(engine.ord(i,engine.ord.n_cols-1));
+      expected_prefix.row(i)=total;
+    }
+    same(prefix,expected_prefix);
+  });
+  test("deterministic kernels borrow immutable inputs and leave RNG state untouched",[] {
+    auto engine=fixture();
+    engine.order(arma::vec{3,1,2,0});
+    const arma::vec r=engine.r,draw={.3,-1.2,2,.7};
+    const arma::mat dr=engine.dr,ic=engine.ic;
+    const arma::umat order=engine.ord;
+    arma::mat prefix;
+    const gof::detail::cumulative_process_view input={engine.r,engine.dr,engine.ic,engine.ord};
+    arma::arma_rng::set_seed(510);
+    const arma::vec expected_next=arma::randn<arma::vec>(engine.n);
+    arma::arma_rng::set_seed(510);
+    const arma::mat first=gof::detail::legacy_multiplier_process(input,draw,arma::umat(),prefix);
+    prefix.fill(not_a_number);
+    same(gof::detail::legacy_multiplier_process(input,draw,arma::umat(),prefix),first,0);
+    same(arma::randn<arma::vec>(engine.n),expected_next,0);
+    same(engine.r,r,0);same(engine.dr,dr,0);same(engine.ic,ic,0);
+    require(arma::accu(engine.ord!=order)==0,"borrowed ordering was mutated");
+  });
+  test("deterministic multiplier kernels validate the supplied draw",[] {
+    auto engine=fixture();
+    const gof::detail::cumulative_process_view input={engine.r,engine.dr,engine.ic,engine.ord};
+    arma::mat prefix;
+    rejects([&]{gof::detail::legacy_multiplier_process(input,arma::vec{1,2},arma::umat(),prefix);});
+    rejects([&]{gof::detail::legacy_multiplier_process(input,arma::vec{1,2,not_a_number,4},arma::umat(),prefix);});
+    rejects([&]{gof::detail::legacy_multiplier_process(input,arma::vec{1,2,inf,4},arma::umat(),prefix);});
   });
   test("empty constants and terminal colour constants",[] {
     require(target::EmptyMat.is_empty() && target::EmptyVec.is_empty());

@@ -35,7 +35,7 @@ main <- function() {
         stop("Could not copy the documentation source")
     inputs <- function(directory) {
         files <- list.files(directory, recursive = TRUE, all.files = TRUE, no.. = TRUE)
-        files <- files[grepl("^(R|src|inst|man|vignettes|tools)/|^(DESCRIPTION|NAMESPACE|README[.]Rmd|README[.]md|NEWS[.]md|_pkgdown[.]yml|CONTRIBUTING[.]md|DEVELOPMENT[.]md|LICENSE)$", files)]
+        files <- files[grepl("^(R|src|inst|man|vignettes|tools)/|^[^/]+[.]md$|^(DESCRIPTION|NAMESPACE|README[.]Rmd|_pkgdown[.]yml|LICENSE)$", files)]
         files <- files[!grepl("([.](o|so|dll|a|gcno|gcda)$|(^|/)Rplots[.]pdf$)", files)]
         stats::setNames(unname(tools::md5sum(file.path(directory, files))), files)
     }
