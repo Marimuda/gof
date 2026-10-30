@@ -21,6 +21,7 @@ testthat-problems\.rds$
 ^DEFERRED_STATISTICAL_EXTENSIONS\.md$
 ^NATIVE_REFACTOR\.md$
 ^CPP_COMPATIBILITY\.md$
+^RELEASE_STATUS\.md$
 ^\.clang-format$
 ^\.clang-tidy$
 (__pycache__|[.]pyc$)

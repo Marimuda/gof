@@ -82,7 +82,7 @@ interface dependencies, then install that archive:
 
 ```{r install-archive, eval=FALSE}
 install.packages(c("lava", "Rcpp", "RcppArmadillo", "numDeriv", "lpSolve"))
-install.packages("gof_1.2.0.tar.gz", repos = NULL, type = "source")
+install.packages("gof_1.2.1.tar.gz", repos = NULL, type = "source")
 ```
 
 From the root of a checkout, this also builds the installed guides:
@@ -95,8 +95,10 @@ remotes::install_local(".", dependencies = TRUE, build_vignettes = TRUE)
 R 4.1 or later and a C++17 toolchain are required. Source installation needs
 the development tools appropriate to your R installation; Windows users
 need the matching Rtools, and macOS users need the command-line developer
-tools. C++23 is a separately tested integration configuration, ahead of the
-planned native-code modernization.
+tools. C++23 is a tested integration configuration; the package retains
+C++17 as its minimum. Building the guides from a checkout also needs a
+Pandoc version supported by `rmarkdown` (at least 2.8 for the current
+qualification). Supplied source archives already contain the built guides.
 
 ## Help and worked guides
 

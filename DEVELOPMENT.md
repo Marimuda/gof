@@ -32,10 +32,13 @@ is installed, select the recorded version deliberately with
 change: regenerate the files and inspect the diff together.
 
 Pandoc is needed to render the README and HTML vignettes. A full PDF manual
-check also needs LaTeX; HTML validation uses HTML Tidy and the V8 R package.
+check also needs LaTeX; as-CRAN PDF size checks need qpdf. HTML validation uses
+HTML Tidy and the V8 R package.
 Native sanitizer checks additionally need Bash, system Armadillo development
 files and compatible sanitizer runtimes. `tools/QUALIFICATION.txt` documents
 these requirements and the available environment controls.
+The optional `commonmark` and `xml2` dependencies support installed Markdown
+NEWS checks on older supported R versions; both are in `Suggests` for test setup.
 
 ## Updating documentation
 
@@ -46,6 +49,10 @@ rmarkdown::render("README.Rmd", quiet = TRUE)
 ```
 
 `README.Rmd` generates `README.md` and its figures under `man/figures/`.
+README freshness is qualified with Pandoc 2.9.2.1; CI pins that generator.
+Package-guide jobs use the separately qualified Pandoc 3.1.11.1. Retain these
+versions when reproducing the corresponding checks, and review generated
+output deliberately when changing a documentation toolchain.
 Commit all of them. Keep installation examples explicit about which source
 archive or checkout they install; the upstream CRAN/GitHub package does not
 contain unpublished local changes.

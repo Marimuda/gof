@@ -1,0 +1,52 @@
+# gof 1.2.1 release candidate
+
+This is the local candidate following the qualified statistical baseline
+`v1.2.0` and the two native refactor checkpoints. The package version is
+1.2.1; its planned local candidate tag is `v1.2.1-rc.1`. The final `v1.2.1`
+tag requires completion of the intended portability matrix. No upstream/CRAN
+release or publication is implied by this candidate.
+
+The declared requirements remain R >= 4.1 and C++17. The public R methods,
+installed native signatures, public class layouts and seeded valid results
+are preserved. The original authorship and license are retained.
+
+## Qualification register
+
+| Area | Evidence/status |
+|:--|:--|
+| Numerical/statistical behavior | Baseline golden/reference checks and exact native/R result and RNG replay pass at the native checkpoint. No statistical method is added or changed for 1.2.1. |
+| Native structure and tools | Kernel/RNG separation and focused utility components are complete. Static analysis has zero blocking findings and 27 reviewed advisories; details are in NATIVE_REFACTOR.md. |
+| Native portability | Local GCC 14 C++14/17/20/23 and Clang 19 C++17/23 sanitizer checks pass, including Clang leak checks. |
+| Performance follow-up | Controlled standalone and interleaved installed-R comparisons do not reproduce a consistent slowdown. The preliminary 3% timing difference and all follow-up measurements are retained. |
+| Candidate package/manual/help/site checks | GNU/C++17 and Clang/C++23 full checks pass: zero errors, zero warnings and one archival note each. The final manifest records help/README/site gate completion, which is required before the local candidate tag. |
+| R 4.1 series | R 4.1.3/GCC 9.4 with a genuine C++17 client passes the installed interfaces and 146 fast blocks / 1,161 assertions. The exact final source archive also passes offline `R CMD check --as-cran --no-manual`: zero errors, zero warnings, two toolchain notes. |
+| Other R versions, Windows and macOS | Workflow configured; execution remains pending. Linux containers do not establish Windows/macOS compatibility. |
+
+The follow-up audit directory is `audits/gof-cpp-finalization-2026-10-30/`.
+Historical qualification records remain immutable in their earlier directories.
+
+The two R 4.1 notes concern unstripped debug-library size and the old image's
+default compiler flags. The image's flags were retained. PDF/HTML manuals
+are checked on the host; the older-R container explicitly omits the manual
+and remote incoming lookup. Both limitations are recorded in its manifest.
+The test image pins R/Pandoc and records downloaded dependency sources/hashes.
+
+The minimum-R run exposed missing NEWS-reader test dependencies (`commonmark`
+and `xml2`), which are now declared in Suggests. It also established the
+Pandoc/qpdf build-tool requirements and proper optional compiler-probe
+reporting. The workflow now pins its qualified Pandoc versions and supplies
+qpdf for Linux package checks; remote execution is still required.
+
+## Remaining sign-off
+
+The remote workflow must run against the candidate commit on an authorized
+repository. GitHub authentication works for `Marimuda`; the account has no
+write permission on the upstream `kkholst/gof`, and `Marimuda/gof` was not
+found during this review. A fork/destination is therefore needed before
+pushing and running its Windows/macOS matrix. No remote was changed or code
+published during this inspection.
+
+Retain successful job logs and source commit IDs, resolve actual failures,
+then review the final source archive before creating the final release tag.
+The ordinary R library continues to use its previous installation until
+the user deliberately installs a qualified archive.

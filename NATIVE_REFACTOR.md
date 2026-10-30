@@ -40,8 +40,8 @@ The compatibility constraints are substantive:
 | N1 | Extract deterministic cumulative-process kernels and a separate RNG boundary, preserving the legacy facade. | Implemented and locally qualified. |
 | N2 | Separate grouping/index/statistic, probability/derivative and information helpers; centralize dependency selection while preserving installed compatibility headers and symbols. | Implemented; final qualification recorded below. |
 | N3 | Review index types, ownership and error contracts across native/bridge code. Introduce narrowly justified modern interfaces without breaking existing clients implicitly. | Boundary fixes and static gates implemented; public compatibility retained. |
-| N4 | Review R/CRAN compatibility policy and qualify actual compiler/library support. Any higher standard or R minimum requires a separate justified decision. | Policy recorded in CPP_COMPATIBILITY.md; C++17 baseline retained. |
-| N5 | Compare performance/allocation behavior against the frozen implementation and finish full package, native, platform and scientific qualification. | Local runtime/heap and package checks completed; remote platform/minimum-R execution remains pending. |
+| N4 | Review R/CRAN compatibility policy and qualify actual compiler/library support. Any higher standard or R minimum requires a separate justified decision. | C++17 retained; local R 4.1.3/GCC and R 4.6.1/GNU/Clang checks pass. Additional remote matrix jobs remain pending. |
+| N5 | Compare performance/allocation behavior against the frozen implementation and finish full package, native, platform and scientific qualification. | Local performance review, package checks and R 4.1-series qualification completed; remote platform/additional-R execution remains pending. |
 
 N1 is structural work, not a claim that selecting a C++23 compilation flag
 completes modernization. Keeping its kernels compatible with the existing
@@ -256,6 +256,61 @@ extended in this checkpoint. Full slow calibration is not repeated after
 the exact result/RNG replays and independent reference tests: the supremum
 remains the same exact maximum, and the two boundary changes only alter
 validation/implementation paths. New scientific claims or algorithm changes
-would require renewed affected calibration. Remote Windows/macOS and
-minimum-R execution still require actual CI runs. No baseline tag is moved,
+would require renewed affected calibration. At that checkpoint, remote
+Windows/macOS and minimum-R execution remained pending; the follow-up below
+records the subsequent local minimum-R evidence. No baseline tag is moved,
 and no publishing or ordinary-library installation is part of this work.
+
+## N5 follow-up: performance review and candidate preparation
+
+The next iteration prepares package version 1.2.1 as a local release
+candidate. Its sign-off register is [RELEASE_STATUS.md](RELEASE_STATUS.md).
+The C++17/R 4.1 requirements and native/statistical implementations remain
+unchanged from `53bbff2`; this iteration updates release metadata and the
+qualification record. Evidence is in
+`audits/gof-cpp-finalization-2026-10-30/`.
+
+The preliminary 3.1% elapsed-time increase above was investigated before
+considering an optimization. Valgrind Callgrind measured 651,608,487 versus
+656,164,727 executed instructions for the baseline and refactor standalone
+workloads, respectively: an increase of about 0.70%. Instruction counts are
+not timing measurements and do not establish performance on other workloads.
+
+Forty alternating standalone process pairs, with warmup, fixed CPU affinity
+and one BLAS/OpenMP thread, gave full-grid medians of 0.10309 versus 0.10321
+seconds and subset medians of 0.05126 versus 0.04940 seconds. These did not
+reproduce the initial slowdown consistently.
+
+Separate sequential installed-R runs varied substantially, so the follow-up
+used three persistent isolated R processes for the tagged baseline, first
+kernel extraction and current refactor. Thirty balanced rotation rounds
+alternated full/subset grids on the same CPU, with 1,000 draws per call.
+The median paired refactor/baseline elapsed-time ratios were 0.9845 for the
+full grid and 0.9808 for the subset. Their interquartile ranges were
+0.9518--1.0356 and 0.9080--1.1905. Exact result and RNG probes matched across
+all three implementations. This is a local performance screen, not evidence
+of a general speed improvement or a formal equivalence study.
+
+No consistent slowdown was confirmed, and no numerical implementation was
+changed to chase these timing differences. All preliminary, sequential and
+controlled follow-up measurements are retained in the audit, including the
+less favorable runs. `performance-summary.json` links the measurements and
+their limitations. Candidate compiler/R-version checks and the remaining
+remote-platform sign-off are tracked separately in RELEASE_STATUS.md.
+
+The candidate subsequently passes the installed interfaces and 146 fast
+blocks / 1,161 assertions under R 4.1.3 with a genuine C++17 client. The
+same final source archive is checked under host R 4.6.1/GNU C++17 and the
+isolated R 4.1.3/GCC 9.4 environment. The host full check has zero errors,
+zero warnings and the archival note; the older offline `--no-manual` check
+has zero errors, zero warnings and two environment/toolchain notes.
+
+Minimum-R qualification identified undeclared Markdown NEWS test dependencies
+in older R's tools implementation. `commonmark` and `xml2` are now declared
+in Suggests. The qualification runner records unavailable optional compiler
+probes explicitly; actual compilation and installed clients enforce the
+requested standard. Correctly executable temporary build storage, compatible
+Pandoc and qpdf were also supplied in the test image. Their earlier failed
+setup/check logs are retained as part of the trace. No C++/R statistical
+implementation change was needed. See RELEASE_STATUS.md for the remaining
+Windows/macOS and additional-R-version sign-off.

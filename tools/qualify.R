@@ -99,7 +99,14 @@ main <- function() {
         cat("Source:",package,"\nSnapshot:",snapshot,"\n")
         for (compiler in c("CXX","CXX17","CXX20","CXX23")) {
             cat(compiler,": ")
-            print(system2(rbin,c("CMD","config",compiler),stdout=TRUE,stderr=TRUE))
+            # Older supported R versions do not define every newer standard.
+            # Record the optional probe's output and status explicitly; actual
+            # compilation below remains the gate for the requested standard.
+            configuration <- suppressWarnings(system2(rbin,c("CMD","config",compiler),
+                                                       stdout=TRUE,stderr=TRUE))
+            print(configuration)
+            status <- attr(configuration,"status")
+            cat("Configuration probe exit status:",if (is.null(status)) 0L else status,"\n")
         }
     })
     run("build",function(log) command(rbin,c("CMD","build",snapshot),log))

@@ -10,7 +10,10 @@ R CMD check --as-cran including the manual. Logs, test result objects, the sourc
 archive and a manifest survive failure. No user library is modified. Dependencies
 must already be installed; the runner does not download or install them.
 Building the vignettes needs the declared knitr/rmarkdown development packages
-and Pandoc. The installed-interface phase fails when those guides were omitted.
+and a Pandoc version supported by rmarkdown (at least 2.8 in the current
+qualification). Installed Markdown NEWS checks on older R also need the
+declared commonmark and xml2 Suggests dependencies. The installed-interface phase fails
+when the built guides were omitted.
 
 Options (environment variables):
   GOF_SLOW_TESTS=true          Include seeded calibration tests (default false).
@@ -27,7 +30,7 @@ files and sanitizer runtimes. The R package itself uses RcppArmadillo. Run the
 native script independently with:
   CXX=clang++ bash tools/check-native.sh c++23
 
-A full manual check also needs LaTeX, HTML Tidy and the V8 R package. Incoming
+A full manual check also needs LaTeX, qpdf, HTML Tidy and the V8 R package. Incoming
 checks need network access to CRAN. Standard _R_CHECK_* environment settings are
 respected and recorded; the runner does not quietly disable dependency or
 documentation checks. Check notes are retained; errors and warnings fail the

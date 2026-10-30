@@ -42,6 +42,12 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+      - uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          pandoc-version: '3.1.11.1'
+      - name: Install Linux PDF-check tooling
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y qpdf
       - name: Select integration compiler standard
         if: matrix.config.cpp != 'default'
         env:
@@ -105,7 +111,12 @@ jobs:
             remotes::install_version("roxygen2", version = version,
                                      dependencies = NA, upgrade = "never")
           }
+      - uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          pandoc-version: '2.9.2.1'
       - name: Check generated documentation and build local site
+        # Match the qualified README generator; package-guide jobs use the
+        # separately qualified 3.1.11.1 build above.
         run: Rscript tools/check-documentation.R "$RUNNER_TEMP/gof-documentation-qualification"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

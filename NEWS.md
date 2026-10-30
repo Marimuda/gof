@@ -1,4 +1,7 @@
-# Development (after the v1.2.0 baseline)
+# gof 1.2.1
+
+This is a local release candidate. The source checkout records platform
+sign-off in `RELEASE_STATUS.md`; the final release tag awaits that sign-off.
 
 * Separated cumulative kernels, randomness and utility components while
   retaining the installed native interfaces and C++17 package requirement.
