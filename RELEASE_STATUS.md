@@ -39,12 +39,15 @@ qpdf for Linux package checks; remote execution is still required.
 
 ## Remaining sign-off
 
-The remote workflow must run against the candidate commit on an authorized
-repository. GitHub authentication works for `Marimuda`; the account has no
-write permission on the upstream `kkholst/gof`, and `Marimuda/gof` was not
-found during this review. A fork/destination is therefore needed before
-pushing and running its Windows/macOS matrix. No remote was changed or code
-published during this inspection.
+The authorized publication destination is [Marimuda/gof](https://github.com/Marimuda/gof),
+a fork of `kkholst/gof`. The user requested removal of commit-message
+co-signatures before publication. Eight trailers were removed from the local
+development history with git-filter-repo; all file trees and original Git
+author/committer identities and dates were preserved. Original qualification
+history remains in a private local backup. The publication mapping is recorded
+in NATIVE_REFACTOR.md. `origin` now points to the fork and `upstream` retains
+the original repository. Remote qualification results must refer to the
+cleaned publication commit, not the earlier local-only commit IDs.
 
 Retain successful job logs and source commit IDs, resolve actual failures,
 then review the final source archive before creating the final release tag.

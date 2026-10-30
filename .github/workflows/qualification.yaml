@@ -4,6 +4,7 @@ name: Package qualification
 
 on:
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
 
@@ -11,6 +12,27 @@ permissions:
   contents: read
 
 jobs:
+  history:
+    name: Commit-message trailer policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check published commit messages
+        run: |
+          python3 - <<'PY'
+          import re
+          import subprocess
+          pattern = re.compile(r'^[ \t]*(?:co-authored-by|co-developed-by|signed-off-by|reviewed-by|acked-by)\s*:', re.I | re.M)
+          commits = subprocess.check_output(['git', 'rev-list', 'HEAD'], text=True).splitlines()
+          bad = [commit for commit in commits if pattern.search(subprocess.check_output(
+              ['git', 'show', '-s', '--format=%B', commit], text=True))]
+          if bad:
+              raise SystemExit('Disallowed commit trailers: ' + ', '.join(bad))
+          print(f'Checked {len(commits)} commit messages; no co-signature trailers.')
+          PY
+
   package:
     name: R ${{ matrix.config.r }} / ${{ matrix.config.os }} / ${{ matrix.config.cpp }}
     runs-on: ${{ matrix.config.os }}
