@@ -18,6 +18,7 @@ testthat-problems\.rds$
 ^CONTRIBUTING\.md$
 ^PACKAGE_POLISH\.md$
 ^CAPABILITIES\.md$
+^DEFERRED_STATISTICAL_EXTENSIONS\.md$
 ^README\.html$
 ^STATISTICAL_REVIEW\.org$
 ^docs$

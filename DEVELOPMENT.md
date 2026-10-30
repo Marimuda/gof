@@ -5,6 +5,8 @@ generated `man/*.Rd` files and `NAMESPACE`; users need no documentation tools
 to install a built package. The statistical repair baseline is recorded in
 `AUDIT.org`. `CAPABILITIES.md` records the subsequent capability contracts,
 review findings and qualification. User-facing changes belong in `NEWS.md`.
+Deferred statistical extensions and the agreed C++-first sequence are recorded
+in [DEFERRED_STATISTICAL_EXTENSIONS.md](DEFERRED_STATISTICAL_EXTENSIONS.md).
 
 ## Development dependencies
 
