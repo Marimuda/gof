@@ -54,8 +54,9 @@ Package-guide jobs use the separately qualified Pandoc 3.1.11.1. Retain these
 versions when reproducing the corresponding checks, and review generated
 output deliberately when changing a documentation toolchain.
 Commit all of them. Keep installation examples explicit about which source
-archive or checkout they install; the upstream CRAN/GitHub package does not
-contain unpublished local changes.
+archive or checkout they install. The maintenance fork is published at
+`Marimuda/gof`; its changes are separate from the upstream CRAN/GitHub
+release. Preserve the original authorship and citation when distributing it.
 
 Run the documentation gate in a fresh terminal R process:
 

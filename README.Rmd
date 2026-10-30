@@ -72,10 +72,23 @@ calls retain their historical wide p-value table.
 
 ## Installation
 
-This is a local maintenance snapshot of Klaus K. Holst's
-[original gof project](https://github.com/kkholst/gof). The changes in this
-checkout have not been published to CRAN or the upstream repository.
-Installing the upstream version does not install these repairs.
+This maintenance fork of Klaus K. Holst's
+[original gof project](https://github.com/kkholst/gof) is available at
+[Marimuda/gof](https://github.com/Marimuda/gof). Its changes have not been
+released on CRAN or merged into the upstream repository. See
+[RELEASE_STATUS.md](RELEASE_STATUS.md) for the qualification record and
+remaining release requirements.
+
+Install the maintenance branch, including its guides, with:
+
+```{r install-fork, eval=FALSE}
+install.packages("remotes")
+remotes::install_github("Marimuda/gof", ref = "refactor/cpp23-core",
+                        dependencies = TRUE, build_vignettes = TRUE)
+```
+
+For reproducible work, replace the branch name with the qualified tag or
+commit used by your analysis and record it with your results.
 
 To install a supplied source archive, first install its runtime and compiler
 interface dependencies, then install that archive:
