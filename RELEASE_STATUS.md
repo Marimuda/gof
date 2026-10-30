@@ -1,16 +1,46 @@
-# gof 1.2.1 release candidate
+# gof 1.2.1 release qualification
 
-This is the maintenance candidate following the qualified statistical baseline
+This maintenance release follows the qualified statistical baseline
 `v1.2.0` and the two native refactor checkpoints. The package version is
-1.2.1; its published candidate tag is `v1.2.1-rc.1`. The final `v1.2.1`
-tag requires completion of the intended portability matrix. No upstream/CRAN
-release or publication is implied by this candidate.
+1.2.1; `v1.2.1-rc.1` records the earlier candidate. The final `v1.2.1` tag
+identifies the release after its bookkeeping checks. This fork release
+does not constitute an upstream or CRAN release.
 
 The declared requirements remain R >= 4.1 and C++17. The public R methods,
 installed native signatures, public class layouts and seeded valid results
 are preserved. The original authorship and license are retained.
 
-## Qualification register
+## Current platform evidence
+
+Both Mac architectures passed on identical corrected package inputs:
+
+* [Source 5520e67](https://github.com/Marimuda/gof/actions/runs/41111882886)
+  passed all 19 non-macOS jobs and real Apple Silicon C++23. Its default
+  macOS job was cancelled before execution because GitHub could not
+  allocate an ARM runner.
+* [Source 57e4661](https://github.com/Marimuda/gof/actions/runs/41114446867)
+  passed all 21 jobs, including Intel macOS C++17 and Apple Silicon C++23.
+  Its only input changes are CI allocation and
+  excluded repository notes; all R-package inputs match 5520e67 exactly.
+
+Both Mac package checks reported `Status: OK` with all 1,162 assertions
+passing, and their installed downstream clients passed with actual
+`__cplusplus` values 201703 and 202302. The installed calibration run passed
+169 total blocks / 1,196 assertions, including 23 calibration/power blocks;
+no failures or errors. GNU/C++17 and Clang/C++23 fast regressions each passed
+146 blocks / 1,162 assertions. The full local corrected-source archive check,
+including manuals, passed with zero errors, zero warnings and one CRAN
+archival/new-submission note. Remote package jobs omit the PDF manual;
+local checks cover it. Generated help, README and local site gates pass.
+
+The linked workflows retain exact per-job outcomes. Pending infrastructure
+retries are not counted as passes. Final release bookkeeping updates
+documentation and CI scheduling while preserving the qualified R/native
+implementation and test inputs. Statistical assumptions, finite-simulation
+uncertainty and support boundaries remain in the installed help, guides,
+CAPABILITIES.md and DEFERRED_STATISTICAL_EXTENSIONS.md.
+
+## Qualification history
 
 | Area | Evidence/status |
 |:--|:--|
@@ -20,7 +50,7 @@ are preserved. The original authorship and license are retained.
 | Performance follow-up | Controlled standalone and interleaved installed-R comparisons do not reproduce a consistent slowdown. The preliminary 3% timing difference and all follow-up measurements are retained. |
 | Candidate package/manual/help/site checks | GNU/C++17 and Clang/C++23 full checks pass: zero errors, zero warnings and one archival note each. The final manifest records help/README/site gate completion, which is required before the local candidate tag. |
 | R 4.1 series | R 4.1.3/GCC 9.4 with a genuine C++17 client passes the installed interfaces and 146 fast blocks / 1,161 assertions. The exact final source archive also passes offline `R CMD check --as-cran --no-manual`: zero errors, zero warnings, two toolchain notes. |
-| Remote portability matrix | [Publication qualification run](https://github.com/Marimuda/gof/actions/runs/41093892656), source `63ae5d10208b6ef9174984537fb00f104d9cad01`. At publication, Windows default/C++23, Linux release/default/C++23, old-release and R 4.1 jobs passed. R-devel, calibration and macOS remained pending; consult the linked run for subsequent results. Linux containers do not establish Windows/macOS compatibility. |
+| Initial remote portability matrix | [Publication qualification run](https://github.com/Marimuda/gof/actions/runs/41093892656), source `63ae5d10208b6ef9174984537fb00f104d9cad01`. At publication, Windows default/C++23, Linux release/default/C++23, old-release and R 4.1 jobs passed. R-devel, calibration and macOS remained pending at that checkpoint; current platform results are recorded above. |
 
 The follow-up audit directory is `audits/gof-cpp-finalization-2026-10-30/`.
 Historical qualification records remain immutable in their earlier directories.
@@ -55,7 +85,7 @@ statistical methods and golden fixtures are unchanged. Both qualified
 Ubuntu GNU/C++17 and Clang/C++23 builds pass all 146 fast blocks / 1,162
 assertions with the corrected test. See NATIVE_REFACTOR.md for the measured
 score-path differences. Corrected-source remote macOS qualification is
-still required before the final release tag.
+was still required at that checkpoint; its results are recorded above.
 
 The corrected-source run at `5520e673d732e01ed24dd7b0f21c91014e39aff4`
 passed all 19 non-macOS jobs and the real Apple Silicon macOS C++23 job,

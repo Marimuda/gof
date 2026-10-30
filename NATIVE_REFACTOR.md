@@ -330,47 +330,26 @@ the following map connects those records to the published history.
 
 | Original local commit | Cleaned publication commit |
 |:--|:--|
-
 | `1f210cc55a6aa62cce0e591c001e42977e3536d3` | `6d07a735c765147f17e9610589dd42ec21e69830` |
-
 | `1f233ea55bfb7d56c8ef7d30a33a01a6e5a62967` | `d9065228a35b274966898924aff451b84d4531e8` |
-
 | `27857703e13c6516504e3145521c3ed9a259fc6e` | `4ae3a3baa84e5fcfd229cd70c09203f74d2bd15a` |
-
 | `286286a4cabe81597b788444998673d67d492785` | `e814ac8aec4a7f9aa70d46327c6183923a390855` |
-
 | `2b92bd1a508e5ca5c42a3e24b5d59b0fb25dfe36` | `50c6d551f3ce8d82e5beb9d27e31b305323cd7e9` |
-
 | `31bd3f9227a6b331cde8ffcf68d29db0dcd1e2a8` | `ef89dde978f2f45df4486c41a4cfe7b19f0dd558` |
-
 | `34422f6bfae87936623bb351d8fc07cb5e97c378` | `839178cb9ccf3a117069361c38a43a4d06b64d57` |
-
 | `3499c98245f6e97c2f95e822661f597067605aee` | `a3b9f89affe77f568684121248033e5b41f292d4` |
-
 | `3ca543e22d3c73012bef6abaae7a47f77a097ea5` | `3288321cb9cf31d420b5409bbbd678d0861b521f` |
-
 | `53bbff2e889b14fe5504a99d2abf61c93f6a849c` | `99aa00326e921dac4e39f44866c3f6d5580a7fc9` |
-
 | `628b84c5b5b43a2682b7a0faafb3476ce5061699` | `5cd839dfac92d238c2966fffd599f570974d0d71` |
-
 | `73fee3ac86ac8205d050b9642464a8fc4fafa792` | `cd71e6a37fa747da75838b73e9367da0098d3d9e` |
-
 | `7fc29b89cc729c5e26ac79fda5ca4d171b1a6723` | `3c33865ca03ec22d2207bc5c4b77f1707d63d0cb` |
-
 | `8c1d4e7dbcf86898cd865e2015f5c1309b894988` | `2e995016fbb8c5602dc56a7fe015f9b7d44aefa7` |
-
 | `9055a44c691886d26120b83702ddaa2692165eab` | `601b4fc20b32ffb0a41c70a1a55bf057f7235b4d` |
-
 | `999aa46c83dcd82083f1ee7c8fcd3e32e9256fef` | `6504a1aa2fd84d967065d0335bb37c643f559a29` |
-
 | `9fad19a25b10ed05626a69a8c7de500d37a78db4` | `4145a1882eb2788e91d67704064d61c5bf0c90f1` |
-
 | `b53de4bf5324722822f94ce8e7f16b3ca9baf042` | `44eef5e36172f817548ed353ee68b6b136b0c310` |
-
 | `bce5ef90d7f1fff2bf39d19359939b0ad68c35ed` | `d377f2b54e3a9c9448c17bb811156858b31f9c93` |
-
 | `bd473e8de74b493a8069984b0f686a10a6545380` | `4de560a5b40255174e06bd449c8df7d79ee45ee1` |
-
 | `e4ac923606086a9fb221a7f2100bec0ae1f003ea` | `86f7cec51182392f55142e572ad20cde5a38e53f` |
 
 ## macOS score-reference follow-up
@@ -423,3 +402,26 @@ runners in [GitHub's runner reference](https://docs.github.com/en/actions/refere
 No package source or test input changes accompany this runner allocation.
 The full local corrected-source archive check passed with zero errors,
 zero warnings and one CRAN archival/new-submission note, including manuals.
+
+
+## Release qualification summary
+
+Both Mac architectures passed on identical corrected package inputs:
+Apple Silicon/C++23 at source `5520e67` and Intel/C++17 at source `57e4661`.
+The complete matrix at `57e4661` subsequently passed all 21 jobs, including
+both Mac architectures, calibration, documentation and static/native checks.
+The actual installed-client standard values were 202302 and 201703,
+respectively. Each package check reported `Status: OK` and all 1,162
+assertions passed. The complete installed calibration run passed 169 blocks /
+1,196 assertions. Statistical assumptions and finite-simulation uncertainty
+remain as documented in the method help and capability notes.
+
+`RELEASE_STATUS.md` links the source runs and distinguishes the failed
+original reference, runner-allocation cancellations and successful package
+checks. Final release bookkeeping updates the README, NEWS and qualification
+notes and cancels superseded CI runs on later pushes. R/native implementation,
+test inputs, installed interfaces, requirements and valid seeded behavior are
+unchanged from the corrected qualified source. Source archives, complete
+local/manual checks, source-equivalence and commit-message checks are retained
+in the macOS follow-up audit. The final release tag is created after the
+release bookkeeping checks pass.

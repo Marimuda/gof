@@ -66,19 +66,19 @@ This maintenance fork of Klaus K. Holst’s [original gof
 project](https://github.com/kkholst/gof) is available at
 [Marimuda/gof](https://github.com/Marimuda/gof). Its changes have not
 been released on CRAN or merged into the upstream repository. See
-[RELEASE\_STATUS.md](RELEASE_STATUS.md) for the qualification record and
-remaining release requirements.
+[RELEASE\_STATUS.md](RELEASE_STATUS.md) for platform qualification and
+source provenance.
 
-Install the maintenance branch, including its guides, with:
+Install maintenance release 1.2.1, including its guides, with:
 
 ``` r
 install.packages("remotes")
-remotes::install_github("Marimuda/gof", ref = "refactor/cpp23-core",
+remotes::install_github("Marimuda/gof", ref = "v1.2.1",
                         dependencies = TRUE, build_vignettes = TRUE)
 ```
 
-For reproducible work, replace the branch name with the qualified tag or
-commit used by your analysis and record it with your results.
+For reproducible work, retain the release tag or use a specific commit,
+and record that revision with your analysis results.
 
 To install a supplied source archive, first install its runtime and
 compiler interface dependencies, then install that archive:
