@@ -126,7 +126,8 @@ familywise-adjusted p-values or simultaneous confidence bands.
 In specified mode, conditional on the fixed design and grid, the observation
 and simulated response samples have the same distribution under the stated
 null. The rank construction therefore controls finite-sample type-I error
-(conservatively with ties), without a Gaussian multiplier approximation.
+without a Gaussian multiplier approximation. Ties in the computed statistic
+are treated conservatively; roundoff can split mathematically tied values.
 This statement requires genuinely specified means and the independent
 binomial/Poisson sampling model. It does not apply to fitted mode. The fitted
 parametric bootstrap is an approximation that relies on accurate estimation

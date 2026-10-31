@@ -125,7 +125,21 @@ This is an exact covariance identity for this stated linear model, not a
 Poisson calibration theorem or a reason to introduce a universal leverage
 threshold. Multiplying all Poisson means by ten still leaves the same number
 of independently observed rows. Independently replicating the design ten
-times changes that number. These are different asymptotic situations.
+times changes that number. For the residual multiplier these are different
+asymptotic situations, because it uses row-level residuals.
+
+For response bootstrap under an independent Poisson law, there is an important
+equivalence. Independent replicate rows with the same predictors, offsets and
+fixed ordering within each cell have Poisson cell totals. Those totals have the
+same law as one row per cell with the mean multiplied by the number of
+replicates. With cumulative sums (`b=0`), an all-point cell grid and the same
+maximum-likelihood solution, the response-bootstrap processes therefore agree
+in law up to a common positive normalization. Their Sup and L2 tail comparisons
+agree in exact arithmetic. Numerical fitting and summation can alter
+mathematically tied comparisons. This equivalence does not apply to the
+multiplier's row-level variance calculation. Increasing counts or splitting an
+observed row does not establish independent experimental replication or diagnose
+overdispersion.
 
 ## Earlier development evidence, with its uncertainty
 
