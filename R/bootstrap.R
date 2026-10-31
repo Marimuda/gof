@@ -10,6 +10,10 @@
 #' @param variable Names of prespecified, fixed numeric ordering variables in
 #'   the design or `data`. Fitted predictions (`"predicted"`) are rejected:
 #'   freezing their response-dependent ordering is not this procedure.
+#'   Refitting and reordering alone would also be insufficient to justify
+#'   unrestricted raw fitted-order L2: at a flat true mean its integration
+#'   range vanishes and has an estimated random scale. Such an extension is
+#'   outside this implementation.
 #' @param data Data containing additional ordering variables, aligned to fitted
 #'   rows as for [cumres.glm()].
 #' @param R Positive whole number of response simulations. This procedure does
@@ -31,6 +35,11 @@
 #'   interpret the resulting test as a specified-null test.
 #' @param control A list of arguments to [stats::glm.control()] used for the
 #'   bootstrap refits. It does not change the original fit.
+#' @param resolution Optional named positive finite measurement steps for
+#'   selected fixed ordering variables, as in [cumres.glm()]. The declared
+#'   `round(x / step) * step` coordinate is fixed before grid selection and is
+#'   used for the observation and every simulated response. No rows/trials are
+#'   merged and the model is not refitted on coarsened covariates.
 #' @details
 #' For binomial groups the residual is `successes - trials * probability`,
 #' normalized by the square root of total trials. This gives exactly the same
@@ -84,6 +93,11 @@
 #' `null` to the common result columns. Bounds coincide with the reported
 #' p-value when all fits and score-space checks are resolved. `summary()`,
 #' `coef()` and `plot()` use the usual cumulative-residual interfaces.
+#' The `ordering` component and additional ordering columns in result tables
+#' record fixed coordinates, declared resolution and grouped tie counts.
+#' Binomial tie/changed-unit counts refer to underlying Bernoulli trials;
+#' these metadata are computed from grouped trial counts without expansion.
+#'
 #' @references
 #' Genest, C. and Rémillard, B. (2008). Validity of the parametric bootstrap for
 #' goodness-of-fit testing in semiparametric models. Annales de l'Institut Henri
@@ -113,18 +127,18 @@ cumres_bootstrap <- function(model, variable, data=model.frame(model),
                              R=999L, plots=min(R,50L), b=0,
                              subset.max=500L, subset=subset_t,
                              null=c("fitted","specified"), mean=NULL,
-                             control=list(epsilon=1e-10,maxit=100L)) {
+                             control=list(epsilon=1e-10,maxit=100L),resolution=NULL) {
     null <- match.arg(null)
     R <- gof_count(R,"R",1L)
     plots <- gof_count(plots,"plots")
     if (plots>R) stop("plots must not exceed R",call.=FALSE)
     if (!is.null(subset.max)) subset.max <- gof_count(subset.max,"subset.max",1L,TRUE)
     if (!is.function(subset)) stop("subset must be a function",call.=FALSE)
-    if (!is.numeric(b) || is.complex(b) || length(b)!=1L || !is.finite(b) || b<0)
+    if (!is.numeric(b) || is.complex(b) || !is.null(dim(b)) || length(b)!=1L || !is.finite(b) || b<0)
         stop("b must be a finite nonnegative bandwidth",call.=FALSE)
     if (!is.list(control)) stop("control must be a list of glm.control arguments",call.=FALSE)
     control <- do.call(stats::glm.control,control)
-    input <- gof_bootstrap_inputs(model,variable,data,null,mean)
+    input <- gof_bootstrap_inputs(model,variable,data,null,mean,resolution)
     grid <- lapply(seq_len(ncol(input$ordering)),function(j) {
         z <- input$ordering[,j]
         if (b>0) gof_window_grid(z,b,subset.max,subset) else {
@@ -208,7 +222,7 @@ cumres_bootstrap <- function(model, variable, data=model.frame(model),
     structure(list(W=W,What=What,x=grid,KS=pv[seq.int(1L,2L*p,2L)],
         CvM=pv[seq.int(2L,2L*p,2L)],R=R,n=input$n,nobs=nrow(input$X),
         variable=input$variable,type=rep("residual",p),model="glm",
-        response=input$response,informative=informative,
+        response=input$response,informative=informative,ordering=input$ordering_metadata,
         calibration=if (null=="fitted") "parametric-bootstrap" else "specified-null-monte-carlo",
         bootstrap=list(null=null,status=status,reasons=reasons,warnings=warnings,
             observed.status=observed$status,observed.warnings=observed$warnings,
@@ -216,7 +230,7 @@ cumres_bootstrap <- function(model, variable, data=model.frame(model),
             mean=observed$mean,trials=input$trials)),class=c("cumres_bootstrap","cumres"))
 }
 
-gof_bootstrap_inputs <- function(model,variable,data,null,mean) {
+gof_bootstrap_inputs <- function(model,variable,data,null,mean,resolution=NULL) {
     if (!inherits(model,"glm") || !identical(model$method,"glm.fit"))
         stop("Response bootstrap requires a glm fitted by stats::glm.fit",call.=FALSE)
     family <- stats::family(model)
@@ -293,6 +307,9 @@ gof_bootstrap_inputs <- function(model,variable,data,null,mean) {
     })
     ordering <- do.call(cbind,values)
     colnames(ordering) <- variable
+    coordinates <- gof_ordering_coordinates(ordering,resolution,
+        units=if (family$family=="binomial") trials[active] else NULL)
+    ordering <- coordinates$values
     if (null=="specified") {
         if (!is.numeric(mean) || is.complex(mean) || !is.null(dim(mean)) || length(mean)!=nrow(mf) ||
             any(!is.finite(mean)) || any(mean<0) || (family$family=="binomial" && any(mean>1)))
@@ -307,7 +324,7 @@ gof_bootstrap_inputs <- function(model,variable,data,null,mean) {
     if (!is.finite(sum(trials)) || sum(trials)>2^53)
         stop("Total binomial trial count exceeds exact integer representation",call.=FALSE)
     list(X=X,offset=unname(offset[active]),success=unname(success[active]),trials=trials,
-         family=family,ordering=ordering,variable=variable,mean=mean,
+         family=family,ordering=ordering,ordering_metadata=coordinates$metadata,variable=variable,mean=mean,
          n=if (family$family=="binomial") sum(trials) else nrow(X),
          response=paste(deparse(response),collapse=""))
 }

@@ -42,6 +42,11 @@
 #' Structurally zero-information processes contribute zero. If any selected
 #' process is numerically indeterminate, the whole family's p-values and
 #' envelope are withheld; the family is never silently reduced.
+#' This also applies to an unresolved fitted ordering under the linear/GLM
+#' numerical check. Its marginal curve is descriptive; other resolved marginal
+#' tails remain available. Named `resolution` and `on_unresolved` arguments are
+#' passed to [cumres.glm()]; declared fixed-coordinate coarsening precedes every
+#' family statistic and simulation.
 #' The maximum-statistic adjusted marginal tails use the common full-model
 #' null. They do not assert strong familywise control for separately defined
 #' component hypotheses under arbitrary partial alternatives.
@@ -162,11 +167,10 @@ gof_joint_finalize <- function(res,level=0.95) {
     marginal <- vapply(seq_len(2L*p),function(j) tail_estimate(null[,j],observed[j]),numeric(1))
     res$KS <- marginal[sup]
     res$CvM <- marginal[l2]
-    indeterminate <- !is.null(res$informative) && anyNA(res$informative)
-    if (indeterminate) {
-        res$KS[is.na(res$informative)] <- NA_real_
-        res$CvM[is.na(res$informative)] <- NA_real_
-    }
+    unavailable <- if (is.null(res$informative)) rep(FALSE,p) else is.na(res$informative)
+    unavailable <- unavailable | gof_ordering_unresolved(res)
+    indeterminate <- any(unavailable)
+    res$KS[unavailable] <- res$CvM[unavailable] <- NA_real_
     probability <- vapply(seq_len(2L),function(j) tail_estimate(simulated[,j],family[j]),numeric(1))
     names(probability) <- names(family)
     adjusted <- cbind(Sup=vapply(seq_len(p),function(j)
@@ -209,6 +213,15 @@ as.data.frame.cumres_joint <- function(x,row.names=NULL,optional=FALSE,...) {
         !identical(x$joint$status,"uninformative")
     family$aggregation <- "maximum across orderings"
     family$scope <- "family"
+    if ("ordering_status" %in% names(family)) {
+        unresolved <- gof_ordering_unresolved(x)
+        family$ordering_source <- "family"
+        family$ordering_status <- if (any(unresolved)) "unresolved" else "family"
+        family$ordering_reason <- if (any(unresolved)) paste0("Unresolved ordering: ",
+            paste(x$variable[unresolved],collapse=", ")) else NA_character_
+        for (field in c("resolution","distinct_values","tie_blocks","tied_units","changed_units"))
+            family[[field]] <- NA_real_
+    }
     result <- rbind(marginal,family)
     rownames(result) <- if (is.null(row.names)) NULL else row.names
     result

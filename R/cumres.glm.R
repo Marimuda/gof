@@ -27,6 +27,21 @@
 ##' @param b Nonnegative moving-window bandwidth. Zero gives cumulative
 ##' residuals; positive values give residual sums over the window \eqn{(t-b,t]}.
 ##' @param plots Nonnegative whole number of null processes to retain for plotting.
+##' @param resolution Optional named numeric vector of positive finite measurement
+##' steps for selected observed ordering variables, for example
+##' \code{c(x=0.25)}. These coordinates become \code{round(x / step) * step},
+##' with origin zero and R's rounding of represented values to the nearest even
+##' integer at exact half steps. The model and residual units are unchanged.
+##' Choose the resolution from the recording convention before inspecting test
+##' results. Fitted predictions cannot be coarsened by this argument.
+##' @param on_unresolved Policy for a fitted ordering flagged by the numerical
+##' check. \code{"report"} (default) warns, retains the numerical curves and
+##' statistics, and returns missing inferential p-values for that ordering.
+##' \code{"error"} stops before simulation. Other selected marginal orderings
+##' remain available in report mode; a joint family containing an unresolved
+##' member has no inferential p-values or simultaneous envelope. These controls
+##' are implemented for linear/GLM methods; \code{resolution} also supports
+##' \code{cumres_bootstrap()}.
 ##' @param ... additional arguments passed to \code{cumres.default}. In
 ##' particular \code{subset.max} (default 500): each process is evaluated at
 ##' at most this many distinct covariate values, retaining every observation
@@ -35,6 +50,9 @@
 ##' \code{breakties} argument is accepted with a warning when nonzero; no jitter
 ##' is added. A custom \code{subset} function receives sorted distinct values
 ##' and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.
+##' Named additional controls must unambiguously match \code{breakties},
+##' \code{subset}, \code{subset.max} or \code{simulation}; unused names are
+##' rejected so misspelled ordering controls cannot be silently ignored.
 ##' @returns A \code{cumres} object. See \code{\link{cumres}} for its observed
 ##' and simulated curves, grids, Monte Carlo p-values and fitted-row metadata.
 ##' @note Normal, binomial and Poisson models with their standard links are
@@ -58,6 +76,31 @@
 ##' consistency, precision and finite-information conditions remain required.
 ##' Predicted coordinates are reconstructed from the fitted coefficients so
 ##' identical design rows are not separated by subtraction roundoff.
+##' This does not certify ties between different design rows at the exact
+##' likelihood solution. R's GLM convergence criterion concerns deviance,
+##' not the accuracy of every fitted-value comparison. With a flat or nearly
+##' flat fitted mean, numerical fitting error can split an exact tie, merge
+##' distinct values or reverse their order; the Sup statistic can change
+##' substantially. A local Fisher-score correction and accumulated-roundoff
+##' screen flag comparisons whose sign is not numerically resolved. For moving
+##' windows the screen also compares entry/exit events, including a fitted
+##' coordinate against another coordinate plus the bandwidth. The
+##' coordinates and supplied coefficients are retained. A passed check is an
+##' ordinary numerical diagnostic, not an exact-root or interval-arithmetic
+##' certificate, nor a guarantee of calibration. Prespecified
+##' fixed covariate orderings avoid this estimated-coordinate ambiguity.
+##' Arbitrary rounding of predictions or tighter fitting tolerances alone
+##' do not establish correct fitted ordering or statistical calibration.
+##' The \code{ordering} component records one row per ordering: source, grouped
+##' tie rule, declared resolution, counts of distinct values/tie blocks/tied
+##' residual units, changed coordinates, check status and reason. Status is
+##' \code{"fixed"} for observed coordinates, \code{"specified"} for a known
+##' mean with no estimated coefficients, \code{"structural"} for identical
+##' design/offset rows, \code{"saturated"} when ordering cannot add lack-of-fit
+##' information across saturated natural-parameter cells, \code{"checked"} for
+##' other fitted orderings that pass the local screen, or \code{"unresolved"}.
+##' This status is separate from the \code{informative} score-space flag.
+##' Diagnostic arithmetic details are retained in \code{ordering_check}.
 ##' Structurally recognized saturated ordering cells have no lack-of-fit
 ##' information: \code{informative=FALSE}, zero curves and p-values of one.
 ##' Other processes whose selected indicators are numerically indistinguishable
@@ -69,6 +112,14 @@
 ##' the observed statistic. \code{n} is the number of independent residual units
 ##' (trials for expanded binomial data); \code{nobs} records positive-weight fitted rows.
 ##' @author Klaus K. Holst
+##' @section Coordinate convention:
+##' The \code{"predicted"} coordinate is the fitted response mean. Lin, Wei
+##' and Ying (2002), equation (2.10), instead use the fitted linear predictor.
+##' A strictly increasing change of coordinate preserves the all-point
+##' cumulative Sup statistic, but generally changes L2's integration measure
+##' and a fixed-bandwidth moving-window statistic. The coordinate scale is
+##' therefore part of the diagnostic specification. The half-open window
+##' \eqn{(t-b,t]} agrees with their equation (2.7).
 ##' @seealso \code{\link{cumres}}, \code{\link{cumres.default}} and
 ##' \code{\link{plot.cumres}}. The \href{https://CRAN.R-project.org/package=timereg}{timereg}
 ##' package provides similar GoF methods for survival data.
@@ -97,10 +148,27 @@
 ##' # A positive bandwidth requests residual sums over (t - b, t].
 ##' window <- cumres(fit, variable = "x", R = 99, plots = 0, b = 0.5)
 ##' coef(window)
+##'
+##' # Declare a recording resolution for the diagnostic coordinate only.
+##' recorded <- cumres(fit, variable = "x", resolution = c(x = 0.25),
+##'   R = 39, plots = 0)
+##' recorded$ordering
+##' # A strict workflow can stop on unresolved fitted ordering.
+##' cumres(fit, variable = "predicted", on_unresolved = "error", R = 39,
+##'   plots = 0)$ordering
 `cumres.glm` <- function(model,
                   variable=c("predicted",colnames(model.matrix(model))),
                   data=model.frame(model),
-                  R=1000,b=0,plots=min(R,50),...) {
+                  R=1000,b=0,plots=min(R,50),...,
+                  resolution=NULL,on_unresolved=c("report","error")) {
+    on_unresolved <- tryCatch(match.arg(on_unresolved,c("report","error")),
+        error=function(e) stop("on_unresolved must be 'report' or 'error'",call.=FALSE))
+    if (!is.numeric(b) || is.complex(b) || !is.null(dim(b)) || length(b)!=1L || !is.finite(b) || b<0)
+        stop("b must be a finite nonnegative bandwidth",call.=FALSE)
+    extra_names <- names(substitute(list(...)))[-1L]
+    extra_names <- extra_names[nzchar(extra_names)]
+    unknown <- extra_names[is.na(pmatch(extra_names,c("breakties","subset","subset.max","simulation"),duplicates.ok=TRUE))]
+    if (length(unknown)) stop("Unused diagnostic argument(s): ",paste(unknown,collapse=", "),call.=FALSE)
     if (!inherits(model,"lm")) stop("Unsupported model!")
     is_glm <- inherits(model,"glm")
     if (is_glm && !family(model)$family %in% c("gaussian","binomial","poisson"))
@@ -137,7 +205,8 @@
     y <- model.response(mf)
     # lm stores fitted = y-residual, which can manufacture tiny differences
     # between identical design rows. Reconstruct from the actual coefficients
-    # so mathematically tied predictions remain tied without rounding data.
+    # so identical design rows remain tied without rounding data. This does
+    # not establish exact-MLE ties between different design rows.
     eta_fit <- drop(Xfit%*%beta)
     if (!is.null(model$offset)) eta_fit <- eta_fit+model$offset
     yhat_fit <- if (is_glm) family(model)$linkinv(eta_fit) else eta_fit
@@ -218,11 +287,30 @@
     if (!length(values)) stop("No selected ordering variables")
     ordering <- do.call(cbind,values)
     colnames(ordering) <- names(values)
+    coordinates <- gof_ordering_coordinates(ordering,resolution)
+    ordering <- coordinates$values
+    predicted <- match("predicted",colnames(ordering))
+    ordering_check <- NULL
+    if (!is.na(predicted)) {
+        offset <- model$offset
+        if (is.null(offset)) offset <- rep(0,nrow(Xfit))
+        success <- if (grouped) counts[,1L] else as.numeric(y)*w
+        exposure <- if (grouped) rowSums(counts) else w
+        ordering_check <- gof_fitted_ordering_check(Xfit[active,,drop=FALSE],beta,
+            offset[active],yhat_fit[active],success[active],exposure[active],
+            if (is_glm) family(model) else stats::gaussian(),b=b)
+        coordinates$metadata$source[predicted] <- "fitted"
+        coordinates$metadata$status[predicted] <- ordering_check$status
+        coordinates$metadata$reason[predicted] <- ordering_check$reason
+    }
+    gof_ordering_report(coordinates$metadata,on_unresolved)
     res <- cumres.default(NULL,variable=ordering,r=r,dr=dr,ic=ic,coef=NULL,
                           R=R,plots=plots,b=b,...)
     res$model <- class(model)[1]
     res$response <- response
     res$nobs <- sum(active)
+    res$ordering <- coordinates$metadata
+    res$ordering_check <- ordering_check$details
     canonical <- !is_glm || (family(model)$family=="gaussian" && family(model)$link=="identity") ||
         (family(model)$family=="binomial" && family(model)$link=="logit") ||
         (family(model)$family=="poisson" && family(model)$link=="log")
@@ -236,6 +324,8 @@
     }
     indeterminate <- which(is.na(res$informative))
     res$KS[indeterminate] <- res$CvM[indeterminate] <- NA_real_
+    unresolved <- gof_ordering_unresolved(res)
+    res$KS[unresolved] <- res$CvM[unresolved] <- NA_real_
     if (inherits(res,"cumres_joint")) res <- gof_joint_finalize(res)
     res
 }

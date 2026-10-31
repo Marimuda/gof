@@ -68,6 +68,8 @@ cumresMaxSet <- function(m,var,...) {
 ##' @param plots Nonnegative whole number of null processes to retain for plotting.
 ##' @param ... Additional arguments passed to \code{cumres.default}, including
 ##' \code{subset.max}, which limits grid values without discarding data rows.
+##' The linear/GLM \code{resolution} and \code{on_unresolved} controls are not
+##' implemented for this adapter and are rejected.
 ##' @method cumres lvmfit
 ##' @export
 ##' @returns A \code{cumres} object for one residual/predictor pair, a named
@@ -109,6 +111,8 @@ cumres.lvmfit <- function(model,y,x,full=FALSE,
                    data=model.frame(model),p,
                    R=1000, b=0, plots=min(R,50),
                    ...) {
+  if (any(c("resolution","on_unresolved") %in% names(list(...))))
+    stop("resolution and on_unresolved are not implemented for SEM diagnostics",call.=FALSE)
   if (!inherits(model,"lvmfit")) stop("Supply a fitted lava structural-equation model")
   if (!requireNamespace("numDeriv",quietly=TRUE)) stop("package 'numDeriv' not available")
   if (!is.logical(full) || length(full)!=1L || is.na(full)) stop("full must be TRUE or FALSE")

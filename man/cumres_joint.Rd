@@ -97,6 +97,11 @@ ordinal adapters are not accepted by this entry point.
 Structurally zero-information processes contribute zero. If any selected
 process is numerically indeterminate, the whole family's p-values and
 envelope are withheld; the family is never silently reduced.
+This also applies to an unresolved fitted ordering under the linear/GLM
+numerical check. Its marginal curve is descriptive; other resolved marginal
+tails remain available. Named \code{resolution} and \code{on_unresolved} arguments are
+passed to \code{\link[=cumres.glm]{cumres.glm()}}; declared fixed-coordinate coarsening precedes every
+family statistic and simulation.
 The maximum-statistic adjusted marginal tails use the common full-model
 null. They do not assert strong familywise control for separately defined
 component hypotheses under arbitrary partial alternatives.

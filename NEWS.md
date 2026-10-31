@@ -1,3 +1,39 @@
+# gof 1.2.1.9000
+
+Development version; not a new qualified statistical release.
+
+* Unresolved fitted-order plots use base R's tick range for their default
+  display limits, avoiding near-constant-axis warnings on R 4.1 while retaining
+  the actual coordinates and diagnostic object.
+* Clarified the original paper's half-open window convention and the distinction
+  between gof's fitted response mean coordinate and the paper's fitted linear
+  predictor coordinate. L2 and bandwidths depend on that scale.
+
+* Added a default local numerical check of linear/GLM fitted-value ordering.
+  Unresolved comparisons warn and withhold inferential p-values while retaining
+  numerical curves. `on_unresolved="error"` stops before simulation. No fitted
+  predictions or coefficients are rounded or replaced.
+* Added named `resolution` steps for prespecified observed ordering variables
+  in linear/GLM diagnostics and response bootstrap. The same transformed
+  coordinate is used throughout each diagnostic; all residual units remain.
+* Added ordering status, reasons, declared resolution and tie counts to object
+  metadata, summaries and result tables. A joint family with an unresolved
+  member withholds all family inference without dropping that member.
+* Added installed help, a dedicated ordering/ties guide and runnable examples.
+  The check is a numerical diagnostic, not an exact-root certificate or a
+  correction for small-sample/estimated-order bootstrap calibration.
+* Linear/GLM methods now reject unused named diagnostic arguments instead of
+  silently ignoring misspelled controls. Existing unambiguous abbreviations
+  for the legacy additional controls remain supported.
+
+* Clarified that numerical fitted-value ordering is not certified at the exact
+  likelihood solution. Flat/near-flat controls show that fitting error can
+  split ties, merge distinct means or reverse their order. Prespecified fixed
+  covariate ordering avoids this ambiguity; arbitrary rounding is not a repair.
+* Documented why complete refitting/reordering alone would not qualify a
+  general raw fitted-order L2 response bootstrap. The existing restriction
+  remains; no inference algorithm or statistical support was extended.
+
 # gof 1.2.1
 
 Platform qualification and source provenance are recorded in

@@ -8,6 +8,9 @@ print.cumres <- function(x,...) {
     if (anyNA(x$informative))
         cat("Numerically indeterminate score process: ",
             paste(x$variable[is.na(x$informative)],collapse=", "),".\n",sep="")
+    if (any(gof_ordering_unresolved(x)))
+        cat("Fitted ordering unresolved: ",paste(x$variable[gof_ordering_unresolved(x)],collapse=", "),
+            ". Curves are descriptive; inferential p-values are unavailable.\n",sep="")
     invisible(x)
 }
 
@@ -19,6 +22,8 @@ summary.cumres <- function(object,...) {
     res$response <- object$response
     res$informative <- object$informative
     res$aggregation <- object$aggregation
+    res$ordering <- object$ordering
+    res$ordering_check <- object$ordering_check
     res$table <- as.data.frame(object)
     return(structure(res, class="summary.cumres"))
 }
@@ -33,6 +38,8 @@ print.summary.cumres <- function(x,...) {
         if (!is.null(x$aggregation)) cat("Ordinal aggregation: ",x$aggregation,".\n",sep="")
         if (!is.null(x$informative) && is.na(x$informative[i]))
             cat("Numerically indeterminate score process.\n")
+        if (gof_ordering_unresolved(x)[i])
+            cat("Fitted ordering unresolved; curve is descriptive and inferential p-values are unavailable.\n")
         cat("Based on ", x$R, " realizations. Cumulated residuals ordered by '", x$variable[i], "'.\n", sep="")
         cat("---\n");
     }

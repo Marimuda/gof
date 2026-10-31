@@ -19,7 +19,8 @@ cumres_bootstrap(
   subset = subset_t,
   null = c("fitted", "specified"),
   mean = NULL,
-  control = list(epsilon = 1e-10, maxit = 100L)
+  control = list(epsilon = 1e-10, maxit = 100L),
+  resolution = NULL
 )
 
 \method{as.data.frame}{cumres_bootstrap}(x, row.names = NULL, optional = FALSE, ...)
@@ -37,7 +38,11 @@ original fitting call. Other families and links are not implemented here.}
 
 \item{variable}{Names of prespecified, fixed numeric ordering variables in
 the design or \code{data}. Fitted predictions (\code{"predicted"}) are rejected:
-freezing their response-dependent ordering is not this procedure.}
+freezing their response-dependent ordering is not this procedure.
+Refitting and reordering alone would also be insufficient to justify
+unrestricted raw fitted-order L2: at a flat true mean its integration
+range vanishes and has an estimated random scale. Such an extension is
+outside this implementation.}
 
 \item{data}{Data containing additional ordering variables, aligned to fitted
 rows as for \code{\link[=cumres.glm]{cumres.glm()}}.}
@@ -69,6 +74,12 @@ interpret the resulting test as a specified-null test.}
 \item{control}{A list of arguments to \code{\link[stats:glm.control]{stats::glm.control()}} used for the
 bootstrap refits. It does not change the original fit.}
 
+\item{resolution}{Optional named positive finite measurement steps for
+selected fixed ordering variables, as in \code{\link[=cumres.glm]{cumres.glm()}}. The declared
+\code{round(x / step) * step} coordinate is fixed before grid selection and is
+used for the observation and every simulated response. No rows/trials are
+merged and the model is not refitted on coarsened covariates.}
+
 \item{x}{An object returned by \code{cumres_bootstrap()}.}
 
 \item{row.names, optional, ...}{Arguments passed to the common data-frame method.}
@@ -85,6 +96,10 @@ The data-frame method adds \code{calibration}, \code{p.lower}, \code{p.upper}, \
 \code{null} to the common result columns. Bounds coincide with the reported
 p-value when all fits and score-space checks are resolved. \code{summary()},
 \code{coef()} and \code{plot()} use the usual cumulative-residual interfaces.
+The \code{ordering} component and additional ordering columns in result tables
+record fixed coordinates, declared resolution and grouped tie counts.
+Binomial tie/changed-unit counts refer to underlying Bernoulli trials;
+these metadata are computed from grouped trial counts without expansion.
 }
 \description{
 Simulate binomial or Poisson responses on a fixed design and compare their

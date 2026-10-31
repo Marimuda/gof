@@ -1,5 +1,13 @@
 # gof 1.2.1 release qualification
 
+Development note, 31 October 2026: the current `fix/fitted-order-contract`
+checkout is version 1.2.1.9000, adding ordering precision policies and declared
+measurement resolution. It is not the tagged release described below. Its
+local validation is recorded in the course audit
+`audits/gof-ordering-controls-2026-10-31/`; the historical Mac/minimum-R/platform
+results below do not qualify these newer R changes. No new release or remote
+platform result is implied by this development note.
+
 This maintenance release follows the qualified statistical baseline
 `v1.2.0` and the two native refactor checkpoints. The package version is
 1.2.1; `v1.2.1-rc.1` records the earlier candidate. The final `v1.2.1` tag

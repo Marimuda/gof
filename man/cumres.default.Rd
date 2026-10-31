@@ -18,7 +18,9 @@
   subset = subset_t,
   subset.max = 500L,
   simulation = c("marginal", "joint"),
-  ...
+  ...,
+  resolution = NULL,
+  on_unresolved = NULL
 )
 }
 \arguments{
@@ -78,6 +80,11 @@ simultaneous null reference envelopes. See \code{\link{cumres_joint}};
 this option applies to the default and linear/GLM methods.}
 
 \item{...}{Additional arguments passed to residual and gradient callbacks.}
+
+\item{resolution, on_unresolved}{Reserved linear/GLM ordering controls.
+They are rejected by this explicit-input method. Declare a fixed transformed
+ordering directly in \code{variable}; numerical fit checks require the
+linear/GLM adapter. \code{cumres_bootstrap()} also supports \code{resolution}.}
 }
 \value{
 A \code{cumres} object. See \code{\link{cumres}} for the common

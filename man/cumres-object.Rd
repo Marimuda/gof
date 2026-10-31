@@ -81,6 +81,16 @@ The additional endpoints retain their interpretation in extracted tables:
 calibration, diagnostic and residual labels; \code{\link[=cumres_bootstrap]{cumres_bootstrap()}} adds
 calibration/null labels, unresolved-refit counts and simulated tail bounds.
 Their method-specific help defines these additional columns.
+Linear/GLM diagnostics and response bootstrap also add \code{ordering_source},
+\code{ordering_status}, \code{ordering_reason}, \code{resolution}, \code{distinct_values},
+\code{tie_blocks}, \code{tied_units} and \code{changed_units}. These repeat the corresponding
+per-ordering metadata for Sup and L2. The complete grouped-tie rule is in
+\code{object$ordering}; local numerical details are in \code{object$ordering_check}.
+An unresolved fitted ordering has missing inferential tails while its
+descriptive statistic is retained. This is separate from score-space
+informativeness. Objects saved without ordering metadata retain the core
+result columns. Joint family rows have no single coordinate resolution
+or tie count; these entries are missing, not inherited from one member.
 The data-frame methods also accept saved matrix-based diagnostic objects.
 A saved summary made before result tables were added retains its p-values
 but cannot reconstruct observed statistics without the original curves.

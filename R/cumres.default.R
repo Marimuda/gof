@@ -229,6 +229,10 @@ cumres <- function(model,...) UseMethod("cumres")
 ##' per process. \code{Inf} or \code{NULL} evaluates all distinct values.
 ##' Every residual unit contributes irrespective of this cap.
 ##' @param ... Additional arguments passed to residual and gradient callbacks.
+##' @param resolution,on_unresolved Reserved linear/GLM ordering controls.
+##' They are rejected by this explicit-input method. Declare a fixed transformed
+##' ordering directly in \code{variable}; numerical fit checks require the
+##' linear/GLM adapter. \code{cumres_bootstrap()} also supports \code{resolution}.
 ##' @returns A \code{cumres} object. See \code{\link{cumres}} for the common
 ##' result components and interpretation of the Monte Carlo p-values.
 ##' @seealso \code{\link{cumres}}, \code{\link{cumres.glm}}.
@@ -246,13 +250,16 @@ cumres.default <- function(model, variable, r=stats::residuals(model), dr,
                            R=1e3L, b=0, plots=min(R,50L),
                            coef=stats::coef(model), ic=lava::iid(model), breakties=0,
                            subset=subset_t, subset.max=500L,
-                           simulation=c("marginal","joint"), ...) {
+                           simulation=c("marginal","joint"), ...,
+                           resolution=NULL,on_unresolved=NULL) {
+    if (!is.null(resolution) || !is.null(on_unresolved))
+        stop("resolution and on_unresolved are lm/glm ordering controls; resolution also supports cumres_bootstrap",call.=FALSE)
     simulation <- match.arg(simulation)
     R <- gof_count(R,"R",1L)
     plots <- gof_count(plots,"plots")
     if (!is.null(subset.max)) subset.max <- gof_count(subset.max,"subset.max",1L,TRUE)
     if (!is.function(subset)) stop("subset must be a function")
-    if (!is.numeric(b) || length(b)!=1L || !is.finite(b) || b<0)
+    if (!is.numeric(b) || is.complex(b) || !is.null(dim(b)) || length(b)!=1L || !is.finite(b) || b<0)
         stop("b must be a finite nonnegative bandwidth")
     if (!is.numeric(breakties) || length(breakties)!=1L || !is.finite(breakties) || breakties<0)
         stop("breakties must be a finite nonnegative number")

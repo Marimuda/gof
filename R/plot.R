@@ -85,6 +85,15 @@ plot.cumres <- function(x,idx=seq_along(x$W),col="purple",col.alpha=0.3,
             c(0,if (peak==0) 1 else 1.25*peak)
         } else max(abs(observed))*2*c(-1,1)
         arguments <- list(x=x0,y=observed,type="n",lwd=2,xlab=xlabel,ylab=ylabel,ylim=limits,main=main)
+        # Older R graphics warn for nearly constant fitted coordinates. Use
+        # base R's tick range for the display, keeping the actual coordinates
+        # and returned object intact. Explicit/logarithmic axes remain caller
+        # controlled; this changes neither ordering nor diagnostic statistics.
+        if (vs && gof_ordering_unresolved(x)[i] && is.null(extra$xlim) && is.null(extra$log)) {
+            tick_limits <- range(pretty(x0))
+            if (all(is.finite(tick_limits)) && tick_limits[1L]<tick_limits[2L])
+                arguments$xlim <- tick_limits
+        }
         for (name in names(extra)) arguments[[name]] <- extra[[name]]
         if (!missing(title)) arguments$main <- title
         do.call(graphics::plot,arguments)
@@ -101,12 +110,15 @@ plot.cumres <- function(x,idx=seq_along(x$W),col="purple",col.alpha=0.3,
                 if (identical(x$informative[i],FALSE)) labels <- c(labels,"No lack-of-fit information")
                 if (is.na(x$informative[i])) labels <- c(labels,"Numerically indeterminate score process")
             }
+            if (gof_ordering_unresolved(x)[i]) labels <- c(labels,"Ordering unresolved; descriptive curve")
             if (length(labels)) graphics::legend("topright",labels,bg="white")
         } else if (legend=="type2") {
-            labels <- if (ordinal_norm) "Observed cutpoint norm" else "Observed"
+            labels <- if (ordinal_norm) "Observed cutpoint norm" else if (gof_ordering_unresolved(x)[i])
+                "Observed (ordering unresolved)" else "Observed"
             line_colors <- observed_color; line_widths <- 2
             if (has_samples) {
-                labels <- c(labels,if (ordinal_norm) "Simulated cutpoint norm" else "Sample process under null")
+                labels <- c(labels,if (ordinal_norm) "Simulated cutpoint norm" else if (gof_ordering_unresolved(x)[i])
+                    "Numerical reference process" else "Sample process under null")
                 line_colors <- c(line_colors,colors[1])
                 line_widths <- c(line_widths,1)
             }

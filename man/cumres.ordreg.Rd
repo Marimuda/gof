@@ -37,7 +37,9 @@ With zero, the returned simulated-curve matrices have zero columns.}
 
 \item{...}{Graphical arguments passed to \code{plot.cumres} when
 \code{plot=TRUE}. This method uses all distinct ordering values and does
-not take \code{subset.max} or moving-window arguments through \code{...}.}
+not take \code{subset.max} or moving-window arguments through \code{...}.
+The linear/GLM \code{resolution} and \code{on_unresolved} controls are
+rejected rather than silently ignored.}
 }
 \value{
 A \code{cumres} object with one process for every component

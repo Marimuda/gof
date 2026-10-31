@@ -1,8 +1,8 @@
 Package: gof
 Type: Package
 Title: Model Diagnostics Based on Cumulative Residuals
-Version: 1.2.1
-Date: 2026-10-30
+Version: 1.2.1.9000
+Date: 2026-10-31
 Authors@R: person("Klaus K.", "Holst", email = "klaus@holst.it",
     role = c("aut", "cre"))
 Description: Implementation of model-checking techniques for generalized linear

@@ -46,6 +46,16 @@
 #'   calibration, diagnostic and residual labels; [cumres_bootstrap()] adds
 #'   calibration/null labels, unresolved-refit counts and simulated tail bounds.
 #'   Their method-specific help defines these additional columns.
+#'   Linear/GLM diagnostics and response bootstrap also add `ordering_source`,
+#'   `ordering_status`, `ordering_reason`, `resolution`, `distinct_values`,
+#'   `tie_blocks`, `tied_units` and `changed_units`. These repeat the corresponding
+#'   per-ordering metadata for Sup and L2. The complete grouped-tie rule is in
+#'   `object$ordering`; local numerical details are in `object$ordering_check`.
+#'   An unresolved fitted ordering has missing inferential tails while its
+#'   descriptive statistic is retained. This is separate from score-space
+#'   informativeness. Objects saved without ordering metadata retain the core
+#'   result columns. Joint family rows have no single coordinate resolution
+#'   or tie count; these entries are missing, not inherited from one member.
 #'   The data-frame methods also accept saved matrix-based diagnostic objects.
 #'   A saved summary made before result tables were added retains its p-values
 #'   but cannot reconstruct observed statistics without the original curves.
@@ -81,6 +91,16 @@ gof_result_table <- function(object) {
                          informative=rep(NA,p*2L),
                          aggregation=rep(if (is.null(object$aggregation)) NA_character_ else object$aggregation,2L*p),
                          stringsAsFactors=FALSE)
+    if (!is.null(object$ordering)) {
+        metadata <- object$ordering
+        if (!identical(as.character(metadata$variable),as.character(variables)))
+            stop("Ordering metadata does not match diagnostic variables",call.=FALSE)
+        result$ordering_source <- rep(metadata$source,each=2L)
+        result$ordering_status <- rep(metadata$status,each=2L)
+        result$ordering_reason <- rep(metadata$reason,each=2L)
+        for (field in c("resolution","distinct_values","tie_blocks","tied_units","changed_units"))
+            result[[field]] <- rep(metadata[[field]],each=2L)
+    }
     if (!p) return(result)
     if (!is.null(object$KS)) result$p.value[seq.int(1L,2L*p,2L)] <- object$KS
     if (!is.null(object$CvM)) result$p.value[seq.int(2L,2L*p,2L)] <- object$CvM

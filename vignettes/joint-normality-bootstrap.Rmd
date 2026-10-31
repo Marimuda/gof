@@ -148,6 +148,28 @@ square root of total trials, matching individual trial expansion at tied
 ordering values. Nonunit positive Poisson prior weights are unsupported here:
 their mean/variance interpretation alone does not specify a count sampler.
 
+Refitting and recomputing fitted-value ordering would not by itself justify a
+general bootstrap for raw fitted-order L2. When the true mean is flat, that
+statistic's fitted-coordinate integration range vanishes with a random scale;
+ordinary fitted-null bootstrap can then remain non-nominal as sample size
+increases. This proposed extension remains unsupported. The existing fixed
+covariate ordering has a different, prespecified coordinate measure.
+
+For multiplier diagnostics using `variable = "predicted"`, the package uses
+predictions reconstructed from the supplied numerical coefficients. This
+preserves ties between identical design/offset rows; it does not certify ties at the
+exact likelihood solution between different rows. Very small fitted differences
+can reflect fitting error. Sup is sensitive to splitting an exact tie, while
+rounding predictions can merge genuinely distinct values. A small deviance
+change or tighter fitting tolerance does not alone certify the ordering.
+Prespecified fixed covariate orderings avoid this estimated-coordinate
+ambiguity, while retaining their own distributional and calibration assumptions.
+The default local numerical screen warns and withholds inferential tails for
+unresolved fitted orderings. `on_unresolved = "error"` stops instead. The
+[ordering and ties guide](ordering-and-ties.html) gives worked examples of
+these controls, declared observed measurement resolution and availability
+metadata. Neither policy enables fitted-order response bootstrap.
+
 Fitted parametric bootstrap calibration remains approximate. It is a way to
 use the assumed sampling distribution, not a guarantee that every sparse or
 boundary-estimation problem has been solved.

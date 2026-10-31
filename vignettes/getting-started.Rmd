@@ -21,6 +21,9 @@ This guide starts with a linear model, then covers the evaluation grid,
 missing observations, grouped binomial responses, weights and offsets.
 The [statistical details vignette](statistical-details.html) explains the
 method, model support and reproducibility assumptions.
+The [ordering and ties guide](ordering-and-ties.html) explains declared
+measurement resolution and report/error policies for numerically unresolved
+fitted ordering.
 
 ## Fit, diagnose and inspect
 

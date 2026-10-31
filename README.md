@@ -5,6 +5,12 @@
 
 **Model diagnostics based on cumulative residuals.**
 
+This checkout is development version 1.2.1.9000. The ordering controls
+below are part of this development candidate; the published 1.2.1
+release has the earlier interface. Numerical checks and the recorded
+platform qualification have separate scopes; see `RELEASE_STATUS.md` in
+the source checkout.
+
 `gof` checks fitted mean relationships by accumulating residuals along a
 covariate or the fitted predictions. It compares the observed curve with
 simulated null curves and reports Sup and L2 test p-values. This can
@@ -36,6 +42,12 @@ diagnostic |> as.data.frame()
 #>   variable test statistic p.value   n nobs   R informative aggregation
 #> 1        x  Sup  2.990672       0 200  200 499        TRUE        <NA>
 #> 2        x   L2  3.887833       0 200  200 499        TRUE        <NA>
+#>   ordering_source ordering_status ordering_reason resolution distinct_values
+#> 1           fixed           fixed            <NA>         NA             200
+#> 2           fixed           fixed            <NA>         NA             200
+#>   tie_blocks tied_units changed_units
+#> 1          0          0             0
+#> 2          0          0             0
 ```
 
 ``` r
@@ -123,6 +135,7 @@ other R interfaces:
 vignette("getting-started", package = "gof")
 vignette("statistical-details", package = "gof")
 vignette("joint-normality-bootstrap", package = "gof")
+vignette("ordering-and-ties", package = "gof")
 ```
 
 The ordinal default combines the joint cutpoint process for one
@@ -191,6 +204,22 @@ Regression tests, independent numerical references, calibration
 experiments and native sanitizers support the recorded implementation
 checks. They do not establish correctness for every supplied model or
 finite sample.
+
+Fitted-value ordering also depends on numerical fitting accuracy. The
+default local check warns and withholds inferential p-values for
+unresolved fitted comparisons, retaining their numerical curves.
+`on_unresolved = "error"` stops instead. A passed numerical check does
+not certify the exact likelihood root or statistical calibration.
+Prespecified fixed covariate orderings avoid this estimated-coordinate
+ambiguity.
+
+Genuine ties enter together. Named `resolution` steps can describe the
+known recording precision of observed ordering variables, for example
+`cumres(fit, variable = "x", resolution = c(x = 0.25))`. The model and
+residual units are unchanged. Fitted predictions cannot be coarsened
+this way. Inspect `diagnostic$ordering` for the applied rule, tie counts
+and availability reasons. See `vignette("ordering-and-ties", package =
+"gof")` for the policies.
 
 ## Citation and development
 

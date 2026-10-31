@@ -57,7 +57,9 @@ residuals; positive values give residual sums over \eqn{(t-b,t]}.}
 \item{plots}{Nonnegative whole number of null processes to retain for plotting.}
 
 \item{...}{Additional arguments passed to \code{cumres.default}, including
-\code{subset.max}, which limits grid values without discarding data rows.}
+\code{subset.max}, which limits grid values without discarding data rows.
+The linear/GLM \code{resolution} and \code{on_unresolved} controls are not
+implemented for this adapter and are rejected.}
 }
 \value{
 A \code{cumres} object for one residual/predictor pair, a named

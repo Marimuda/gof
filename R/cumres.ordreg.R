@@ -20,6 +20,8 @@
 ##' @param ... Graphical arguments passed to \code{plot.cumres} when
 ##' \code{plot=TRUE}. This method uses all distinct ordering values and does
 ##' not take \code{subset.max} or moving-window arguments through \code{...}.
+##' The linear/GLM \code{resolution} and \code{on_unresolved} controls are
+##' rejected rather than silently ignored.
 ##' @returns A \code{cumres} object with one process for every component
 ##' returned by \code{aggregate}. A scalar aggregator produces one process;
 ##' vector outputs receive labels such as \code{x.1}, \code{x.2}. See
@@ -66,6 +68,8 @@
 ##' @export
 cumres.ordreg <- function(model,variable="predicted",R=100,plot=FALSE,
                           aggregate=c("omnibus","score","cutpoints"),plots=min(R,50L),...) {
+    if (any(c("resolution","on_unresolved") %in% names(list(...))))
+        stop("resolution and on_unresolved are not implemented for ordinal diagnostics",call.=FALSE)
     if ("simulation" %in% names(list(...)))
         stop("Ordinal diagnostics use shared cutpoint multipliers for one ordering; simulation is a default/linear/GLM option")
     R <- gof_count(R,"R",1L)

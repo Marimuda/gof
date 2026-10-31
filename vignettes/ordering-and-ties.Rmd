@@ -1,0 +1,200 @@
+---
+title: "Ordering variables, ties and numerical precision"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ordering variables, ties and numerical precision}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+library(gof)
+```
+
+## Genuine ties enter one step
+
+The cumulative process adds all residuals whose ordering coordinate is at most
+the evaluation point. Observations at the same coordinate therefore enter
+together. If two tied observations have residuals +1 and -1, their combined
+jump is zero; there is no intermediate +1 step. Arbitrarily ordering them or
+adding jitter would change the statistic.
+
+The observations remain separate residual units. Tying their coordinates does
+not assign them one common subject multiplier, drop rows or average away their
+responses. The grouped step is also used for simulations. There is no random,
+first/last or average-rank switch for this statistic.
+
+The half-open moving window `(t-b, t]` matches Lin, Wei and Ying (2002),
+equation (2.7); a closed window can differ at coincident entry/exit events.
+For `"predicted"`, gof uses fitted response means, whereas that paper's
+equation (2.10) uses fitted linear predictors. A strictly increasing transform
+preserves the all-point cumulative Sup statistic, but generally changes the
+L2 integration measure and fixed-bandwidth windows. These are specified
+coordinate conventions, not interchangeable statistics. Supplying an
+outcome-estimated predictor under an observed-variable name does not make it
+a fixed ordering or establish its regularity.
+
+## Declare an observed measurement resolution
+
+By default, observed numeric ordering values are used as supplied. If the
+recording convention supplies a meaningful resolution, declare it explicitly
+before inspecting diagnostic results:
+
+```{r declared-resolution}
+set.seed(210)
+d <- data.frame(x = seq(-1, 1, length.out = 80))
+d$y <- rpois(nrow(d), exp(0.4 + 0.7 * d$x))
+fit <- glm(y ~ x, data = d, family = poisson())
+
+recorded <- fit |> cumres(
+  variable = "x", resolution = c(x = 0.25), R = 39, plots = 0
+)
+recorded$ordering
+as.data.frame(recorded)[, c("variable", "test", "statistic", "p.value",
+                          "ordering_status", "resolution", "tie_blocks")]
+```
+
+The coordinate becomes `round(x / 0.25) * 0.25`. The grid origin is zero;
+R rounds represented half-step values to the nearest even integer. Binary
+representation can affect values near a rounding boundary. Choose an explicitly
+transformed fixed variable yourself for other recording origins or bin rules.
+No tolerance is inferred from the significance of the resulting test.
+
+Only the diagnostic coordinate changes. The model retains its original
+covariates, fit, offsets, residuals and independent units. `resolution` must
+name selected observed numeric variables; it cannot target `"predicted"`.
+Very fine steps whose integer grid indices exceed exact double representation
+are rejected. Coarsening can change both power and the coordinate measure in
+L2, so it is part of the diagnostic specification.
+
+Response bootstrap uses the same declared fixed coordinate and grid for the
+observation and every simulated sample:
+
+```{r bootstrap-resolution}
+set.seed(211)
+bootstrap <- fit |> cumres_bootstrap(
+  variable = "x", resolution = c(x = 0.25), R = 39, plots = 0
+)
+bootstrap$ordering
+```
+
+Fitted-null bootstrap remains approximate under its documented sampling and
+estimation assumptions. Declaring resolution does not fix small-sample
+calibration, model selection or a wrong sampling distribution.
+
+## Fitted ordering has a separate numerical check
+
+For `lm`/`glm`, predictions are reconstructed from coefficients and offsets,
+so identical design/offset rows remain tied. Between different rows, fitting
+error can split an exact tie, collapse distinct predictions or reverse their
+order. Sup is particularly sensitive to an extra step between a split tie.
+
+The default check uses a local Fisher-score correction, conditioning and
+accumulated-roundoff allowances to screen adjacent fitted comparisons and
+moving-window entry/exit events. A stable ordering of fitted values alone does
+not settle their separation by bandwidth. The check consumes no random draws,
+does not refit the model and does not modify fitted
+coordinates. This is an ordinary local numerical diagnostic, **not** a formal
+interval/root certificate, proof of exact ties, or guarantee that the
+asymptotic/statistical calibration is valid. High-precision references are
+development validation tools; users do not need a high-precision dependency.
+
+```{r checked-ordering}
+checked <- fit |> cumres(variable = c("predicted", "x"), R = 39, plots = 0)
+checked$ordering[, c("variable", "source", "status", "reason")]
+```
+
+The `informative` score-space flag and the ordering precision status answer
+different questions. A numerically stable coordinate need not contain useful
+lack-of-fit information, and an observed score-space constraint does not
+establish that fitted coordinates were computed accurately.
+
+## Choose how unresolved ordering is reported
+
+`on_unresolved = "report"` is the default. A flagged fitted ordering generates
+a warning; its numerical curve/statistic remains available descriptively but
+its inferential Sup/L2 p-values are missing. Other resolved marginal diagnostics
+remain available. A joint family containing it withholds its entire family
+inference and simultaneous envelope, without silently removing the member.
+
+The following symmetric count totals have an exact flat fitted mean. The
+example deliberately retains an ordinary finite-precision GLM fit:
+
+```{r unresolved-ordering}
+set.seed(7281)
+flat_data <- data.frame(x = rep(c(-1, 0, 1), each = 100))
+flat_data$y <- unlist(lapply(c(200, 187, 200), function(total) {
+  drop(rmultinom(1, total, rep(0.01, 100)))
+}))
+flat_fit <- glm(y ~ x, data = flat_data, family = poisson(),
+                control = glm.control(epsilon = 1e-12))
+
+# Ordinary calls also warn. Suppress it here to display the returned reason.
+flat <- suppressWarnings(cumres(flat_fit, variable = c("predicted", "x"),
+                                R = 19, plots = 0))
+flat$ordering[, c("variable", "status", "reason")]
+as.data.frame(flat)[, c("variable", "test", "statistic", "p.value",
+                       "ordering_status")]
+```
+
+Strict workflows can use `on_unresolved = "error"`. This stops before any
+simulation, allowing a calling pipeline to handle the failure explicitly:
+
+```{r strict-policy}
+tryCatch(
+  cumres(flat_fit, variable = "predicted", on_unresolved = "error",
+         R = 19, plots = 0),
+  error = function(e) conditionMessage(e)
+)
+```
+
+Increasing optimizer precision can help, but a small deviance change alone
+does not certify every fitted comparison. Rounding fitted values or trying
+different policies until a preferred p-value appears is not a repair.
+Prespecified fixed covariate ordering avoids this estimated-coordinate issue
+while retaining its own sampling and calibration assumptions.
+
+## Scope and recorded metadata
+
+`resolution` supports `cumres.lm`/`cumres.glm`, their `cumres_joint` wrapper and
+`cumres_bootstrap`. `on_unresolved` controls the linear/GLM fitted-order check;
+it does not change bootstrap failure bounds or substitute for MLE-existence
+checks. The controls are not implemented for ordinal/SEM adapters or arbitrary
+explicit residual callbacks, which reject them rather than silently ignore them.
+
+`object$ordering` records source, `ties = "group"`, declared resolution,
+distinct coordinates, tied blocks/units, changed units, status and reason.
+Units are those of the residual engine, including expanded binomial trials.
+`object$ordering_check` stores local numerical details. Result tables, summaries
+and optional tidy methods retain ordering availability. Objects saved without
+this metadata retain the previous core result columns.
+
+Fitted status is `"specified"` for no estimated coefficients, `"structural"`
+for one natural-parameter cell, `"saturated"` for saturated natural-parameter
+cells with the required precision structure, `"checked"` after other local
+comparisons pass, or `"unresolved"`. Observed coordinates have status `"fixed"`.
+A passed check does not generalize the supported inferential method.
+
+In particular, fitted-order response bootstrap remains unsupported. Full
+refitting/reordering alone does not solve the raw L2 random-range problem at
+flat means. The existing response bootstrap uses prespecified fixed orderings.
+
+## References and implementation boundaries
+
+R's [empirical distribution function documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/ecdf.html)
+illustrates grouped jumps at tied values. The weighted residual step follows
+the same indicator convention.
+
+The `survival` package's
+[numerical controls](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.control.html)
+distinguish numerical tie repair from statistical tie methods, and warn that
+automatic repair can merge genuine differences. gof does not borrow Cox tie
+methods or automatically merge fitted values.
+
+R's [glm.control documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.control.html)
+defines a deviance-based stopping criterion. The local gof screen is a
+documented numerical implementation choice, independently checked against
+high-precision and exact-rational development references; it is not a newly
+claimed published hypothesis test. The original cumulative-residual method
+and remaining inferential conditions are described in the statistical guide.

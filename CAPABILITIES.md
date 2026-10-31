@@ -108,6 +108,47 @@ events. Other unresolved fits are never dropped or replaced: informative
 p-values are missing, and bounds account for every unresolved tail indicator.
 Those are calculation bounds, not confidence intervals.
 
+### Fitted-order precision and scope
+
+The fitted-order observed process uses numerical coefficients from the supplied
+fit. Reconstructing predictions preserves identical-design-row ties, but does
+not certify equality or order at the exact likelihood solution across different
+rows. Development controls exhibit both numerical splitting of exact ties and
+collapse/reversal of genuinely distinct means. Sup can change substantially.
+Prespecified fixed covariate ordering avoids this particular ambiguity; arbitrary
+prediction rounding is not a general correction. The development engine now
+screens fitted comparisons using a local Fisher-score correction and
+accumulated-roundoff allowances. It never rounds predictions or changes the
+fit. A failed screen warns and withholds inferential tails while retaining
+descriptive curves; `on_unresolved="error"` stops before simulation. A joint
+family containing an unresolved member withholds all family inference and its
+envelope without dropping that member. This is an ordinary numerical screen,
+not a validated interval/root enclosure or a calibration guarantee.
+
+An independent research reference now uses directed-rounding score-root boxes
+and exact rational mean certificates to inspect this issue. It is not an R
+runtime dependency or an integrated inference guarantee. It validates the
+local screen against exact ties, genuinely close slopes and all five canonical
+class fits. Its evidence is in the
+course audit `audits/gof-statistical-validation-2026-10-31/ordering-precision/`.
+
+Separately, a derived flat-mean example shows that full refitting/reordering
+does not qualify unrestricted raw fitted-order L2 bootstrap. The vanishing
+coordinate range introduces a random scale not reproduced consistently by
+the ordinary fitted-null bootstrap. Development rejection rates were 1.1–1.4%
+at nominal 5%, for n=300 through 30,000, in this example. This is conservative
+there, not an inflated type-I error claim. The response-bootstrap restriction
+on fitted ordering remains. See the preceding day's course audit
+`audits/gof-statistical-validation-2026-10-30/nonregular-ordering/`.
+
+Declared `resolution` steps support observed fixed coordinates in linear/GLM
+and response-bootstrap diagnostics. They use `round(x / step) * step`, retaining
+all original independent units and the unmodified model. That coordinate is
+used consistently by observations, grids and simulations. Fitted predictions
+cannot be coarsened via this control. Ordering status, reason, resolution and
+tie counts are retained by extraction/summary; ordinal and SEM controls remain
+outside this addition. The installed ordering/ties guide documents examples.
+
 Integration review found that withholding all p-values also hid the known
 answer for structurally zero-information processes. These now retain zero
 statistics and p-values/bounds of one while failed-refit statuses stay visible.

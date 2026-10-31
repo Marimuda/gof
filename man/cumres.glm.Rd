@@ -14,7 +14,9 @@
   R = 1000,
   b = 0,
   plots = min(R, 50),
-  ...
+  ...,
+  resolution = NULL,
+  on_unresolved = c("report", "error")
 )
 }
 \arguments{
@@ -27,7 +29,10 @@ in the fitted model. Use \code{subset.max=Inf} or \code{NULL} for all
 distinct values. Tied observations are accumulated together. The deprecated
 \code{breakties} argument is accepted with a warning when nonzero; no jitter
 is added. A custom \code{subset} function receives sorted distinct values
-and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.}
+and \code{n.qt}, \code{n.eq}, and returns their 1-based evaluation positions.
+Named additional controls must unambiguously match \code{breakties},
+\code{subset}, \code{subset.max} or \code{simulation}; unused names are
+rejected so misspelled ordering controls cannot be silently ignored.}
 
 \item{variable}{Names of ordering variables. The default selects fitted
 predictions and design columns with more than two distinct values. Explicit
@@ -43,6 +48,23 @@ to the fitted model by row names, or must already be in fitted-row order.}
 residuals; positive values give residual sums over the window \eqn{(t-b,t]}.}
 
 \item{plots}{Nonnegative whole number of null processes to retain for plotting.}
+
+\item{resolution}{Optional named numeric vector of positive finite measurement
+steps for selected observed ordering variables, for example
+\code{c(x=0.25)}. These coordinates become \code{round(x / step) * step},
+with origin zero and R's rounding of represented values to the nearest even
+integer at exact half steps. The model and residual units are unchanged.
+Choose the resolution from the recording convention before inspecting test
+results. Fitted predictions cannot be coarsened by this argument.}
+
+\item{on_unresolved}{Policy for a fitted ordering flagged by the numerical
+check. \code{"report"} (default) warns, retains the numerical curves and
+statistics, and returns missing inferential p-values for that ordering.
+\code{"error"} stops before simulation. Other selected marginal orderings
+remain available in report mode; a joint family containing an unresolved
+member has no inferential p-values or simultaneous envelope. These controls
+are implemented for linear/GLM methods; \code{resolution} also supports
+\code{cumres_bootstrap()}.}
 }
 \value{
 A \code{cumres} object. See \code{\link{cumres}} for its observed
@@ -79,6 +101,31 @@ fitter estimated the coefficients accurately. Appropriate estimator
 consistency, precision and finite-information conditions remain required.
 Predicted coordinates are reconstructed from the fitted coefficients so
 identical design rows are not separated by subtraction roundoff.
+This does not certify ties between different design rows at the exact
+likelihood solution. R's GLM convergence criterion concerns deviance,
+not the accuracy of every fitted-value comparison. With a flat or nearly
+flat fitted mean, numerical fitting error can split an exact tie, merge
+distinct values or reverse their order; the Sup statistic can change
+substantially. A local Fisher-score correction and accumulated-roundoff
+screen flag comparisons whose sign is not numerically resolved. For moving
+windows the screen also compares entry/exit events, including a fitted
+coordinate against another coordinate plus the bandwidth. The
+coordinates and supplied coefficients are retained. A passed check is an
+ordinary numerical diagnostic, not an exact-root or interval-arithmetic
+certificate, nor a guarantee of calibration. Prespecified
+fixed covariate orderings avoid this estimated-coordinate ambiguity.
+Arbitrary rounding of predictions or tighter fitting tolerances alone
+do not establish correct fitted ordering or statistical calibration.
+The \code{ordering} component records one row per ordering: source, grouped
+tie rule, declared resolution, counts of distinct values/tie blocks/tied
+residual units, changed coordinates, check status and reason. Status is
+\code{"fixed"} for observed coordinates, \code{"specified"} for a known
+mean with no estimated coefficients, \code{"structural"} for identical
+design/offset rows, \code{"saturated"} when ordering cannot add lack-of-fit
+information across saturated natural-parameter cells, \code{"checked"} for
+other fitted orderings that pass the local screen, or \code{"unresolved"}.
+This status is separate from the \code{informative} score-space flag.
+Diagnostic arithmetic details are retained in \code{ordering_check}.
 Structurally recognized saturated ordering cells have no lack-of-fit
 information: \code{informative=FALSE}, zero curves and p-values of one.
 Other processes whose selected indicators are numerically indistinguishable
@@ -90,6 +137,17 @@ Monte Carlo comparisons count simulated statistics greater than or equal to
 the observed statistic. \code{n} is the number of independent residual units
 (trials for expanded binomial data); \code{nobs} records positive-weight fitted rows.
 }
+\section{Coordinate convention}{
+
+The \code{"predicted"} coordinate is the fitted response mean. Lin, Wei
+and Ying (2002), equation (2.10), instead use the fitted linear predictor.
+A strictly increasing change of coordinate preserves the all-point
+cumulative Sup statistic, but generally changes L2's integration measure
+and a fixed-bandwidth moving-window statistic. The coordinate scale is
+therefore part of the diagnostic specification. The half-open window
+\eqn{(t-b,t]} agrees with their equation (2.7).
+}
+
 \examples{
 set.seed(13)
 d <- data.frame(x = seq(-2, 2, length.out = 120))
@@ -107,6 +165,14 @@ all_points$nobs
 # A positive bandwidth requests residual sums over (t - b, t].
 window <- cumres(fit, variable = "x", R = 99, plots = 0, b = 0.5)
 coef(window)
+
+# Declare a recording resolution for the diagnostic coordinate only.
+recorded <- cumres(fit, variable = "x", resolution = c(x = 0.25),
+  R = 39, plots = 0)
+recorded$ordering
+# A strict workflow can stop on unresolved fitted ordering.
+cumres(fit, variable = "predicted", on_unresolved = "error", R = 39,
+  plots = 0)$ordering
 }
 \references{
 D.Y. Lin and L.J. Wei and Z. Ying (2002) \emph{Model-Checking
