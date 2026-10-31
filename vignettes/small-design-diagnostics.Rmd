@@ -1,0 +1,202 @@
+---
+title: "Small designs: counts, uncertainty and interpretation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Small designs: counts, uncertainty and interpretation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse=TRUE,comment="#>")
+library(gof)
+```
+
+## Start with the sampling design
+
+A successfully fitted model and a finite p-value do not establish that a
+residual-process approximation is accurate for a particular design. The
+multiplier methods rely on large-sample arguments, independent sampling units
+and regular estimation. Counts help describe that situation; they do not
+certify it. There is no universal minimum sample size or parameter-to-sample
+ratio at which every supported diagnostic becomes calibrated.
+
+Keep the scientific sampling units distinct from the engine's counts. Four
+binomial groups with ten independent trials each have four model-data rows
+and forty expanded trial units under the binomial model. Correlated trials
+within a group would violate that sampling model; expansion does not resolve
+the dependence.
+
+```{r grouped}
+d <- data.frame(x=0:3,s=c(1,3,6,8),f=c(9,7,4,2))
+fit <- glm(cbind(s,f)~x,data=d,family=binomial())
+set.seed(62101)
+diagnostic <- cumres(fit,variable="x",R=39,plots=0)
+diagnostic$design_info
+as.data.frame(diagnostic)[,c("variable","test","n","n_rows","n_trials",
+                            "estimated_parameters","correction_dimension")]
+```
+
+`R=39` keeps this illustration quick; it is not a recommendation for a final
+analysis. `subset.max` and the evaluation grid choose where to evaluate a
+process, not which observations contribute to estimation or residual sums.
+An externally fixed covariate such as `x` supplies a fixed ordering here.
+Fitted predictions are estimated orderings and require the additional
+conditions and precision policies in the ordering guide.
+
+The multiplier mean diagnostic targets the stated conditional mean with its
+adapter's variance/influence assumptions. Response bootstrap instead simulates
+an entire binomial or Poisson response law. A response-family assumption is
+stronger than specifying a mean alone; a bootstrap result is not a generic
+replacement for a mean-model diagnostic.
+
+## What the metadata mean
+
+New objects contain a one-row `design_info` data frame. Summaries retain it;
+`as.data.frame()` and optional tidiers repeat its fields on each result row.
+The installed `?"cumres-object"` help defines every field.
+
+| Field | Interpretation |
+|:--|:--|
+| `unit` | Engine unit: row, trial, subject or explicit residual. |
+| `n_rows` | Contributing model-data rows before binomial expansion; unknown for arbitrary explicit residual inputs. |
+| `n_trials` | Active binomial trials; missing otherwise. |
+| `fit_parameters` | Coefficient slots in the source fit, including any aliased slots permitted for specified-null simulation. |
+| `estimated_parameters` | Mean/nuisance coefficients adjusted for or refitted by this diagnostic. |
+| `fit_design_rank` | Reported lm/glm design rank; missing for other adapters. |
+| `correction_dimension` | Dimension of the linear nuisance correction; zero for response bootstrap, which refits instead. |
+| `n_components` | Residual components per unit before pooling or aggregation. |
+
+These quantities serve different purposes. Gaussian lm/glm dispersion is not
+an lm/glm coefficient slot. An arbitrary callback's correction-vector size
+does not establish how many parameters its author estimated. Such an
+`estimated_parameters` entry stays missing. SEM data overrides describe the
+rows used for the diagnostic, which need not be the original estimation rows.
+Objects saved before this metadata existed retain their earlier table columns;
+the package does not reconstruct unknown design information from their curves.
+
+For a genuinely specified null, no mean parameters are estimated by the
+diagnostic, even if a fitted model supplies its design:
+
+```{r specified}
+set.seed(62102)
+specified <- cumres_bootstrap(fit,variable="x",null="specified",
+                             mean=rep(.5,4),R=39,plots=0)
+specified$design_info
+```
+
+Here the null probabilities .5 are stipulated independently of these outcomes.
+Passing fitted probabilities as `null="specified"` would not make them known.
+For fitted-null bootstrap, the mean model is refitted in every simulation.
+Neither choice automatically provides good finite-sample calibration.
+
+Precision weights in Gaussian models do not replicate observations. Nor do
+ordinal cutpoints or pooled SEM residual coordinates create additional
+independent subjects. In particular, `n_components * n` is not an independent
+sample-size calculation. See the
+[joint, normality and bootstrap guide](joint-normality-bootstrap.html) for
+their method-specific constructions.
+
+## Why a small fitted design can matter
+
+An elementary Gaussian calculation illustrates one mechanism; it is not a
+general correction formula. With known error variance one, design matrix X,
+hat matrix H and M = I - H, fitted residual covariance is M. If A accumulates
+observations in a fixed order, a linear corrected process has coefficient
+matrix B = A M / sqrt(n). Its sampling covariance is B B'. A multiplier
+covariance using the squared fitted residuals has expectation
+B diag(diag(M)) B'. Leverage therefore reduces this expected covariance in
+this example.
+
+```{r gaussian-mechanism}
+X <- cbind(1,0:3)
+H <- qr.fitted(qr(X),diag(4))
+M <- diag(4)-H
+A <- outer(1:4,1:4,">=")*1
+B <- A %*% M/sqrt(4)
+sampling <- tcrossprod(B)
+expected_multiplier <- B %*% diag(diag(M)) %*% t(B)
+c(sampling_trace=sum(diag(sampling)),
+  multiplier_trace=sum(diag(expected_multiplier)),
+  ratio=sum(diag(expected_multiplier))/sum(diag(sampling)))
+```
+
+This is an exact covariance identity for this stated linear model, not a
+Poisson calibration theorem or a reason to introduce a universal leverage
+threshold. Multiplying all Poisson means by ten still leaves the same number
+of independently observed rows. Independently replicating the design ten
+times changes that number. These are different asymptotic situations.
+
+## Earlier development evidence, with its uncertainty
+
+The package preserves a development screen of two fixed Poisson designs:
+200 response cohorts per design and 199 inner simulations per method. The
+selected formulas were held fixed, so this screen does not validate a model
+selection procedure. It used response-independent lexicographic covariate
+cells for ordering. These are earlier results from gof 1.2.1, not a newly
+executed qualification study of the current development version.
+
+```{r retained-evidence}
+evidence <- system.file("extdata","small-design",package="gof")
+screen <- read.csv(file.path(evidence,"development-summary.csv"))
+screen
+```
+
+The multiplier rejection rates were far from the nominal .05 on these
+designs, in both directions. This is a retained limitation, not hidden by a
+passing software suite. The response-bootstrap results look more promising
+in this screen, but 200 cohorts give wide uncertainty. An interval containing
+.05 is not evidence of equivalence to .05 or a qualification pass.
+
+`rejection.lower` counts only definite rejections; `rejection.upper` also
+counts decisions left unresolved. Their denominator includes every planned
+cohort. `mc.lower` and `mc.upper` form a pointwise 95% Clopper--Pearson
+envelope using those lower and upper rejection counts. They are not
+simultaneous intervals across all rows. They describe outer simulation
+uncertainty at the stated inner simulation budget, not the infinite-budget
+tail probability. `development-records.csv` retains all 1,600
+method/statistic records; `PROVENANCE.json` and `README.md` explain their
+origin and the accompanying response-free design objects.
+
+Fresh statistical qualification remains deferred behind independent review.
+No recommendation to switch methods automatically follows from this screen.
+
+## Read availability and failures before interpreting tails
+
+* `informative=FALSE` identifies a structurally recognized lack of information
+  and yields p-values of one. That is not affirmative model evidence. Some
+  custom ordinal aggregations have a constant, nonzero descriptive curve even
+  though their score-space variation is zero.
+* `informative=NA` can mean unavailable metadata or numerical indeterminacy.
+  Missing metadata alone does not withhold an otherwise available p-value;
+  diagnosed indeterminacy does. Read the adapter's status and warnings.
+* Unresolved fitted ordering withholds inferential tails under the default
+  policy. A joint family with an unresolved member is not silently reduced to
+  the remaining members. See [ordering and ties](ordering-and-ties.html).
+* Bootstrap refit failures retain their place in the denominator. Affected
+  point estimates are missing and `p.lower`/`p.upper` bound the possible
+  completed simulation tail. These completion bounds are not confidence
+  intervals. Analytic zero/one boundary cases have their documented special
+  handling; they do not establish general finite-sample validity.
+* Unsupported or invalid model constructions may raise an error. In a batch
+  assessment, retain and report those errors separately. Dropping them with
+  `na.rm=TRUE`, or replacing them with p-values zero or one, changes the
+  question being assessed.
+
+Choose the diagnostic, ordering family, measurement resolution, windows and
+simulation budget before inspecting the diagnostic outcomes. Increasing R
+reduces inner Monte Carlo uncertainty; it does not repair a model assumption
+or a poorly calibrated approximation. Report simulation uncertainty and
+failures alongside conclusions. For approximate SEM normality, retain its
+Gaussian, independent-subject and regularity assumptions and its documented
+first-order nuisance correction.
+
+## References
+
+* Lin, D. Y., Wei, L. J. and Ying, Z. (2002). Model-checking techniques based on
+  cumulative residuals. *Biometrics*, 58, 1--12.
+  [Author's article](https://dlin.web.unc.edu/wp-content/uploads/sites/1568/2013/04/LinWeiYing02.pdf).
+* R Core Team. [Generalized linear models](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html):
+  meanings of binomial and precision weights.
+* R Core Team. [Exact binomial test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/binom.test.html):
+  Clopper--Pearson interval construction.

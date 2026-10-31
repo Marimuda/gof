@@ -57,6 +57,36 @@
 #'   result columns. Joint family rows have no single coordinate resolution
 #'   or tie count; these entries are missing, not inherited from one member.
 #'   The data-frame methods also accept saved matrix-based diagnostic objects.
+#'
+#'   New diagnostics also retain one row of descriptive `design_info`, copied
+#'   into summaries and repeated as additional result-table columns:
+#'   \describe{
+#'     \item{unit}{Engine unit: `"row"`, `"trial"`, `"subject"` or explicit
+#'       `"residual"`. This describes counting, not scientific independence.}
+#'     \item{n_rows}{Contributing model-data rows before binomial expansion.
+#'       Missing for explicit residual inputs. SEM data overrides describe the
+#'       diagnostic rows, which need not be the original estimation rows.}
+#'     \item{n_trials}{Total active binomial trials; otherwise missing.}
+#'     \item{fit_parameters}{Coefficient slots in the source fit. An lm/glm
+#'       dispersion estimate is not a coefficient. Aliased slots can occur in
+#'       a design used only for specified-null simulation.}
+#'     \item{estimated_parameters}{Mean/nuisance coefficients whose estimation
+#'       is corrected or whose model is refitted. Zero for specified-null
+#'       bootstrap; unknown for arbitrary explicit inputs. This is not a count
+#'       of every estimated feature of the sampling distribution.}
+#'     \item{fit_design_rank}{The rank reported by the source lm/glm fit.
+#'       Missing for other adapters; not replaced by information-matrix rank.}
+#'     \item{correction_dimension}{Dimension of the linear nuisance correction.
+#'       Response bootstrap instead refits, so its dimension here is zero.}
+#'     \item{n_components}{Residual components per unit before aggregation or
+#'       pooling. Ordinal cutpoints and pooled SEM residual components do not
+#'       create additional independent subjects.}
+#'   }
+#'   Unknown metadata remain missing. These descriptive fields do not establish
+#'   adequate information, calibrated inference, a universal residual-df formula
+#'   or an n/p cutoff. Availability is still defined by each adapter's information,
+#'   ordering and refit-status fields. Objects saved without `design_info`
+#'   retain their previous result columns; metadata are not guessed from curves.
 #'   A saved summary made before result tables were added retains its p-values
 #'   but cannot reconstruct observed statistics without the original curves.
 #'
@@ -100,6 +130,13 @@ gof_result_table <- function(object) {
         result$ordering_reason <- rep(metadata$reason,each=2L)
         for (field in c("resolution","distinct_values","tie_blocks","tied_units","changed_units"))
             result[[field]] <- rep(metadata[[field]],each=2L)
+    }
+    if (!is.null(object$design_info)) {
+        info <- object$design_info
+        fields <- names(gof_design_info())
+        if (!is.data.frame(info) || nrow(info)!=1L || !identical(names(info),fields))
+            stop("Design metadata must contain one row with the documented fields",call.=FALSE)
+        for (field in fields) result[[field]] <- rep(info[[field]],2L*p)
     }
     if (!p) return(result)
     if (!is.null(object$KS)) result$p.value[seq.int(1L,2L*p,2L)] <- object$KS

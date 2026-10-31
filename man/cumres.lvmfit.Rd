@@ -65,7 +65,8 @@ implemented for this adapter and are rejected.}
 A \code{cumres} object for one residual/predictor pair, a named
 list for multiple pairs, or a list of results when \code{y} is a list of
 formulas. See \code{\link{cumres}} for each diagnostic's common result
-components; normal/GLM-specific metadata are not added by this method.
+components, including subject-based \code{design_info}; normal/GLM-specific
+ordering metadata are not added by this method.
 }
 \description{
 Calculates GoF statistics based on cumulative residual processes for

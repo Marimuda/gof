@@ -20,11 +20,12 @@ local({
             stop("Installed help topic not found: ", topic)
     }
     vignettes <- utils::vignette(package = "gof", lib.loc = library_path)$results
-    if (is.null(vignettes) || nrow(vignettes) < 4L)
+    if (is.null(vignettes) || nrow(vignettes) < 5L)
         stop("Install the source archive after building its vignettes")
     html <- list.files(file.path(path, "doc"), pattern = "[.]html$", full.names = TRUE)
     if (!all(c("getting-started.html","statistical-details.html",
-               "joint-normality-bootstrap.html","ordering-and-ties.html") %in% basename(html)))
+               "joint-normality-bootstrap.html","ordering-and-ties.html",
+               "small-design-diagnostics.html") %in% basename(html)))
         stop("The installed vignette HTML files are missing")
 
     news <- utils::news(package = "gof", lib.loc = library_path)
@@ -49,7 +50,9 @@ local({
     table <- piped |> as.data.frame()
     columns <- c("variable", "test", "statistic", "p.value", "n", "nobs", "R", "informative", "aggregation",
                  "ordering_source", "ordering_status", "ordering_reason", "resolution",
-                 "distinct_values", "tie_blocks", "tied_units", "changed_units")
+                 "distinct_values", "tie_blocks", "tied_units", "changed_units",
+                 "unit", "n_rows", "n_trials", "fit_parameters", "estimated_parameters",
+                 "fit_design_rank", "correction_dimension", "n_components")
     stopifnot(is.data.frame(table), identical(names(table), columns), nrow(table) == 2L,
               all(table$variable == "x"), all(table$n == 80L), all(table$nobs == 80L),
               all(table$R == 19L), all(is.finite(table$statistic)),

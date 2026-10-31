@@ -309,6 +309,10 @@
     res$model <- class(model)[1]
     res$response <- response
     res$nobs <- sum(active)
+    res$design_info <- gof_design_info(unit=if (is_binomial) "trial" else "row",
+        n_rows=sum(active),n_trials=if (is_binomial) res$n else NA_real_,
+        fit_parameters=length(beta),estimated_parameters=length(beta),
+        fit_design_rank=model$rank,correction_dimension=ncol(ic))
     res$ordering <- coordinates$metadata
     res$ordering_check <- ordering_check$details
     canonical <- !is_glm || (family(model)$family=="gaussian" && family(model)$link=="identity") ||

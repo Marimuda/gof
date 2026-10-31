@@ -1,5 +1,15 @@
 # Statistical capability development after 1.1.0
 
+Development version 1.2.1.9001 adds `design_info` to diagnostics, summaries
+and result tables. Counts distinguish rows, binomial trials, source-fit
+coefficient slots, parameters adjusted/refitted, fitted-design rank, linear
+correction size and residual components. They establish neither sampling
+independence nor adequate calibration. Unknown counts remain missing and
+older saved objects retain their previous table columns. The installed
+`small-design-diagnostics` vignette explains the contract and retains the
+earlier small-design screen with all failures and uncertainty. No inference
+formula changes or new qualification studies are part of this addition.
+
 The repaired 1.1.0 baseline is commit `bd473e8`. This phase adds capabilities
 within gof's purpose: graphical and numerical model diagnostics based on
 cumulative residual or residual-distribution processes. C++ architecture

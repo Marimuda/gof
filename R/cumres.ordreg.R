@@ -176,7 +176,10 @@ cumres.ordreg <- function(model,variable="predicted",R=100,plot=FALSE,
                              CvM=colMeans(sweep(l2,2,obs.l2,">=")),
                              n=n,R=R,type=rep(if (aggregation=="omnibus") "ordinal-norm" else "normal",q),
                              aggregation=aggregation,informative=rep(informative,q),sd=NULL,cvalues=NULL,
-                             variable=labels,model="ordreg"),class="cumres")
+                             variable=labels,model="ordreg",
+                             design_info=gof_design_info(unit="subject",n_rows=n,
+                                 fit_parameters=length(coef(model)),estimated_parameters=length(coef(model)),
+                                 correction_dimension=ncol(ic),n_components=k)),class="cumres")
     if (is.na(informative)) result$KS[] <- result$CvM[] <- NA_real_
     if (isTRUE(plot)) graphics::plot(result,...)
     result

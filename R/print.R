@@ -4,6 +4,7 @@ print.cumres <- function(x,...) {
     cat("\n")
     print(coef(x), ...)
     cat("\nBased on ", x$R, " realizations.\n",sep="")
+    gof_print_design(x)
     if (!is.null(x$aggregation)) cat("Ordinal aggregation: ",x$aggregation,".\n",sep="")
     if (anyNA(x$informative))
         cat("Numerically indeterminate score process: ",
@@ -24,6 +25,7 @@ summary.cumres <- function(object,...) {
     res$aggregation <- object$aggregation
     res$ordering <- object$ordering
     res$ordering_check <- object$ordering_check
+    res$design_info <- object$design_info
     res$table <- as.data.frame(object)
     return(structure(res, class="summary.cumres"))
 }
@@ -32,6 +34,7 @@ summary.cumres <- function(object,...) {
 ##' @export
 print.summary.cumres <- function(x,...) {
     cat("\n");
+    gof_print_design(x)
     for (i in seq_along(x$variable)) {
         if (!is.null(x$KS)) cat("Sup-test: p-value=", x$KS[i], "\n", sep="")
         if (!is.null(x$CvM)) cat("L2-test: p-value=", x$CvM[i], "\n", sep="")

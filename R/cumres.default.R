@@ -147,6 +147,11 @@ gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
 ##'   \item{\code{R}}{Number of null simulations used for the p-values.}
 ##'   \item{\code{n}}{Number of independent residual units. Grouped binomial
 ##'   diagnostics count expanded trials, rather than original fitted rows.}
+##'   \item{\code{design_info}}{One-row descriptive data frame distinguishing
+##'   engine units, rows, trials, parameter counts, fitted-design rank and
+##'   correction/component dimensions. See \code{\link{cumres-object}} for
+##'   definitions. Unknown counts remain missing. These counts do not certify
+##'   adequate information or finite-sample calibration.}
 ##'   \item{\code{type}, \code{model}}{Labels describing the process and
 ##'   fitted model adapter.}
 ##' }
@@ -166,7 +171,8 @@ gof_samplestat <- function(cumres_obj, R=1e3L, x=NULL, idx=NULL) {
 ##' individual elements follow the same \code{cumres} contract.
 ##' @seealso \code{\link{cumres.glm}}, \code{\link{cumres.default}},
 ##' \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
-##' \code{\link{plot.cumres}}.
+##' \code{\link{plot.cumres}}, \code{\link{cumres-object}} and
+##' \code{vignette("small-design-diagnostics", package="gof")}.
 ##' @references D. Y. Lin, L. J. Wei and Z. Ying (2002).
 ##' \emph{Model-Checking Techniques Based on Cumulative Residuals}.
 ##' Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
@@ -345,5 +351,6 @@ cumres.default <- function(model, variable, r=stats::residuals(model), dr,
     }
     structure(list(W=W,What=What,x=x,KS=pv[seq(1,2*p,2)],CvM=pv[seq(2,2*p,2)],
                    R=R,n=n,sd=NULL,cvalues=NULL,variable=vnames,
-                   type=rep("residual",p),untie=rep(0,n),model=class(model)[1]),class="cumres")
+                   type=rep("residual",p),untie=rep(0,n),model=class(model)[1],
+                   design_info=gof_design_info(correction_dimension=ncol(dr))),class="cumres")
 }

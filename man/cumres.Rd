@@ -31,6 +31,11 @@ p-values, respectively, in the same order as \code{W}.}
 \item{\code{R}}{Number of null simulations used for the p-values.}
 \item{\code{n}}{Number of independent residual units. Grouped binomial
 diagnostics count expanded trials, rather than original fitted rows.}
+\item{\code{design_info}}{One-row descriptive data frame distinguishing
+engine units, rows, trials, parameter counts, fitted-design rank and
+correction/component dimensions. See \code{\link{cumres-object}} for
+definitions. Unknown counts remain missing. These counts do not certify
+adequate information or finite-sample calibration.}
 \item{\code{type}, \code{model}}{Labels describing the process and
 fitted model adapter.}
 }
@@ -116,5 +121,6 @@ Biometrics 58, 1--12. \doi{10.1111/j.0006-341X.2002.00001.x}.
 \seealso{
 \code{\link{cumres.glm}}, \code{\link{cumres.default}},
 \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
-\code{\link{plot.cumres}}.
+\code{\link{plot.cumres}}, \code{\link{cumres-object}} and
+\code{vignette("small-design-diagnostics", package="gof")}.
 }

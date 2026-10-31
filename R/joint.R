@@ -137,7 +137,8 @@ gof_joint_engine <- function(model,variable,r,dr,ic,R,b,plots,subset,subset.max,
     }
     result <- structure(list(W=W,What=What,x=x,KS=rep(NA_real_,p),CvM=rep(NA_real_,p),
         R=R,n=n,sd=NULL,cvalues=NULL,variable=vnames,type=rep("residual",p),
-        untie=rep(0,n),model=class(model)[1],joint=list(statistics=null)),class=c("cumres_joint","cumres"))
+        untie=rep(0,n),model=class(model)[1],joint=list(statistics=null),
+        design_info=gof_design_info(correction_dimension=q)),class=c("cumres_joint","cumres"))
     gof_joint_finalize(result)
 }
 

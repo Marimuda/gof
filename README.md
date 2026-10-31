@@ -5,7 +5,7 @@
 
 **Model diagnostics based on cumulative residuals.**
 
-This checkout is development version 1.2.1.9000. The ordering controls
+This checkout is development version 1.2.1.9001. The ordering controls
 below are part of this development candidate; the published 1.2.1
 release has the earlier interface. Numerical checks and the recorded
 platform qualification have separate scopes; see `RELEASE_STATUS.md` in
@@ -45,9 +45,12 @@ diagnostic |> as.data.frame()
 #>   ordering_source ordering_status ordering_reason resolution distinct_values
 #> 1           fixed           fixed            <NA>         NA             200
 #> 2           fixed           fixed            <NA>         NA             200
-#>   tie_blocks tied_units changed_units
-#> 1          0          0             0
-#> 2          0          0             0
+#>   tie_blocks tied_units changed_units unit n_rows n_trials fit_parameters
+#> 1          0          0             0  row    200       NA              2
+#> 2          0          0             0  row    200       NA              2
+#>   estimated_parameters fit_design_rank correction_dimension n_components
+#> 1                    2               2                    2            1
+#> 2                    2               2                    2            1
 ```
 
 ``` r
@@ -71,6 +74,14 @@ tidyverse package is needed for native `|>` pipelines. Optional
 same columns as a tibble when the corresponding optional packages are
 installed. Existing `coef(diagnostic)` calls retain their historical
 wide p-value table.
+
+New diagnostics also report `design_info`: data rows, binomial trials,
+coefficient/correction counts and the unit being counted. Summaries and
+tidy tables retain these fields. They describe the construction; they do
+not certify independence or finite-sample calibration. See
+`vignette("small-design-diagnostics", package = "gof")` for worked
+examples, known small-design failures and how to interpret unavailable
+inference.
 
 ## Installation
 

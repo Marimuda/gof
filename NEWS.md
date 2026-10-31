@@ -1,3 +1,16 @@
+# gof 1.2.1.9001
+
+Development version; no new statistical qualification claim.
+
+* Added descriptive design_info to every diagnostic adapter and retained it
+  through summaries, result tables and optional tidy methods. Counts distinguish
+  rows, trials, subjects, fitted coefficient slots, parameters adjusted/refitted
+  and linear correction dimension. Unknown callback counts remain missing.
+* Added an installed small-design guide with existing development evidence,
+  sampling/availability distinctions and a deterministic covariance example.
+  No automatic sample-size cutoff, method selection or inference change is made.
+* Saved objects without the new metadata retain their previous result columns.
+
 # gof 1.2.1.9000
 
 Development version; not a new qualified statistical release.

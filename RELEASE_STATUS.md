@@ -1,5 +1,16 @@
 # gof 1.2.1 release qualification
 
+Development note, 31 October 2026 (B02): `feat/small-design-guidance`, version
+1.2.1.9001, adds descriptive design metadata and a small-design guide. Its
+inference calculations are intended to match the frozen 1.2.1.9000 baseline
+exactly. The baseline commit `1fe29cc` passed all 21 jobs in
+[run 41203031604](https://github.com/Marimuda/gof/actions/runs/41203031604).
+Evidence for the new changes belongs in
+`audits/gof-small-design-guidance-2026-10-31/`; baseline platform results do
+not qualify this newer source. Fresh statistical qualification remains
+deferred to the independent-review handoff. Earlier small-design failures
+and uncertainty are retained in the installed guide and accompanying files.
+
 Development note, 31 October 2026: the current `fix/fitted-order-contract`
 checkout is version 1.2.1.9000, adding ordering precision policies and declared
 measurement resolution. It is not the tagged release described below. Its

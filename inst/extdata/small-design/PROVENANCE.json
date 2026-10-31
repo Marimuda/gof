@@ -1,0 +1,19 @@
+{
+  "status": "earlier development evidence; not fresh statistical qualification",
+  "protocol": {
+    "cases": ["greenflies", "particles"],
+    "outer": 200,
+    "inner": 199,
+    "alpha": 0.05,
+    "seed": 84621,
+    "null": "Poisson means from the observed selected fixed-formula fits",
+    "ordering": "response-independent lexicographic covariate cells",
+    "selection": "model selection is not repeated; this is a conditional design screen",
+    "failures": "retain every replicate; unresolved decisions contribute [0,1] bounds"
+  },
+  "package_version": "1.2.1",
+  "response_cohorts_regenerated": false,
+  "source_records_sha256": "2bebc5b7d2190006ed895e6ec53c547604bff835757317a207e17324d39eae1c",
+  "source_summary_sha256": "8c1b478657d2a9a2dd90d022e7bf6543bed1c99e7e5766bc102cc2da822cb57c",
+  "note": "Designs/parameters and retained diagnostic outputs only; no original response vectors, company records or confidential workbooks. Original protocol records integer seeds; no new confirmation streams allocated."
+}

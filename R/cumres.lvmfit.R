@@ -75,7 +75,8 @@ cumresMaxSet <- function(m,var,...) {
 ##' @returns A \code{cumres} object for one residual/predictor pair, a named
 ##' list for multiple pairs, or a list of results when \code{y} is a list of
 ##' formulas. See \code{\link{cumres}} for each diagnostic's common result
-##' components; normal/GLM-specific metadata are not added by this method.
+##' components, including subject-based \code{design_info}; normal/GLM-specific
+##' ordering metadata are not added by this method.
 ##' @author Klaus K. Holst
 ##' @note The residual process assumes a Gaussian SEM with independent subjects
 ##' and complete data, a positive semidefinite structural error covariance and
@@ -213,6 +214,9 @@ cumres.lvmfit <- function(model,y,x,full=FALSE,
                           ic=influence,coef=NULL,R=R,plots=plots,b=b),dots))
       result$type <- rep("sem",length(result$W))
       result$model <- "lvmfit"
+      result$design_info <- gof_design_info(unit="subject",n_rows=nrow(data),
+          fit_parameters=length(fitted.p),estimated_parameters=length(p),
+          correction_dimension=ncol(influence))
       result
   }
   collection <- function(yy,xx) {
