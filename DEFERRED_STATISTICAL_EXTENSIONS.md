@@ -1,3 +1,16 @@
+# Status for version 1.3.0
+
+The native structural refactor and compiler/platform qualification were completed
+for 1.2.1; C++17 remains the supported package baseline and C++23 an integration
+configuration. No further native rewrite is required for this release.
+The fixed-order finite-panel study is now complete with its limited empirical
+support and adverse findings in the installed validation guide. The broader
+statistical extensions below remain research proposals, not missing promised
+endpoints or claims made by this release. The historical work-order discussion
+is retained as context.
+
+---
+
 # Deferred statistical extensions after C++ modernization
 
 Recorded 2026-10-30. The qualified statistical baseline is `v1.2.0`, commit

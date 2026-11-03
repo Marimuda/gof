@@ -152,6 +152,24 @@ selection requires its own statistical adjustment. Custom callbacks,
 quasi-likelihood, penalized fitting, clustered observations and arbitrary
 prior-weight sampling distributions are outside this implementation.
 }
+\section{Finite-panel evidence}{
+
+A frozen study of fixed response-independent orderings, all distinct grid
+points and zero bandwidth used 20,000 samples per primary scenario and
+999 inner requests. Fourteen eligible primary cells met a project-specific
+4--6\% practical criterion; two greenflies cells had upper-bound-only support.
+Sparse/high-leverage stress designs retained failures, conservative results
+and an observed L2 rejection rate of 6.62\% in one stress case. This is not
+exact 5\% control or a general guarantee for arbitrary designs, fitted
+ordering or the default capped grid when n > 500.
+
+All 106 cell summaries, uncertainty, design/stream metadata and review basis
+are installed under \code{system.file("extdata", "fixed-order", package="gof")}.
+See \code{vignette("finite-panel-validation", package="gof")} for the full
+evidence and adverse findings. The assessment was model-assisted under an
+explicit owner decision, without independent human review.
+}
+
 \examples{
 set.seed(310)
 d <- data.frame(x = seq(-1, 1, length.out = 60))

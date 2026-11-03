@@ -298,6 +298,9 @@ procedure: fitted-null calibration refits every sample and remains approximate;
 specified-null Monte Carlo testing requires genuinely prespecified means.
 Unresolved refits are accounted for explicitly. See the
 [joint, normality and bootstrap guide](joint-normality-bootstrap.html).
+The [finite-panel validation guide](finite-panel-validation.html) records fresh
+fixed-order bootstrap evidence and the sparse/high-leverage cases that remain
+limited. It does not qualify every configuration or the normality endpoint.
 
 ## Reproduce the simulation, not just the fit
 

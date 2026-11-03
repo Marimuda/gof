@@ -22,10 +22,11 @@ knitr::opts_chunk$set(
 
 **Model diagnostics based on cumulative residuals.**
 
-This checkout is development version 1.2.1.9001. The ordering controls below
-are part of this development candidate; the published 1.2.1 release has the
-earlier interface. Numerical checks and the recorded platform qualification
-have separate scopes; see `RELEASE_STATUS.md` in the source checkout.
+Version 1.3.0 includes explicit ordering controls, descriptive design metadata
+and installed finite-panel evidence. The package requires R >= 4.1 and C++17;
+C++23 is additionally exercised as an integration configuration. Software
+qualification and statistical support have separate scopes; see
+`RELEASE_STATUS.md` in the source checkout.
 
 `gof` checks fitted mean relationships by accumulating residuals along a
 covariate or the fitted predictions. It compares the observed curve with
@@ -82,6 +83,22 @@ independence or finite-sample calibration. See
 `vignette("small-design-diagnostics", package = "gof")` for worked examples,
 known small-design failures and how to interpret unavailable inference.
 
+## Fixed-order bootstrap evidence
+
+A frozen N=20,000/B=999 study retained 637,000 records across 15 null scenarios,
+three arms and eight power alternatives. All 14 eligible primary cells met the
+project-specific 4–6% practical criterion; the two greenflies cells met only
+an upper-bound criterion. This is support at declared design/parameter points,
+not exact 5% control or a guarantee for every sparse design. Stress cases retain
+failed fits, conservatism and an observed 6.62% L2 rate in one leverage scenario.
+
+The [finite-panel validation guide](vignettes/finite-panel-validation.Rmd)
+reports the full scope, uncertainty and adverse findings. All 106 cell summaries
+and design/stream metadata are installed with the package. The assessment was
+model-assisted under an explicit owner decision; no independent human review
+or expert endorsement is claimed. See also the separate approximate normality
+method and its limitations in the capability guide.
+
 ## Installation
 
 This maintenance fork of Klaus K. Holst's
@@ -91,11 +108,11 @@ released on CRAN or merged into the upstream repository. See
 [RELEASE_STATUS.md](RELEASE_STATUS.md) for platform qualification and
 source provenance.
 
-Install maintenance release 1.2.1, including its guides, with:
+Install release 1.3.0, including its guides, with:
 
 ```{r install-fork, eval=FALSE}
 install.packages("remotes")
-remotes::install_github("Marimuda/gof", ref = "v1.2.1",
+remotes::install_github("Marimuda/gof", ref = "v1.3.0",
                         dependencies = TRUE, build_vignettes = TRUE)
 ```
 
@@ -107,7 +124,7 @@ interface dependencies, then install that archive:
 
 ```{r install-archive, eval=FALSE}
 install.packages(c("lava", "Rcpp", "RcppArmadillo", "numDeriv", "lpSolve"))
-install.packages("gof_1.2.1.tar.gz", repos = NULL, type = "source")
+install.packages("gof_1.3.0.tar.gz", repos = NULL, type = "source")
 ```
 
 From the root of a checkout, this also builds the installed guides:

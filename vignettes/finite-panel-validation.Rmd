@@ -1,0 +1,176 @@
+---
+title: "Fixed-order bootstrap: finite-panel evidence and limits"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fixed-order bootstrap: finite-panel evidence and limits}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse=TRUE,comment="#>")
+library(gof)
+path <- system.file("extdata","fixed-order","summary.csv",package="gof")
+evidence <- read.csv(path,stringsAsFactors=FALSE)
+stopifnot(nrow(evidence)==106L,sum(evidence$primary_family)==16L,
+          all(evidence$definite_rejections<=evidence$possible_rejections),
+          all(rowSums(evidence[paste0("count_",c("R","N","U","OF","DG","IN"))])==evidence$N))
+percent <- function(x) sprintf("%.2f%%",100*x)
+display <- function(d) data.frame(
+  scenario=d$scenario,test=d$statistic,N=d$N,
+  definite=percent(d$definite_rate),possible=percent(d$possible_rate),
+  completion_interval=paste0("[",percent(d$lower95),", ",percent(d$upper95),"]"),
+  check.names=FALSE)
+```
+
+## What was assessed
+
+The November 2026 study assessed the existing response bootstrap at declared
+Poisson/log and binomial/logit design/parameter points. It retained **637,000
+records and 106 cells**: 15 null scenarios with fitted bootstrap, legacy
+multiplier and specified-null arms, plus eight power alternatives.
+
+Eight primary null scenarios each used **N=20,000** outer samples and **B=999**
+inner requests. Every ordering was fixed independently of the response;
+`subset.max=Inf` and `b=0` were used. Bootstrap refits retained the design,
+offsets, binomial trials and declared fitting controls. Early stopping was
+allowed only after both rejection decisions were determined. Audit prefixes
+and every power sample executed the full inner simulation count. Statistic
+matrices were retained for fitted-null primary prefixes; control/power matrices
+were not stored. All attempts retain counts and RNG-state hashes. This limits
+post hoc trajectory inspection and is disclosed alongside the full-count checks.
+
+The study does not qualify fitted ordering, the default capped grid when
+n>500, moving windows, overdispersion, clustered units or arbitrary links.
+It is evidence at the declared points, not uniform control over composite
+nulls or a proof of an asymptotic theorem. Its derived full-grid argument
+remains distinct from empirical measurement.
+
+The assessment was **model-assisted, without independent human review**, under
+an explicit owner decision replacing the external-review requirement. The
+**4–6% practical criterion is project-specific**, not a universal statistical
+standard or exact nominal 5% control. Code and design were frozen before the
+fresh confirmation samples; prior development evidence had been seen.
+
+## Failure accounting and uncertainty
+
+Every planned sample remains in the denominator. R denotes definite rejection,
+N definite non-rejection, U unresolved tail completion, OF outer failure,
+DG a degenerate/noninformative process and IN indeterminate information.
+Let D count R and E count R+U+OF+IN. The interval [D/N,E/N] describes unresolved
+completion; it is not a sampling confidence interval.
+
+The displayed **pointwise 95% completion interval** uses a lower exact binomial
+limit for D and an upper limit for E, retaining both sampling and completion
+uncertainty. It does not provide simultaneous coverage for every displayed
+cell. A DG sample is not evidence that a diagnostic is calibrated; the
+declared degeneracy/availability restrictions remain explicit project choices.
+
+The primary assessment is a separate 16-cell family: eight scenarios by Sup
+and L2 for fitted bootstrap. One-sided limits use tail .05/16 and an
+intersection-union rule. At N=20,000, within-band support requires D>=878 and
+E<=1108. P01 was predeclared upper-only. The family error statement concerns
+false primary support promotions, not every displayed endpoint/classification.
+The stricter 4.5–5.5% assessment is supplementary and descriptive.
+
+## Primary findings
+
+All **14 eligible primary cells** met the practical 4–6% rule. Both P01 cells
+met only their predeclared upper-rate criterion; P01 is not an equivalence or
+within-band result. Estimates and completion uncertainty remain visible:
+
+```{r primary, results='asis'}
+primary <- evidence[evidence$primary_family,]
+knitr::kable(display(primary),row.names=FALSE)
+```
+
+These results do not show that the true rate is exactly .05 or close within
+half a percentage point. In particular, B01 L2 has an observed rate of 5.44%.
+The primary support conclusion uses the declared practical criterion, not
+an interval merely containing .05.
+
+## Controls and comparison
+
+All **90 prespecified upper-alarm checks** on the specified-null arm remained
+below their thresholds. That control requires genuinely specified means and
+the independent response law. No lower-tail alarm was used: discrete
+conservatism is permitted. Lack of an alarm is not a new simultaneous
+calibration guarantee for every control cell.
+
+```{r controls, results='asis'}
+control <- evidence[evidence$study_role=="specified_control",]
+knitr::kable(display(control),row.names=FALSE)
+```
+
+The legacy multiplier remains a separate asymptotic method. Its comparator
+results are descriptive and are retained even when they are poor. The
+bootstrap study does not qualify that comparator or justify choosing a
+method after seeing the diagnostic outcomes.
+
+```{r comparator, results='asis'}
+comparator <- evidence[evidence$study_role=="multiplier_comparison",]
+knitr::kable(display(comparator),row.names=FALSE)
+```
+
+## Stress cases and availability
+
+The adverse findings are part of the evidence. P07 and B02 retain conservative
+rates, failed fits and unresolved bounds. P08 had 1,521 degenerate samples
+and 421 outer failures out of 2,000; it cannot establish fitted-null calibration.
+L03's observed L2 rate is **6.62%**. It is a descriptive stress result, not a
+primary qualification pass. Its pointwise interval and the full panel must be
+considered; it does not establish a universal violation or identify a coding
+defect by itself.
+
+```{r stress, results='asis'}
+stress <- evidence[evidence$study_role=="stress_calibration",]
+knitr::kable(display(stress),row.names=FALSE)
+```
+
+Increasing nominal observations or exposure is not a universal adequacy rule.
+No observed sample-size threshold, penalty, replacement fitter, rounding rule
+or automatic method switch was selected to remove these outcomes. The separate
+small-design guide explains leverage, sampling units and declared ordering.
+
+## Power under the prespecified alternatives
+
+Power rows report detection, not null calibration. Across the declared
+alternatives the definite detection estimates range from 79.05% to 99.60%.
+P01 retains a completion gap from failures/unresolved draws. These are
+alternative-specific estimates with uncertainty, not a universal power claim
+or a reason to select the better statistic after observing results.
+
+```{r power, results='asis'}
+power <- evidence[evidence$study_role=="power",]
+knitr::kable(display(power),row.names=FALSE)
+```
+
+## Reuse and provenance
+
+The compact evidence is installed and can be inspected without running a new
+simulation:
+
+```{r access}
+files <- system.file("extdata","fixed-order",package="gof")
+list.files(files)
+evidence |> subset(primary_family,select=c(scenario,statistic,N,assessment))
+```
+
+`PROVENANCE.json` identifies the exact studied source/archive, protocol/harness
+binding, confirmation seed and file hashes. `designs.rds` retains the null/power
+design objects; `streams.rds` retains the frozen namespaces, including reserved
+names, rather than the observed cohort data. The full all-attempt records and
+frozen execution code remain in the project audit. The compact export is not
+a standalone full execution archive.
+
+A post-study audit verified all 6,370 chunks, 637,000 records, paired null
+responses, counts, classifications, point values and 106 confidence summaries.
+It also found a companion-harness metadata mismatch: legacy comparator k/B
+points had plus-one inner completion bounds. Frozen records were preserved;
+legacy point values, classifications, primary/control findings and the
+count-based intervals above were unaffected. Future companion metadata is
+corrected. This was not a change to package inference.
+
+Review status, unresolved cases and finite-panel limits must accompany reused
+results. The study does not replace the separate assumptions and approximate
+calibration evidence for joint, ordinal or Gaussian SEM normality diagnostics.

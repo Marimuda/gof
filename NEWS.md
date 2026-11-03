@@ -1,6 +1,17 @@
-# gof 1.2.1.9001
+# gof 1.3.0
 
-Development version; no new statistical qualification claim.
+* Completed the fixed-order response-bootstrap finite-panel study on the exact
+  recorded development implementation. All 637,000 records and 106 cells are
+  retained; 14 eligible primary cells meet the declared 4–6% practical criterion
+  and both P01 cells meet only their predeclared upper-bound criterion.
+* Installed the complete compact count/interval/design/stream evidence and a
+  worked validation guide, including control, comparator, power and adverse
+  stress results. The study is model-assisted without independent human review;
+  it does not establish exact 5% control or general sparse-design validity.
+* Clarified exposure/replication equivalence for the response bootstrap and
+  computed-statistic ties. Existing numerical calculations are preserved.
+* The ordering controls and design metadata below are now included in this
+  release. The package requirements remain R >= 4.1 and C++17.
 
 * Added descriptive design_info to every diagnostic adapter and retained it
   through summaries, result tables and optional tidy methods. Counts distinguish
@@ -13,7 +24,7 @@ Development version; no new statistical qualification claim.
 
 # gof 1.2.1.9000
 
-Development version; not a new qualified statistical release.
+Development history incorporated in 1.3.0; retained for provenance.
 
 * Unresolved fitted-order plots use base R's tick range for their default
   display limits, avoiding near-constant-axis warnings on R 4.1 while retaining

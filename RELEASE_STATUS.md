@@ -1,3 +1,88 @@
+# gof 1.3.0 release qualification
+
+Version 1.3.0, 3 November 2026. This minor fork release includes the ordering
+policies/design metadata developed after 1.2.1 and the completed fixed-order
+finite-panel assessment. Its 19 parsed R sources and 29 native source/header
+files match the studied source 12f17c7. Authorship/license, R >= 4.1 and the
+C++17 baseline are retained; C++23 is an integration configuration.
+
+## Statistical evidence and limits
+
+The exact studied archive has SHA-256
+`9bd05defb889102b2611731fbec81819719d38321c93dc408079e9f26d5d60fb`.
+The study completed 6,370 chunks / 637,000 records with N=20,000/B=999 on
+primary scenarios. The post-study audit verified every result-triplet hash,
+record, paired null response, classification, point value, 106 cell summaries
+and intervals, 90 upper control alarms, RDS/JSON equality and all 1,600 retained
+statistic matrices. No confirmation draws were generated during this audit.
+All 14 eligible primary cells met the project-specific 4–6% criterion; both P01
+cells met only their predeclared upper criterion. All power, comparator, stress,
+failed and unresolved results are retained in the installed validation guide
+and compact evidence.
+
+This does not establish exact 5% control, universal sparse-design validity,
+fitted-order or general boundary-bootstrap validity. P07/B02 retain limitations,
+P08 is largely degenerate/failed and L03 L2 has observed rejection 6.62%.
+Normality retains its separate approximation evidence. The assessment was
+model-assisted under an explicit owner decision, without independent human
+review or expert endorsement. No adverse result was hidden or corrected by
+changing the estimator/tie rule. A companion-only comparator completion-bound
+metadata error was corrected for future tooling; package inference and all
+study classifications/primary/control findings are unchanged. Control/power
+samples executed full counts but did not retain statistic matrices; this
+inspection limit is disclosed rather than reconstructed silently.
+
+## Local software and documentation qualification
+
+Evidence is in `audits/gof-release-closeout-2026-11-03/` in the course workspace.
+The independently built archive `gof_1.3.0.tar.gz` has SHA-256
+`17a2e124a90b6a6bfb7253ae42c3c62c42a9d91664cea79c8875a85a47a87ad9`.
+
+* Built and installed in an isolated library; 1,383 fast expectations pass.
+* Installed downstream C++ client, 18 help topics, six built vignettes and
+  model-first pipe/table/summary/plot checks pass.
+* Generated help and README match their sources; the local documentation site
+  builds successfully without deployment.
+* Full `R CMD check --as-cran`, including PDF manual, passes with no errors or
+  warnings. Its three notes concern historical CRAN archive status, Ubuntu's
+  compiler flags and unavailable HTML Tidy.
+* A follow-up standard check with private Ubuntu Tidy, using R's documented
+  `--install=check` mode with the same archive's completed installation/log,
+  reruns the other sections including tests, examples, vignettes and both
+  manuals. HTML and PDF validation pass, with no errors/warnings and only the
+  historical CRAN archive note. The original compiler-note receipt is retained.
+
+The ordinary installed gof remains 1.2.1. Private development tools and test
+libraries do not change it. Local native sanitizer/calibration repeats were
+not requested in this documentation/evidence closeout; final CI runs them.
+
+## Exact release pointer and cross-platform gate
+
+The annotated `v1.3.0` tag is the authoritative release pointer. It is created
+only after the matching final source passes every job of fork qualification,
+and records the source commit, exact CI run URL, local archive hash and study
+binding. Inspect it with `git show v1.3.0`. An untagged preparation branch is
+not evidence that those remote checks have completed. This avoids recording
+an unobserved CI success or tagging a later untested bookkeeping commit.
+
+The workflow covers Linux release/devel/oldrel/R 4.1, Intel macOS C++17, Apple
+Silicon C++23, Windows C++17/C++23, Linux C++23, generated documentation, seeded
+calibration, compiler-backed static analysis, eight native sanitizer jobs and
+the no-co-signature history policy (21 jobs). The previous source 0a8533a passed
+[run 41210370201](https://github.com/Marimuda/gof/actions/runs/41210370201);
+that inherited result does not replace final release qualification.
+
+This evidence supports a scoped fork release, not an upstream merge, a CRAN
+resubmission or a claim that any software is free of every possible bug.
+
+## Historical 1.2.1 record
+
+The following record is preserved for the explicitly named earlier sources.
+It does not redefine current 1.3.0 evidence or imply its statistical studies
+were part of the older maintenance release.
+
+---
+
 # gof 1.2.1 release qualification
 
 Development note, 31 October 2026 (B02): `feat/small-design-guidance`, version

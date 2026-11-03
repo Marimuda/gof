@@ -1,3 +1,36 @@
+# Current capability evidence: version 1.3.0
+
+The following current assessment supplements the historical records below.
+The inference implementation matches the studied source 12f17c7; version,
+documentation and installed evidence are updated without changing calculations.
+
+A frozen fixed-order response-bootstrap study retained 637,000 records in 106
+cells. N=20,000/B=999 on eight primary scenarios gives 14 eligible cells meeting
+the project-specific 4–6% practical criterion, plus two P01 upper-only results.
+All 90 specified-null upper-alarm checks stayed below their thresholds. Power,
+legacy comparator, failure/availability and stress results are all retained in
+`inst/extdata/fixed-order/`, with a complete installed validation guide.
+
+This is finite-panel empirical support, not exact nominal 5% control, uniform
+composite-null size, fitted-order or general boundary validity. P07/B02 retain
+failures and conservatism; P08 is largely degenerate/failed. L03 L2 has observed
+rejection 6.62% at N=5,000. None is silently promoted or removed. Normality
+retains its separate asymptotic assumptions and uncertainty below.
+
+The assessment was model-assisted under explicit owner authorization replacing
+the external-review requirement. No independent human endorsement is claimed.
+The full study and all-record/interval/alarm audits remain in the course audit;
+compact counts, design/stream metadata and exact source/archive hashes ship in
+the package. A companion-only comparator completion-bound metadata error was
+identified and corrected for future tooling; package p-values/classifications
+and all primary/control findings are unchanged. See the installed guide.
+
+Current release software/platform evidence belongs in RELEASE_STATUS.md.
+All older counts, archives, studies and statements below are historical records
+for their explicitly named source, not additional claims about 1.3.0.
+
+---
+
 # Statistical capability development after 1.1.0
 
 Development version 1.2.1.9001 adds `design_info` to diagnostics, summaries

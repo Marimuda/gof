@@ -1,0 +1,16 @@
+id,source,role,N,B,early_stop_h,full_B_ids,theory_status,claim_available,change_from_proposal
+P01_greenflies,frozen,primary,20000,999,50,200,none at m=1,upper bound only (predeclared availability gate),two-sided claim removed before any run
+P02_particles,frozen,primary,20000,999,50,200,none at m=1,in-band or upper-bound pointwise assessment,none
+P03_greenflies_replicated10,frozen,primary,20000,999,50,200,fixed-K sketch; exactly P01 at 10x exposure,in-band or upper-bound pointwise assessment,interpretation corrected
+P04_particles_replicated10,frozen,primary,20000,999,50,200,fixed-K sketch; exactly P02 at 10x exposure,in-band or upper-bound pointwise assessment,interpretation corrected
+P05_regular200,frozen,primary,20000,999,50,200,K=n extension (derived),in-band or upper-bound pointwise assessment,theory status added
+P06_regular1000,frozen,primary,20000,999,50,200,K=n extension (derived),in-band or upper-bound pointwise assessment,theory status added
+B01_balanced,frozen,primary,20000,999,50,200,K=n extension (derived),in-band or upper-bound pointwise assessment,theory status added
+B03_grouped,frozen,primary,20000,999,50,200,fixed-K sketch,in-band or upper-bound pointwise assessment,none
+B04_grouped_rare,frozen,stress,20000,999,50,0,outside,descriptive stress results,none
+P07_sparse_leverage,frozen,stress,5000,999,50,0,outside,descriptive stress results,N lowered: envelope .031 exceeds Monte Carlo half-width .009
+B02_rare,frozen,stress,5000,999,50,0,outside,descriptive stress results,N lowered: envelope .023 exceeds Monte Carlo half-width .009
+P08_near_boundary,frozen,stress,2000,999,50,0,outside,descriptive stress results,N lowered: 2.8 percent regular and all regular datasets have u>=50
+L01,new: P08 intercept +log(100),stress,5000,999,50,0,outside,descriptive stress results,added on availability only
+L02,new: B02 intercept +log(2),stress,5000,999,50,0,outside,descriptive stress results,added on availability only
+L03,new: P07 intercept +log(5),stress,5000,999,50,0,outside,descriptive stress results,added on availability only

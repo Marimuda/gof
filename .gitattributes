@@ -1,0 +1,4 @@
+# Evidence hashes must survive checkout on every platform.
+inst/extdata/fixed-order/* -text
+# CSV exports retain CRLF; apply the usual checks while allowing that ending.
+inst/extdata/fixed-order/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

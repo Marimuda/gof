@@ -20,13 +20,18 @@ local({
             stop("Installed help topic not found: ", topic)
     }
     vignettes <- utils::vignette(package = "gof", lib.loc = library_path)$results
-    if (is.null(vignettes) || nrow(vignettes) < 5L)
+    if (is.null(vignettes) || nrow(vignettes) < 6L)
         stop("Install the source archive after building its vignettes")
     html <- list.files(file.path(path, "doc"), pattern = "[.]html$", full.names = TRUE)
     if (!all(c("getting-started.html","statistical-details.html",
                "joint-normality-bootstrap.html","ordering-and-ties.html",
-               "small-design-diagnostics.html") %in% basename(html)))
+               "small-design-diagnostics.html","finite-panel-validation.html") %in% basename(html)))
         stop("The installed vignette HTML files are missing")
+    evidence <- utils::read.csv(system.file("extdata","fixed-order","summary.csv",package="gof"))
+    stopifnot(nrow(evidence)==106L,sum(evidence$primary_family)==16L,
+              all(rowSums(evidence[paste0("count_",c("R","N","U","OF","DG","IN"))])==evidence$N),
+              all(evidence$assessment[evidence$scenario=="P01_greenflies" & evidence$primary_family]==
+                    "Upper rejection-rate bound at most 6% at this scenario"))
 
     news <- utils::news(package = "gof", lib.loc = library_path)
     version <- as.character(utils::packageVersion("gof", lib.loc = library_path))

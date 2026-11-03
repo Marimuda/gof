@@ -172,7 +172,11 @@ tail probability. `development-records.csv` retains all 1,600
 method/statistic records; `PROVENANCE.json` and `README.md` explain their
 origin and the accompanying response-free design objects.
 
-Fresh statistical qualification remains deferred behind independent review.
+Fresh fixed-order finite-panel qualification is now recorded in the
+[validation guide](finite-panel-validation.html), including its model-assisted
+review basis, primary support, control/power results and adverse stress cases.
+The earlier screen below remains development evidence and is not replaced by
+the confirmation study.
 No recommendation to switch methods automatically follows from this screen.
 
 ## Read availability and failures before interpreting tails

@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "study_id": "fixed-order-20261101",
+  "completed_utc": "2026-11-02T11:51:42Z",
+  "package_source_commit": "12f17c765fcc0257449eda1dcdce9928f03c8ebd",
+  "studied_package_version": "1.2.1.9001",
+  "studied_archive_sha256": "9bd05defb889102b2611731fbec81819719d38321c93dc408079e9f26d5d60fb",
+  "study_binding": {
+    "candidate_source_commit": "12f17c765fcc0257449eda1dcdce9928f03c8ebd",
+    "harness_sha256": "e971cdbffb9fd1bbe1faec532378fe2260fb947e7309683912bdceb201198bfe",
+    "library_sha256": "9dadb45a600047bc680fa122bc9bf1fa6e53aa77cb53488ab42b22be47d27aba",
+    "protocol_sha256": "66098f599892153dce471dd991d73164836fc450f5a41c8383d120bfe11aa7b8"
+  },
+  "confirmation_seed": 383688849,
+  "RNG": "L'Ecuyer-CMRG / Inversion / Rejection; disjoint data and simulation substreams",
+  "primary_N": 20000,
+  "B": 999,
+  "power_N": 2000,
+  "records": 637000,
+  "cells": 106,
+  "primary_cells": 16,
+  "primary_band": [
+    0.04,
+    0.06
+  ],
+  "supplementary_band": [
+    0.045,
+    0.055
+  ],
+  "review_basis": "explicit_owner_change",
+  "independent_human_review": false,
+  "scope": "Declared fixed-order all-grid independent canonical GLM panels only",
+  "raw_result_sha256": "4fd72b1e135dcfe487f071fe650fb4b4b8a1cd6b4b0c9887b5ccae9012538bea",
+  "all_record_audit_sha256": "cbd04002de168288a80d7ce063fb01a8f6f6a1589385f00a7f0511eacdcff358",
+  "interval_audit_sha256": "ba4bf713dfcd1589d3fb9d896f14c90eb0220ca4c3eccc19ceb061f476d81a79",
+  "public_export": "Audited counts and independently recomputed intervals; power rows labelled as detection, not null calibration",
+  "files_sha256": {
+    "README.md": "6ab43a806e07b3c308eee77480b3f596995dc3c1bbfe88cd1c25a3a45fdc3d8b",
+    "designs.rds": "36fb6b05643003feac55f350057678d7c1cc7de89126985735ac555b3cb74c50",
+    "scenario-roles.csv": "fdcc4c71b1df49924051cb74aed9b7a2254862122e6a1efbb3c447187edc2996",
+    "streams.rds": "3ac810a1d5ac372e5d8c948442d622244c6d1bc96520021ea3a25763f9e39e8d",
+    "summary.csv": "6293148d1749841f3e6d3922e673bf1249995969523f7b97fb8852dd90c322ab"
+  },
+  "trajectory_retention": "Statistic matrices retained for fitted-null primary prefixes only; specified-null/power full-count runs retain counts and RNG metadata, not statistic matrices"
+}
