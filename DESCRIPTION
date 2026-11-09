@@ -12,6 +12,8 @@ Description: Implementation of model-checking techniques for generalized linear
     equation residual-distribution checks (Sanchez et al. (2009)
     <doi:10.1111/j.1541-0420.2008.01022.x>), and parametric binomial/Poisson
     calibration with explicit refitting and simulation-failure accounting.
+    Provides marginal cumulative-category diagnostics with cluster multipliers
+    for nested ordinal mixed models fitted with the optional 'ordinal' package.
 Depends:
     R (>= 4.1)
 Imports:

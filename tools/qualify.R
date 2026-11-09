@@ -128,7 +128,8 @@ main <- function() {
                    GOF_BOOTSTRAP_CALIBRATION_REPORT=file.path(output,"calibration-bootstrap.rds"),
                    GOF_CLMM_CALIBRATION_REPORT=file.path(output,"calibration-clmm.rds"))
         result <- testthat::test_dir(file.path(snapshot,"tests","testthat"),
-                                    reporter="summary",stop_on_failure=FALSE)
+                                    reporter="summary",stop_on_failure=FALSE,
+                                    package="gof",load_package="installed")
         saveRDS(result,file.path(output,paste0(label,".rds")))
         frame <- as.data.frame(result)
         cat("\nTest blocks:",nrow(frame),"expectations:",sum(frame$passed),"\n")

@@ -36,3 +36,16 @@ bibentry(
   doi = "10.1111/j.1541-0420.2008.01022.x",
   header = "When using Gaussian SEM residual-distribution diagnostics, also cite:"
 )
+
+bibentry(
+  bibtype = "Article",
+  title = "Goodness-of-Fit Methods for Generalized Linear Mixed Models",
+  author = c(person("Zhiying", "Pan"), person(c("D.", "Y."), "Lin")),
+  journal = "Biometrics",
+  year = "2005",
+  volume = "61",
+  number = "4",
+  pages = "1000--1009",
+  doi = "10.1111/j.1541-0420.2005.00365.x",
+  header = "When using mixed-model cumulative-residual diagnostics, also cite:"
+)

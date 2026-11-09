@@ -47,6 +47,16 @@ in [0.03,0.075] with refusal below 5%. A failed rule remains a failed gate.
 Neither a successful software check nor conditional size among accepted fits
 certifies the procedure for all attempted datasets or arbitrary designs.
 
+Rscript tools/export-clmm-evidence.R AUDIT_DIRECTORY DESTINATION
+
+After confirmation completes, audits all retained attempt records, planned
+keys/seeds, status counts, rates, exact intervals, uniformity distances and
+histograms before atomically creating the compact installed evidence. JSON
+provenance export requires jsonlite in the development library. Failed project
+criteria are exported as failures; the tool does not change thresholds or
+select only successful cells. The original source snapshot and execution
+receipts remain outside the checkout.
+
 Native C++14/17/20/23 checks require Bash, a suitable C++ compiler, system Armadillo development
 files and sanitizer runtimes. The R package itself uses RcppArmadillo. Run the
 native script independently with:

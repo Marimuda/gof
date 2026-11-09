@@ -63,7 +63,7 @@ Parameter shifts, node checks and covariance-boundary diagnostics are
 retained in \code{fit_check}; actual boundary fits and failed checks are refused.
 Weakly estimated interior covariances and large shifts warn and are reported.
 
-For cutpoint k, the residual is w_i times (1{Y_i <= k} - P_i,k), with P
+For cutpoint k, the residual is \code{w_i * (I(Y_i <= k) - P_ik)}, with P
 integrated over the random effects. All rows in a top-level cluster share
 a multiplier; a score/information correction accounts for estimated
 parameters. The process scale is sqrt(m)/sum(w), where m is the number of
