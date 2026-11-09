@@ -164,8 +164,16 @@ evidence_path <- system.file("extdata","clmm-calibration","summary.csv",package=
 if (nzchar(evidence_path)) {
   evidence <- read.csv(evidence_path)
   main <- subset(evidence,alpha==.05 & stratum=="all")
+  primary <- subset(main,primary)
+  cat(sum(primary$criterion_met),"of",nrow(primary),
+      "primary endpoints met the prespecified project criteria.\n\n")
+  if (!all(primary$criterion_met))
+    cat("This cohort does not meet the broad empirical release criterion.\n\n")
+  main$project_criterion <- ifelse(!main$primary,"not primary",
+                                  ifelse(main$criterion_met,"met","FAILED"))
   knitr::kable(main[c("id","m","nc","structure","link","alternative","statistic",
-                     "attempted","accepted","rate","lower95","upper95","refusal_rate")],
+                     "attempted","accepted","rate","lower95","upper95","refusal_rate",
+                     "project_criterion")],
                row.names=FALSE,digits=4)
 } else {
   cat("Confirmation results are not installed in this development snapshot.\n")

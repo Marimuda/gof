@@ -183,10 +183,12 @@ jobs:
                                                               "calibration-weights.rds"),
                      GOF_CLMM_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
                                                             "calibration-clmm.rds"))
-          result <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = TRUE,
+          result <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = FALSE,
                                       package = "gof", load_package = "installed")
           saveRDS(result, "qualification/calibration-tests.rds")
           capture.output(sessionInfo(), file = "qualification/session-info.txt")
+          frame <- as.data.frame(result)
+          stopifnot(!any(frame$failed > 0L | frame$error))
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
