@@ -57,6 +57,16 @@ criteria are exported as failures; the tool does not change thresholds or
 select only successful cells. The original source snapshot and execution
 receipts remain outside the checkout.
 
+Rscript tools/check-clmm-input.R [new-output-directory]
+
+Reproduces the asymmetric-link input-fitting check on two deterministic
+fixtures. Select an isolated gof >= 1.4.0 library first. The tool compares
+the declared and opposite Gumbel likelihoods by independent scalar
+integration, verifies gof's declared-link values and the matrix backend's
+Laplace value, and retains all warnings, package versions and CSV results.
+This is an implementation audit, not a calibration study. It does not patch
+ordinal, change the confirmation protocol or alter any installed package.
+
 Native C++14/17/20/23 checks require Bash, a suitable C++ compiler, system Armadillo development
 files and sanitizer runtimes. The R package itself uses RcppArmadillo. Run the
 native script independently with:

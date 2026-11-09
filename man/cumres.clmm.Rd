@@ -62,6 +62,12 @@ exact integrated-likelihood solution. The input fit is not modified.
 Parameter shifts, node checks and covariance-boundary diagnostics are
 retained in \code{fit_check}; actual boundary fits and failed checks are refused.
 Weakly estimated interior covariances and large shifts warn and are reported.
+The diagnosed model uses the declared link. In ordinal 2026.7-26, its
+scalar backend interchanges the two asymmetric Gumbel links; see
+\code{vignette("ordinal-mixed-models", package = "gof")} for the verified input
+refit and independent likelihood checks. The upstream reported objective
+in \code{fit_check$loglik_clmm} need not be the same likelihood as gof's
+\code{fit_check$loglik}; their difference is not a likelihood-ratio statistic.
 
 For cutpoint k, the residual is \code{w_i * (I(Y_i <= k) - P_ik)}, with P
 integrated over the random effects. All rows in a top-level cluster share

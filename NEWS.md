@@ -11,6 +11,10 @@
   imprecise interior covariances and large parameter shifts warn.
 * Extracted a shared ordinal engine while preserving existing `lava::ordreg`
   results and random streams. `lava` remains a hard dependency.
+* Added independent declared-link likelihood checks and documented the
+  asymmetric-link mismatch in ordinal 2026.7-26's scalar input-fitting backend.
+  gof retains the declared-link target and reports its own polished parameters;
+  the mixed-model guide explains the large shifts and a verified input refit.
 * Added a resumable calibration protocol with independent pilot, slow-test and
   confirmation seeds, explicit refusal accounting and retained adverse results.
 * Consolidated contributor guidance and moved historical working notes out

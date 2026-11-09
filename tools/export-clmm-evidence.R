@@ -40,6 +40,14 @@ stopifnot(all(is.finite(attempts$p_sup[accepted]) & is.finite(attempts$p_l2[acce
           all(attempts$p_l2[accepted]>=0 & attempts$p_l2[accepted]<=1))
 
 equal <- function(x,y) isTRUE(all.equal(x,y,tolerance=1e-12,check.attributes=FALSE))
+# Check the complete table roster, not just the rows that happen to be present.
+expected <- expand.grid(id=protocol$cells$id,statistic=c("Sup","L2"),
+    alpha=c(.01,.05,.10),stratum=c("all","z<1","z>=1"),stringsAsFactors=FALSE)
+summary_key <- function(data) with(data,paste(id,statistic,alpha,stratum,sep="/"))
+stopifnot(nrow(summary)==nrow(expected),!anyDuplicated(summary_key(summary)),
+    identical(sort(summary_key(summary)),sort(summary_key(expected))),
+    equal(summary[,names(protocol$cells)],
+          protocol$cells[match(summary$id,protocol$cells$id),]))
 for (i in seq_len(nrow(summary))) {
     row <- summary[i,]
     data <- attempts[attempts$id==row$id,]
@@ -66,7 +74,13 @@ for (i in seq_len(nrow(summary))) {
     stopifnot(equal(row$uniformity_D,distance))
 }
 histograms <- read.csv(file.path(study,"pvalue-histograms.csv"),stringsAsFactors=FALSE)
-stopifnot(nrow(histograms)==29L*2L*10L)
+expected_histogram <- expand.grid(id=protocol$cells$id,statistic=c("p_sup","p_l2"),
+    lower=seq(0,.9,.1),stringsAsFactors=FALSE)
+histogram_key <- function(data) with(data,paste(id,statistic,sprintf("%.1f",lower),sep="/"))
+stopifnot(nrow(histograms)==nrow(expected_histogram),
+    !anyDuplicated(histogram_key(histograms)),
+    identical(sort(histogram_key(histograms)),sort(histogram_key(expected_histogram))),
+    equal(histograms$upper,histograms$lower+.1))
 for (i in seq_len(nrow(histograms))) {
     row <- histograms[i,]
     data <- attempts[attempts$id==row$id & attempts$status=="accepted",]

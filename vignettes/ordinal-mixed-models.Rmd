@@ -88,6 +88,51 @@ read later offsets by model-frame position; gof detects this mismatch and
 asks for a refit. An `offset=` argument is rejected because `clmm` ignores it.
 The supplied model object is never modified.
 
+## Asymmetric-link input fits in ordinal 2026.7-26
+
+The single-scalar random-effect backend in `ordinal` 2026.7-26 interchanges
+the Gumbel distributions used for `cloglog` and `loglog`. We verified this
+in the [official versioned source](https://cran.r-project.org/src/contrib/ordinal_2026.7-26.tar.gz):
+the integer-link mapping in `R/clmm.ssr.R` and `src/utilityFuns.c` differs
+from the named-link mapping in `src/get_fitted.c` and the documented CDFs.
+This is an input-fitting issue, not a reason to interchange the links in gof.
+
+Independent scalar integration on two fixed software fixtures agrees with
+gof's likelihood at both the supplied and polished parameters. The input
+backend's reported likelihood instead agrees with the opposite Gumbel CDF.
+The resulting polishing shifts were 8.18 and 9.69 standard errors. Using
+the matrix backend gave matching Laplace likelihoods within `6e-11` and
+polishing shifts below 0.05 standard errors on those fixtures. These are
+implementation checks, not calibration evidence.
+
+The reproducible developer command is
+`Rscript tools/check-clmm-input.R /path/to/new-audit`, with an isolated gof
+1.4.0 library selected. Its CSV and RDS outputs retain the likelihood
+comparisons, package versions and upstream warnings.
+
+gof targets the **declared link model** and uses its own polished parameters.
+For affected inputs, `fit_check$loglik_clmm` is the upstream reported
+objective, which is not the same likelihood as `fit_check$loglik`.
+Their difference is not a likelihood-ratio comparison. Inspect
+`fit_check$theta` and `fit_check$shift` to identify the parameters actually
+diagnosed.
+
+For a likelihood-consistent asymmetric-link input in this ordinal version,
+the verified alternative is its matrix backend:
+
+```{r asymmetric-input, eval=FALSE}
+fit <- ordinal::clmm(y~x+(1|group),data=d,link="cloglog",
+                    control=ordinal::clmm.control(useMatrix=TRUE))
+diagnostic <- cumres(fit,variable="x")
+```
+
+The matrix backend uses Laplace input fitting (`nAGQ=1`); gof supplies its
+own adaptive quadrature. Inspect upstream fitting warnings as well as gof's
+checks. The frozen confirmation protocol retains ordinal's default input
+backend: this observation did not change its estimator, seed roster,
+acceptance criteria or refusal accounting. Calibration of a different input
+fitting procedure is not claimed by that cohort.
+
 ## Ordering and unsupported extensions
 
 A numeric fixed-design column or retained numeric covariate can define the
