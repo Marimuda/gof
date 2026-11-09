@@ -1,0 +1,27 @@
+R version 4.6.1 (2026-06-24)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 22.04.4 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
+LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=fo_FO.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=fo_FO.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=fo_FO.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=fo_FO.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Atlantic/Faroe
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+ [1] MASS_7.3-66         compiler_4.6.1      Matrix_1.7-6       
+ [4] parallel_4.6.1      tools_4.6.1         nlme_3.1-171       
+ [7] ucminf_1.2.3        grid_4.6.1          ordinal_2026.7-26  
+[10] numDeriv_2016.8-1.1 lattice_0.23-1     

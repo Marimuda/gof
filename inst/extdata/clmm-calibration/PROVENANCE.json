@@ -1,0 +1,332 @@
+{
+  "schema": 1,
+  "package": "gof",
+  "version": "1.4.0",
+  "scientific_commit": "5bc9e4d8b0f39724a1df931bcfb011d331a3534e",
+  "original_feature_commit": "3f8fca8094230e4a9c730520f98a6a55bc43ffb8",
+  "created_utc": "2026-11-09 21:30:52 UTC",
+  "attempts": 29000,
+  "cells": [
+    {
+      "m": 20,
+      "nc": 3,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core01",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 3,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core02",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 3,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core03",
+      "primary": true
+    },
+    {
+      "m": 20,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core04",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core05",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core06",
+      "primary": true
+    },
+    {
+      "m": 20,
+      "nc": 3,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core07",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 3,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core08",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 3,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core09",
+      "primary": true
+    },
+    {
+      "m": 20,
+      "nc": 10,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core10",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core11",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 10,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core12",
+      "primary": true
+    },
+    {
+      "m": 20,
+      "nc": 3,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core13",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 3,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core14",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 3,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core15",
+      "primary": true
+    },
+    {
+      "m": 20,
+      "nc": 10,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core16",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core17",
+      "primary": true
+    },
+    {
+      "m": 150,
+      "nc": 10,
+      "structure": "nested",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core18",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 0.5,
+      "alternative": "null",
+      "id": "core19",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link1",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "probit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link2",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "cloglog",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link3",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "loglog",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link4",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "cauchit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link5",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "quadratic",
+      "id": "power1",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "wrong-cloglog",
+      "id": "power2",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "wrong-cauchit",
+      "id": "power3",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "omitted-slope",
+      "id": "power4",
+      "primary": false
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "nonproportional",
+      "id": "power5",
+      "primary": false
+    }
+  ],
+  "replicates": 1000,
+  "R": 199,
+  "seed_base": 140000000,
+  "seed_rule": "seed_base + cell_index * 100000 + replicate; multiplier seed = data seed + 50000",
+  "ordering": "x",
+  "aggregation": "omnibus",
+  "nested_design": "three children per top-level cluster, nc rows per child",
+  "numerical_controls": "package defaults; Q+4 check",
+  "acceptance": "conditional on an accepted numerical fit; all refused attempts remain in the denominator of refusal rates",
+  "intervals": "Pointwise exact 95% binomial intervals among accepted fits; no simultaneous or unconditional guarantee",
+  "project_primary_rule": "m >= 50 null cells: 5% rejection rate in [0.03,0.075] and refusal < 0.05; m=20 descriptive",
+  "primary_cells": 18,
+  "primary_endpoints": 36,
+  "primary_passes": 23,
+  "empirical_release_gate_scope": "Full confirmation cohort only; overall qualification also requires the separate slow-cohort and software gates",
+  "empirical_release_gate_passed": false,
+  "review_status": "Model-assisted assessment; no independent human statistical review or expert endorsement",
+  "integrity_audit": "Every planned key, seed, status, count, rate, refusal decomposition and binomial interval audited against retained attempt records",
+  "trajectory_limit": "Response datasets and multiplier-statistic matrices were not retained; replay requires the frozen source and seed roster",
+  "software_version_source": "session-info.txt retained verbatim from the completed study",
+  "installed_R_md5": {
+    "gof": "d6c68f1fe41ced6e98a766a3757313da",
+    "gof.rdb": "bcd35e181ecc93f5bafe78ecd77ca5bb",
+    "gof.rdx": "2b4432ede3f3c616869557e08af3a842"
+  },
+  "file_md5": {
+    "summary.csv": "70d171ad98c4c342b20233f2e184c919",
+    "attempts.csv.gz": "c390c5d3985b27d48b7e483eeceff29b",
+    "pvalue-histograms.csv": "5bdfca7451eeb81a86f1a71791ec644b",
+    "session-info.txt": "38b1d2061725016bdffd2099a6bd340d"
+  }
+}

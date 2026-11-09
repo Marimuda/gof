@@ -9,6 +9,9 @@ if (file.exists(output)) stop("Refusing to overwrite existing installed evidence
 if (!requireNamespace("jsonlite",quietly=TRUE)) stop("Install jsonlite in a development library to export JSON provenance")
 if (!file.exists(file.path(audit,"confirmation-completed.txt"))) stop("The confirmation cohort is not complete")
 study <- file.path(audit,"confirmation")
+session <- file.path(study,"session.txt")
+if (!file.exists(session) || !length(readLines(session,warn=FALSE)))
+    stop("The completed study's recorded software session is missing")
 protocol <- readRDS(file.path(study,"protocol.rds"))
 records <- readRDS(file.path(study,"records.rds"))
 summary <- readRDS(file.path(study,"summary.rds"))
@@ -119,8 +122,11 @@ provenance <- list(schema=1L,package="gof",version=protocol$package_version,
     review_status="Model-assisted assessment; no independent human statistical review or expert endorsement",
     integrity_audit="Every planned key, seed, status, count, rate, refusal decomposition and binomial interval audited against retained attempt records",
     trajectory_limit="Response datasets and multiplier-statistic matrices were not retained; replay requires the frozen source and seed roster",
+    software_version_source="session-info.txt retained verbatim from the completed study",
     installed_R_md5=as.list(stats::setNames(unname(md5),basename(names(md5)))),
     file_md5=as.list(tools::md5sum(file.path(staging,c("summary.csv","attempts.csv.gz","pvalue-histograms.csv")))))
+stopifnot(file.copy(session,file.path(staging,"session-info.txt")))
+provenance$file_md5[["session-info.txt"]] <- unname(tools::md5sum(file.path(staging,"session-info.txt")))
 names(provenance$file_md5) <- basename(names(provenance$file_md5))
 jsonlite::write_json(provenance,file.path(staging,"PROVENANCE.json"),pretty=TRUE,auto_unbox=TRUE,na="null")
 writeLines(c("# Ordinal mixed-model calibration evidence","",
@@ -128,6 +134,7 @@ writeLines(c("# Ordinal mixed-model calibration evidence","",
     "- summary.csv: conditional rejection rates, pointwise exact intervals, refusal counts and covariance-z strata.",
     "- attempts.csv.gz: all 29,000 planned samples, seeds, outcomes, numerical checks and warning/failure messages.",
     "- pvalue-histograms.csv: descriptive ten-bin distributions among accepted fits.",
+    "- session-info.txt: recorded R, package, platform and numerical-library versions.",
     "- PROVENANCE.json: source binding, design roster, seed rule, integrity checks and the unchanged project release criterion.","",
     "All refusals remain in refusal-rate denominators. Rejection rates condition on accepted fits. Failed project criteria remain failed; this panel does not prove universal calibration.",
     "Response datasets and multiplier-statistic matrices were not retained. The frozen source and recorded seeds permit replay; no audit of unretained trajectories is claimed."),

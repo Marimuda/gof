@@ -187,10 +187,32 @@ attempts, numerical refusals, warnings, intervals, strata and artifact provenanc
 [CI run](https://github.com/Marimuda/gof/actions/runs/42621994375)
 before exporting these files. The local run uses this same slow-study seed
 roster and is a replay, not another 2,000 independent samples; do not pool the
-two runs. The full confirmation cohort has a disjoint seed roster and remains
-in progress. Its results cannot erase a failed slow-cohort gate.
+two runs. The local replay under R 4.6.1 matched all 2,000 accepted/refused
+decisions and all 1,939 computed pairs of p-values from the original R 4.6.2
+CI run. One refusal category changed: `core11`, replicate 194, seed
+121100194 was labelled `boundary` in the original run and `convergence`
+locally. Numerical diagnostics and some refusal messages were not identical.
+
+A [repeated CI run](https://github.com/Marimuda/gof/actions/runs/42633570741)
+of the same seeds accepted 1,938 fits instead of 1,939. In `core11`, replicate
+1, seed 121100001, the original fit was accepted with Sup p-value
+0.2361809 and L2 p-value 0.08542714; the repeated run refused it at a covariance
+boundary after polishing failed to converge. The other accepted/refused
+decisions and p-values matched. The slope-design refusal rate therefore
+changed from 7.4% to 7.6%. Both replays retained four passing endpoints out
+of eight and the failed release gate. The original sealed cohort remains the
+reported cohort; these discrepancies preclude a claim of identical numerical
+replay across environments.
+
+The completed full confirmation cohort has a disjoint seed roster. Its results
+are reported separately and cannot erase a failed slow-cohort gate.
 
 ### Full confirmation cohort
+
+All 29,000 planned attempts were completed: 24,773 fits were accepted and
+4,227 were refused or failed. **Twenty-three of 36 primary statistic endpoints
+met the project criteria.** Broad mixed-model release qualification remains
+on hold.
 
 ```{r evidence, results='asis'}
 evidence_path <- system.file("extdata","clmm-calibration","summary.csv",package="gof")
@@ -212,6 +234,33 @@ if (nzchar(evidence_path)) {
   cat("Confirmation results are not installed in this development snapshot.\n")
 }
 ```
+
+The sparse random-slope designs with three rows per cluster refused 78.2%
+of attempts at 50 clusters and 40.5% at 150 clusters. Sparse nested designs
+refused 21.8% and 8.0%, respectively. The random-slope design with ten rows
+per cluster and 50 clusters refused 7.9%; among its accepted fits, rejection
+rates were 1.74% (Sup) and 0.98% (L2). At 150 clusters its L2 rejection rate
+was still 1.71%. These failures remain visible alongside passing endpoints.
+
+The cauchit cell accepted only 163 of 1,000 attempts. Its other attempts
+comprised 258 convergence refusals and 579 fitting failures; these were not
+covariance-boundary refusals. Conditional rejection rates near 5% among the
+accepted fits do not qualify a procedure unavailable for 83.7% of attempts.
+
+Power also depended strongly on the alternative. Conditional rejection rates
+were 100% for the quadratic alternative and 92.7% (Sup) and 96.8% (L2) for
+the nonproportional alternative. The omitted-slope alternative yielded only
+4.42% and 3.82%, and the wrong-cauchit alternative 4.33% and 6.84%. This panel
+does not establish reliable detection of arbitrary model misspecification.
+
+The installed `extdata/clmm-calibration` directory retains every attempt,
+all 522 summary rows, histograms and source/seed provenance.
+`tools/export-clmm-evidence.R` audits the complete cohort before export.
+A replay plan fixed before opening the results selected replicates 1 and
+1,000 in each of the 29 cells. All 58 replays matched the original records
+within the fixed `1e-10` comparison tolerance, excluding runtime. This checks
+seeded reproducibility in the frozen environment; it is not an independent
+calibration sample or a guarantee of identical results on other platforms.
 
 This is an asymptotic diagnostic. Small cluster counts, boundary behavior,
 quadrature sensitivity and model misspecification can affect its behavior.

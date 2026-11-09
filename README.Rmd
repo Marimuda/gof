@@ -70,9 +70,10 @@ remotes::install_github("Marimuda/gof", ref = "feature/clmm-integration",
                         dependencies = TRUE, build_vignettes = TRUE)
 ```
 
-The mixed-model path is experimental and **not release-qualified**. Its completed
-slow cohort failed the prespecified size/refusal criteria. The larger confirmation
-study is still running; the mixed-model guide retains the adverse results.
+The mixed-model path is experimental and **not release-qualified**. The completed
+29,000-attempt confirmation study met 23 of 36 primary endpoint criteria; the
+separate slow cohort met four of eight. Both failed their prespecified gates.
+The mixed-model guide retains all attempts, refusals and adverse findings.
 
 ## Example
 

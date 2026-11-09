@@ -20,7 +20,16 @@
 * The completed 2,000-attempt slow cohort met four of eight primary endpoint
   criteria. Sparse random-intercept and random-slope tests were conservative;
   the slope design also had 7.4% boundary refusals. Broad mixed-model release
-  qualification is on hold. The larger confirmation cohort remains in progress.
+  qualification is on hold.
+* Completed the separate 29,000-attempt confirmation study. Twenty-three of
+  36 primary endpoints met the unchanged criteria; sparse slope/nested and
+  cauchit designs had high refusal rates, and some slope tests were conservative.
+  All attempts, failures, intervals and strata are installed as evidence.
+  All 58 prespecified seeded replay checks matched within the fixed tolerance.
+  These results retain the broad mixed-model release hold.
+* Documented slow-cohort replay differences: one local refusal category changed,
+  and repeated CI added one covariance-boundary refusal. Both replays retained
+  the failed gate; they are not additional independent simulation samples.
 * Consolidated contributor guidance and moved historical working notes out
   of the package checkout. Temporary local notes and agent state are excluded
   from Git and source archives.
