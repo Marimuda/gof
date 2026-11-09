@@ -96,8 +96,10 @@ The data-frame methods also accept saved matrix-based diagnostic objects.
 New diagnostics also retain one row of descriptive \code{design_info}, copied
 into summaries and repeated as additional result-table columns:
 \describe{
-\item{unit}{Engine unit: \code{"row"}, \code{"trial"}, \code{"subject"} or explicit
-\code{"residual"}. This describes counting, not scientific independence.}
+\item{unit}{Engine unit: \code{"row"}, \code{"trial"}, \code{"subject"}, \code{"block"} or
+explicit \code{"residual"}. This describes counting, not scientific
+independence. A \code{"block"} is an independent group of data rows that
+shares one multiplier, such as a top-level random-effect cluster.}
 \item{n_rows}{Contributing model-data rows before binomial expansion.
 Missing for explicit residual inputs. SEM data overrides describe the
 diagnostic rows, which need not be the original estimation rows.}
@@ -117,6 +119,14 @@ Response bootstrap instead refits, so its dimension here is zero.}
 pooling. Ordinal cutpoints and pooled SEM residual components do not
 create additional independent subjects.}
 }
+Ordinal diagnostics also retain a \code{multiplier} data frame with one row per
+multiplier factor: \code{factor}, its number of \code{levels}, the data \code{rows} it
+indexes, and the \code{draw} and \code{combine} rules. A fixed-effect ordinal fit
+reports one \code{"rows"} factor with one multiplier per data row; print and
+summary list the factors only when they are not just \code{"rows"}.
+Mixed-model ordinal diagnostics additionally retain \code{random_effects}
+(random-effect terms and covariance summaries) and \code{fit_check}
+(integrator, estimate shift and numerical acceptance checks).
 Unknown metadata remain missing. These descriptive fields do not establish
 adequate information, calibrated inference, a universal residual-df formula
 or an n/p cutoff. Availability is still defined by each adapter's information,

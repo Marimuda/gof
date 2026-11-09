@@ -68,22 +68,14 @@
 ##' @export
 cumres.ordreg <- function(model,variable="predicted",R=100,plot=FALSE,
                           aggregate=c("omnibus","score","cutpoints"),plots=min(R,50L),...) {
-    if (any(c("resolution","on_unresolved") %in% names(list(...))))
-        stop("resolution and on_unresolved are not implemented for ordinal diagnostics",call.=FALSE)
-    if ("simulation" %in% names(list(...)))
-        stop("Ordinal diagnostics use shared cutpoint multipliers for one ordering; simulation is a default/linear/GLM option")
+    gof_ordinal_check_dots(...)
     R <- gof_count(R,"R",1L)
     plots <- gof_count(plots,"plots")
     if (!is.logical(plot) || length(plot)!=1L || is.na(plot)) stop("plot must be TRUE or FALSE")
     if (!requireNamespace("numDeriv",quietly=TRUE)) stop("package 'numDeriv' not available")
-    if (is.character(aggregate)) {
-        aggregation <- match.arg(aggregate,c("omnibus","score","cutpoints"))
-        aggregate <- switch(aggregation,omnibus=gof_ordinal_norm,score=sum,cutpoints=identity)
-    } else {
-        if (!is.function(aggregate)) stop("aggregate must be a function or a named aggregation mode")
-        aggregation <- if (identical(aggregate,sum)) "score" else
-            if (identical(aggregate,identity)) "cutpoints" else "custom"
-    }
+    aggregation <- gof_ordinal_aggregation(aggregate)
+    aggregate <- aggregation$fn
+    aggregation <- aggregation$aggregation
     env <- model$up
     if (!is.environment(env) || any(!is.finite(coef(model))) ||
         (!is.null(model$opt$convergence) && !isTRUE(model$opt$convergence==0L)))
@@ -124,69 +116,17 @@ cumres.ordreg <- function(model,variable="predicted",R=100,plot=FALSE,
     if (!identical(dim(gradient),c(n*k,length(coef(model)))) ||
         !identical(dim(ic),c(n,length(coef(model)))))
         stop("Incompatible ordinal gradient or influence dimensions")
-    o <- order(x)
-    x <- x[o]
-    ends <- cumsum(rle(x)$lengths)
-    x <- x[ends]
-    residual <- residual[o,,drop=FALSE]
-    eta <- lapply(seq_len(k),function(j) {
-        z <- gradient[seq_len(n)+(j-1L)*n,,drop=FALSE][o,,drop=FALSE]
-        apply(z,2,cumsum)
-    })
-    ic <- ic[o,,drop=FALSE]
     if (any(!is.finite(residual)) || any(!is.finite(gradient)) || any(!is.finite(ic)))
         stop("Ordinal residuals, gradients and influences must be finite")
-    combine <- function(w) {
-        rows <- lapply(seq_len(nrow(w)),function(i) aggregate(w[i,]))
-        sizes <- lengths(rows)
-        if (!length(sizes) || !sizes[1] || any(sizes!=sizes[1]) ||
-            any(!vapply(rows,function(z) is.numeric(z) && !is.complex(z) && is.null(dim(z)),logical(1))) ||
-            any(!is.finite(unlist(rows))))
-            stop("aggregate must return a fixed-length finite numeric vector")
-        do.call(rbind,rows)
-    }
-    observed_cdf <- apply(residual,2,cumsum)[ends,,drop=FALSE]/sqrt(n)
-    if (identical(informative,FALSE)) observed_cdf[] <- 0
-    observed <- combine(observed_cdf)
-    q <- ncol(observed)
-    What <- lapply(seq_len(q),function(i) matrix(0,length(ends),plots))
-    obs.ks <- apply(abs(observed),2,max)
-    obs.l2 <- apply(observed,2,function(w) L2Test(w,x))
-    ks <- l2 <- matrix(0,R,q)
-    for (j in seq_len(max(R,plots))) {
-        g <- rnorm(n)
-        B <- colSums(ic*g)
-        w <- vapply(seq_len(k),function(i)
-            (cumsum(residual[,i]*g)+drop(eta[[i]] %*% B))[ends]/sqrt(n),
-            numeric(length(ends)))
-        w <- matrix(w,ncol=k)
-        if (identical(informative,FALSE)) w[] <- 0
-        w <- combine(w)
-        if (ncol(w)!=q) stop("aggregate returned a different number of processes")
-        if (j<=R) {
-            ks[j,] <- apply(abs(w),2,max)
-            l2[j,] <- apply(w,2,function(z) L2Test(z,x))
-        }
-        if (j<=plots) for (i in seq_len(q)) What[[i]][,j] <- w[,i]
-    }
-    labels <- if (q==1L) variable else paste(variable,seq_len(q),sep=".")
-    result <- structure(list(W=lapply(seq_len(q),function(i) observed[,i]),
-                             What=What,x=rep(list(x),q),
-                             KS=colMeans(sweep(ks,2,obs.ks,">=")),
-                             CvM=colMeans(sweep(l2,2,obs.l2,">=")),
-                             n=n,R=R,type=rep(if (aggregation=="omnibus") "ordinal-norm" else "normal",q),
-                             aggregation=aggregation,informative=rep(informative,q),sd=NULL,cvalues=NULL,
-                             variable=labels,model="ordreg",
-                             design_info=gof_design_info(unit="subject",n_rows=n,
-                                 fit_parameters=length(coef(model)),estimated_parameters=length(coef(model)),
-                                 correction_dimension=ncol(ic),n_components=k)),class="cumres")
-    if (is.na(informative)) result$KS[] <- result$CvM[] <- NA_real_
+    ## One multiplier per fitted row; the engine sorts rows by the ordering.
+    multiplier <- gof_multiplier_design(list(list(name="rows",index=seq_len(n),influence=ic)),
+                                        n_units=n,divisor=sqrt(n))
+    result <- gof_ordinal_engine(residual,gradient,multiplier,ordering=x,aggregate=aggregate,
+                                 aggregation=aggregation,informative=informative,R=R,plots=plots,
+                                 variable=variable,model="ordreg",
+                                 design_info=gof_design_info(unit="subject",n_rows=n,
+                                     fit_parameters=length(coef(model)),estimated_parameters=length(coef(model)),
+                                     correction_dimension=ncol(ic),n_components=k))
     if (isTRUE(plot)) graphics::plot(result,...)
     result
-}
-
-gof_ordinal_norm <- function(x) {
-    scale <- max(abs(x))
-    if (scale==0) return(0)
-    scale*sqrt(sum((x/scale)^2))
 }

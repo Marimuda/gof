@@ -4,7 +4,7 @@ gof_design_info <- function(unit="residual",n_rows=NA_real_,n_trials=NA_real_,
                             fit_design_rank=NA_real_,correction_dimension=0,
                             n_components=1) {
     if (!is.character(unit) || length(unit)!=1L || is.na(unit) ||
-        !unit %in% c("row","trial","subject","residual"))
+        !unit %in% c("row","trial","subject","block","residual"))
         stop("Invalid diagnostic unit metadata",call.=FALSE)
     counts <- list(n_rows=n_rows,n_trials=n_trials,fit_parameters=fit_parameters,
         estimated_parameters=estimated_parameters,fit_design_rank=fit_design_rank,
@@ -29,5 +29,10 @@ gof_print_design <- function(object) {
         cat("; estimated parameter count unreported")
     if (!is.na(info$fit_design_rank)) cat("; fit design rank ",info$fit_design_rank,sep="")
     cat(".\n")
+    ## Mixed-model diagnostics draw multipliers per independent block; the
+    ## per-row multipliers of fixed-effect fits are already implied above.
+    m <- object$multiplier
+    if (is.data.frame(m) && nrow(m) && !identical(m$factor,"rows"))
+        cat("Multipliers: ",paste0(m$factor," (",m$levels," levels)",collapse=", "),".\n",sep="")
     invisible(NULL)
 }

@@ -1,0 +1,144 @@
+---
+title: "Cumulative residual diagnostics for ordinal mixed models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cumulative residual diagnostics for ordinal mixed models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse=TRUE,comment="#>",fig.width=6,fig.height=4)
+library(gof)
+has_ordinal <- requireNamespace("ordinal",quietly=TRUE) && requireNamespace("numDeriv",quietly=TRUE)
+```
+
+## Model and sampling unit
+
+`cumres.clmm()` checks marginal cumulative-category residuals from a fitted
+`ordinal::clmm` model. It accepts a single grouping factor or a nesting chain,
+including random slopes, the five cumulative links and the four threshold
+structures supported by `clmm`. Independent units are the top-level clusters.
+More rows within a cluster do not create more independent multiplier draws.
+Crossed and non-chain random effects are rejected.
+
+`lava` remains a required package for existing model adapters. The optional
+`ordinal` and `numDeriv` packages are needed only for the mixed-model path.
+
+```{r wine, eval=has_ordinal}
+data("wine",package="ordinal")
+fit <- ordinal::clmm(rating~temp+contact+(1|judge),data=wine)
+set.seed(1401)
+# Nine judges is a small-cluster example; retain its warning in an analysis.
+diagnostic <- suppressWarnings(cumres(fit,variable="tempwarm",R=99,plots=5))
+as.data.frame(diagnostic)[c("variable","test","p.value","n","n_rows","unit")]
+plot(diagnostic)
+```
+
+The wine data illustrate the interface, not a well-calibrated large-cluster
+analysis. The method warns below 30 clusters and refuses fits with no more
+clusters than corrected parameters. Inspect all warnings and numerical checks
+before interpreting the diagnostic.
+
+## What is diagnosed
+
+For each row and cumulative cutpoint, the residual is the weighted indicator
+of the observed category being at or below that cutpoint, minus its weighted
+marginal probability. Probabilities integrate over the Gaussian random effects;
+they do not condition on estimated random effects. Each top-level cluster gets
+one shared normal multiplier. A score/information correction accounts for
+estimated thresholds, fixed effects and random-effect covariance parameters.
+
+The process is scaled by `sqrt(m)/sum(weights)`. `n` reports m independent
+clusters, while `n_rows` reports positive-weight rows. Weights multiply the
+likelihood and residual contributions. They do not implement survey sampling
+or arbitrary dependence beyond the fitted cluster structure.
+
+The default `aggregate="omnibus"` is the Euclidean norm across cumulative
+cutpoint processes. `"cutpoints"` exposes signed components; `"score"` sums
+them and can miss departures that preserve the ordinal mean. These summaries
+are related views of the same process, not independent replications.
+
+## Numerical estimator and acceptance checks
+
+The supplied fit initializes adaptive Gauss--Hermite quadrature. gof polishes
+the parameters to a score root with quadrature nodes frozen at their final
+adaptive locations. This is a finite-quadrature estimating equation, not an
+exact integrated-likelihood calculation. A separate calculation with four
+more nodes per dimension checks sensitivity. Marginal probabilities use the
+probit closed form or accurate one-dimensional integration as appropriate.
+
+```{r checks, eval=has_ordinal}
+diagnostic$fit_check$shift
+diagnostic$fit_check$node_check
+diagnostic$fit_check$boundary
+diagnostic$multiplier
+```
+
+Actual covariance boundaries, unidentifiable information, nonconvergence and
+failed node checks refuse ordinary inference. A weakly estimated but interior
+covariance warns and reports its smallest-eigenvalue z statistic. Parameter
+shifts are always reported and warn above 0.5 standard errors; the default
+does not refuse a fit merely because polishing changes the estimates.
+Use `gof_clmm_control()` to set numerical controls deliberately. Altering a
+control after seeing a diagnostic changes the procedure being assessed.
+
+Formula offsets must precede random-effect terms. Some `ordinal` versions
+read later offsets by model-frame position; gof detects this mismatch and
+asks for a refit. An `offset=` argument is rejected because `clmm` ignores it.
+The supplied model object is never modified.
+
+## Ordering and unsupported extensions
+
+A numeric fixed-design column or retained numeric covariate can define the
+ordering. All tied values enter together. `variable="predicted"` uses the
+polished fixed predictor plus offset; it is not a conditional prediction or a
+BLUP. Its estimated ordering still depends on the response and fitting accuracy.
+Prespecify an observed covariate when possible. BLUP/conditional orderings,
+joint ordering inference and crossed-effect multipliers are not implemented.
+
+## Calibration evidence
+
+The protocol assesses logit models across 20, 50 and 150 independent clusters,
+three or ten rows per level, and intercept, slope and nested structures.
+Nested designs have three children per top-level cluster and the declared
+number of rows per child. Separate cells cover all five links and five
+prespecified alternatives. Confirmation uses 1,000 attempted datasets per
+cell and 199 multiplier draws. Pilot and opt-in test cohorts have separate
+seed rosters. Every attempted dataset remains in refusal accounting.
+
+Reported rejection rates are **conditional on an accepted fit**. Refusal
+rates, failure reasons and covariance-z strata accompany them. Exact binomial
+intervals are pointwise; they are neither simultaneous guarantees nor proofs
+of exact nominal size. The project criterion at m >= 50 is a 5% rejection
+rate between 3% and 7.5%, with refusal below 5%. Smaller-cluster results are
+descriptive. A failure of either condition must remain visible.
+
+```{r evidence, results='asis'}
+evidence_path <- system.file("extdata","clmm-calibration","summary.csv",package="gof")
+if (nzchar(evidence_path)) {
+  evidence <- read.csv(evidence_path)
+  main <- subset(evidence,alpha==.05 & stratum=="all")
+  knitr::kable(main[c("id","m","nc","structure","link","alternative","statistic",
+                     "attempted","accepted","rate","lower95","upper95","refusal_rate")],
+               row.names=FALSE,digits=4)
+} else {
+  cat("Confirmation results are not installed in this development snapshot.\n")
+}
+```
+
+This is an asymptotic diagnostic. Small cluster counts, boundary behavior,
+quadrature sensitivity and model misspecification can affect its behavior.
+Neither passing software tests nor a successful calibration cell establishes
+validity for arbitrary mixed models. Full qualification retains failed and
+unresolved attempts. No independent human statistical endorsement is claimed.
+
+## References
+
+Pan, Z. and Lin, D. Y. (2005). Goodness-of-Fit Methods for Generalized Linear
+Mixed Models. *Biometrics* 61, 1000--1009.
+<https://doi.org/10.1111/j.1541-0420.2005.00365.x>.
+
+Lin, D. Y., Wei, L. J. and Ying, Z. (2002). Model-Checking Techniques Based on
+Cumulative Residuals. *Biometrics* 58, 1--12.
+<https://doi.org/10.1111/j.0006-341X.2002.00001.x>.

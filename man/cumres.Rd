@@ -8,7 +8,8 @@ cumres(model, ...)
 }
 \arguments{
 \item{model}{A fitted model. Methods are supplied for \code{lm}, supported
-\code{glm}, \code{lava::lvmfit} and \code{lava::ordreg} objects. Use
+\code{glm}, \code{lava::lvmfit}, \code{lava::ordreg} and
+\code{ordinal::clmm} objects. Use
 \code{NULL} with the default method when supplying residuals and influences.}
 
 \item{...}{Arguments for the selected method, including ordering variables,
@@ -63,7 +64,8 @@ the native pipe \code{|>}.
 \details{
 Use \code{cumres.glm} for normal, binomial and Poisson mean models,
 \code{cumres.lvmfit} for supported Gaussian structural equation models,
-and \code{cumres.ordreg} for ordinal models fitted by \code{lava}.
+\code{cumres.ordreg} for ordinal models fitted by \code{lava}, and
+\code{cumres.clmm} for supported ordinal mixed models.
 The default method accepts residuals, their parameter derivatives and
 coefficient influence contributions for other justified model structures.
 

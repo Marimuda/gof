@@ -24,6 +24,28 @@ Options (environment variables):
                               DESCRIPTION and Makevars are updated together.
   GOF_RUN_NATIVE=false         Omit native checks; recorded as not requested.
   GOF_RUN_CHECK=false          Omit R CMD check; recorded as not requested.
+  GOF_CLMM_WORKERS=4           Worker count for the opt-in CLMM cohort.
+  GOF_CLMM_CALIBRATION_REPORT  Output RDS path for the CLMM cohort and its
+                              resumable per-attempt directory (path + .d).
+
+Rscript tools/clmm-calibration.R OUTPUT [full|slow|pilot] [N] [workers]
+
+Runs a frozen CLMM protocol against the selected installed package. The full
+study defaults to 1,000 attempts in each of 29 cells (19 core null cells,
+five link cells and five alternatives), with R = 199 and fixed covariate
+ordering. Nested cells have three children per top-level cluster and nc rows
+per child. Pilot and slow-test modes use separate seed banks. The opt-in test
+uses four cells with 500 attempts each. Attempts are atomically retained and
+execution resumes only under an identical protocol and installed-R hash set.
+Never overwrite a prior cohort after changing the estimator or protocol.
+
+summary.csv retains conditional rejection rates, exact pointwise binomial
+intervals, refusal counts, covariance-z strata and a descriptive uniformity
+distance; pvalue-histograms.csv retains the binned p-values. Every failed fit
+stays in refusal accounting. The declared primary rule at m >= 50 is 5% size
+in [0.03,0.075] with refusal below 5%. A failed rule remains a failed gate.
+Neither a successful software check nor conditional size among accepted fits
+certifies the procedure for all attempted datasets or arbitrary designs.
 
 Native C++14/17/20/23 checks require Bash, a suitable C++ compiler, system Armadillo development
 files and sanitizer runtimes. The R package itself uses RcppArmadillo. Run the

@@ -77,6 +77,8 @@
 #' plot(diagnostic, idx = "x")
 #' @export
 cumres_joint <- function(model, ..., level=0.95) {
+    if (inherits(model,"clmm"))
+        stop("Joint ordering inference is not implemented for clmm fits; use cumres() for one ordering",call.=FALSE)
     if (!is.null(model) && (!inherits(model,"lm") || inherits(model,c("ordreg","lvmfit"))))
         stop("Joint ordering inference supports lm/glm fits or explicit inputs with model=NULL",call.=FALSE)
     dots <- list(...)

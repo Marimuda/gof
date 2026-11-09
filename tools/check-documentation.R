@@ -30,7 +30,7 @@ main <- function() {
     snapshot <- file.path(output, "source")
     dir.create(snapshot)
     entries <- list.files(package, all.files = TRUE, full.names = TRUE, no.. = TRUE)
-    entries <- entries[!basename(entries) %in% c(".git", ".Rproj.user", ".Rhistory", "docs")]
+    entries <- entries[!basename(entries) %in% c(".git", ".Rproj.user", ".Rhistory", "docs", ".local", ".claude-flow")]
     if (!all(file.copy(entries, snapshot, recursive = TRUE, copy.mode = TRUE, copy.date = TRUE)))
         stop("Could not copy the documentation source")
     inputs <- function(directory) {

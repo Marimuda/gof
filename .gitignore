@@ -43,3 +43,7 @@ gof_*.tar.gz
 README.html
 __pycache__/
 *.pyc
+
+# Local working notes and scratch files
+/.local/
+/.claude-flow/

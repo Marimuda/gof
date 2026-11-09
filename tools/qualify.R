@@ -23,7 +23,7 @@ main <- function() {
     snapshot <- file.path(output,"source")
     dir.create(snapshot)
     entries <- list.files(package,all.files=TRUE,full.names=TRUE,no..=TRUE)
-    entries <- entries[!basename(entries) %in% c(".git",".Rproj.user",".Rhistory")]
+    entries <- entries[!basename(entries) %in% c(".git",".Rproj.user",".Rhistory","docs",".local",".claude-flow")]
     if (!all(file.copy(entries,snapshot,recursive=TRUE,copy.mode=TRUE,copy.date=TRUE)))
         stop("Could not create the source snapshot")
     cpp <- Sys.getenv("GOF_CXX_STD","")
@@ -125,7 +125,8 @@ main <- function() {
                    GOF_WEIGHT_CALIBRATION_REPORT=file.path(output,"calibration-weights.rds"),
                    GOF_JOINT_CALIBRATION_REPORT=file.path(output,"calibration-joint.rds"),
                    GOF_NORMALITY_CALIBRATION_REPORT=file.path(output,"calibration-normality.rds"),
-                   GOF_BOOTSTRAP_CALIBRATION_REPORT=file.path(output,"calibration-bootstrap.rds"))
+                   GOF_BOOTSTRAP_CALIBRATION_REPORT=file.path(output,"calibration-bootstrap.rds"),
+                   GOF_CLMM_CALIBRATION_REPORT=file.path(output,"calibration-clmm.rds"))
         result <- testthat::test_dir(file.path(snapshot,"tests","testthat"),
                                     reporter="summary",stop_on_failure=FALSE)
         saveRDS(result,file.path(output,paste0(label,".rds")))

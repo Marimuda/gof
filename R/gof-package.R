@@ -7,6 +7,8 @@
 ##'
 ##' Supported adapters cover normal/binomial/Poisson regression, Gaussian
 ##' structural equation models and ordinal regression fitted with \pkg{lava}.
+##' Mixed-effects ordinal models fitted with the optional \pkg{ordinal}
+##' package are supported by \code{\link{cumres.clmm}} for nesting chains.
 ##' The low-level default method accepts custom residual and influence
 ##' contributions when their statistical assumptions can be justified.
 ##' \code{\link{cumres_joint}} provides simultaneous ordering-variable inference;
@@ -16,6 +18,7 @@
 ##' @author Klaus K. Holst <klaus@@holst.it>
 ##' @seealso \code{\link{cumres}}, \code{\link{cumres.glm}},
 ##' \code{\link{cumres.lvmfit}}, \code{\link{cumres.ordreg}},
+##' \code{\link{cumres.clmm}}, \code{\link{gof_clmm_control}},
 ##' \code{\link{cumres_joint}}, \code{\link{cumres_normality}},
 ##' \code{\link{cumres_bootstrap}},
 ##' \code{\link{plot.cumres}}, \code{\link{surgunit}}.

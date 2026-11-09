@@ -63,8 +63,13 @@ testing; response-driven selection needs its own adjustment.
 | Binomial `glm` | Bernoulli responses or grouped/trial-weighted responses defining integer successes and failures; grouped contributions expand without refitting. |
 | Poisson `glm` | Independent counts or response means with prior precision weights; fitted offsets are retained. |
 | `lava::ordreg` | Converged ordinal fits on explicitly preprocessed complete data; category residuals are aggregated by the selected function. |
+| `ordinal::clmm` | Single grouping factors or nesting chains, with one multiplier per independent top-level cluster and reported numerical polishing checks. |
 | `lava` Gaussian SEM | Independent subjects, complete data, valid structural covariance and invertible structural system. |
 | `cumres.default` | User-supplied centered residuals, gradients and coefficient influences for independent residual units. |
+
+The [ordinal mixed-model guide](ordinal-mixed-models.html) gives the estimator,
+cluster-multiplier construction, numerical checks and calibration limitations
+for `clmm`. Crossed effects and joint ordering inference remain unsupported.
 
 Gaussian, binomial and Poisson adapters support their standard family links.
 They retain the fitted coefficients and fitted rows. A converged numerical

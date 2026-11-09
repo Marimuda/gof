@@ -22,28 +22,61 @@ knitr::opts_chunk$set(
 
 **Model diagnostics based on cumulative residuals.**
 
-Version 1.3.0 includes explicit ordering controls, descriptive design metadata
-and installed finite-panel evidence. The package requires R >= 4.1 and C++17;
-C++23 is additionally exercised as an integration configuration. Software
-qualification and statistical support have separate scopes; see
-`RELEASE_STATUS.md` in the source checkout.
+`gof` checks fitted models by accumulating residuals along a covariate or
+the fitted predictions. It compares the observed curve with simulated null
+curves and reports Sup and L2 test p-values, helping identify patterns that
+a coefficient table may miss.
 
-`gof` checks fitted mean relationships by accumulating residuals along a
-covariate or the fitted predictions. It compares the observed curve with
-simulated null curves and reports Sup and L2 test p-values. This can help
-identify a missing nonlinear term or another systematic pattern that a
-coefficient table does not describe.
+Methods cover `lm`, Gaussian/binomial/Poisson `glm`, Gaussian structural
+equation models fitted with `lava`, and `lava` ordinal regression. Additional
+procedures provide joint inference across orderings, SEM residual-distribution
+checks and binomial/Poisson parametric bootstrap calibration. Each method's
+help page states its assumptions and support limits.
 
-The package provides methods for `lm`, Gaussian/binomial/Poisson `glm`,
-Gaussian structural equation models fitted with `lava`, and `lava` ordinal
-regression. It also has an interface for supplied residuals, gradients and
-coefficient influences. Each method has explicit assumptions and support
-limits in its help page.
+This is a maintenance fork of Klaus K. Holst's
+[original gof project](https://github.com/kkholst/gof). The fork's changes
+have not been released on CRAN or merged upstream. Original authorship,
+license and method citations are retained.
 
-## A complete diagnostic workflow
+The 1.4.0 development version adds diagnostics for `ordinal::clmm` mixed
+models with a single grouping factor or nested random effects. `lava`
+remains required; `ordinal` is optional. The
+[mixed-model guide](https://github.com/Marimuda/gof/blob/feature/clmm-integration/vignettes/ordinal-mixed-models.Rmd)
+explains parameter polishing, cluster multipliers and calibration limits.
 
-This example deliberately fits a straight line to a curved relationship.
-The random seed makes the data and Monte Carlo calculation reproducible.
+## Installation
+
+Install release 1.3.0, including its worked guides, from GitHub:
+
+```{r installation, eval=FALSE}
+install.packages("remotes")
+remotes::install_github("Marimuda/gof", ref = "v1.3.0",
+                        dependencies = TRUE, build_vignettes = TRUE)
+```
+
+The package requires **R >= 4.1 and C++17**. Source installation needs R's
+development toolchain, including the matching Rtools on Windows or command-line
+developer tools on macOS. Building guides from a checkout also requires Pandoc
+supported by `rmarkdown` (at least 2.8). Supplied source archives contain
+the built guides.
+
+For reproducible work, retain the release tag or exact commit and record it
+with your analysis results.
+
+To try the 1.4.0 development branch, including ordinal mixed-model diagnostics:
+
+```{r development-installation, eval=FALSE}
+remotes::install_github("Marimuda/gof", ref = "feature/clmm-integration",
+                        dependencies = TRUE, build_vignettes = TRUE)
+```
+
+The development branch is a release candidate. Its calibration evidence and
+numerical support limits must be considered separately from software checks.
+
+## Example
+
+This example fits a straight line to a curved relationship. The seed makes
+the data and Monte Carlo calculation reproducible.
 
 ```{r example}
 library(gof)
@@ -55,7 +88,7 @@ d$y <- 1 + 0.5 * d$x + 0.7 * d$x^2 + rnorm(nrow(d))
 diagnostic <- lm(y ~ x, data = d) |>
   cumres(variable = "x", R = 499, plots = 25)
 
-diagnostic |> as.data.frame()
+as.data.frame(diagnostic)[c("variable", "test", "statistic", "p.value")]
 ```
 
 ```{r diagnostic-plot, fig.alt="Observed cumulative residual curve compared with 25 simulated null curves along x; the curved mean omitted from the fitted model produces a systematic residual pattern."}
@@ -64,193 +97,67 @@ diagnostic |> plot(idx = "x", legend = "type2")
 
 A small p-value indicates that this aspect of the fitted model deserves
 attention. A large p-value does not establish that the model is correct.
-Sup and L2 summarize the same residual process in different ways. The
-p-values are Monte Carlo estimates; a reported zero means none of the
-simulated statistics reached the observed value, rather than an exact
-probability of zero. Increase `R` when more simulation precision is needed.
+Sup and L2 summarize the same residual process in different ways. A reported
+zero means no simulated statistic reached the observed value; it is not an
+exact probability of zero. Increase `R` for greater Monte Carlo precision.
 
-The base-R table contains explicit `variable`, `test`, `statistic`,
-`p.value`, `n`, `nobs`, `R`, `informative` and `aggregation` columns. No tidyverse package is
-needed for native `|>` pipelines. Optional `broom::tidy(diagnostic)` or
-`generics::tidy(diagnostic)` returns the same columns as a tibble when the
-corresponding optional packages are installed. Existing `coef(diagnostic)`
-calls retain their historical wide p-value table.
+`as.data.frame()`, `summary()` and optional `broom::tidy()` methods expose
+results and diagnostic metadata. Native `|>` pipelines and base-R tables
+do not require tidyverse packages.
 
-New diagnostics also report `design_info`: data rows, binomial trials,
-coefficient/correction counts and the unit being counted. Summaries and tidy
-tables retain these fields. They describe the construction; they do not certify
-independence or finite-sample calibration. See
-`vignette("small-design-diagnostics", package = "gof")` for worked examples,
-known small-design failures and how to interpret unavailable inference.
+## Documentation
 
-## Fixed-order bootstrap evidence
+Use `?cumres` for the main interface and `?"cumres-object"` for returned
+objects. Worked guides are available in R with
+`vignette("getting-started", package = "gof")`, or in the source:
 
-A frozen N=20,000/B=999 study retained 637,000 records across 15 null scenarios,
-three arms and eight power alternatives. All 14 eligible primary cells met the
-project-specific 4–6% practical criterion; the two greenflies cells met only
-an upper-bound criterion. This is support at declared design/parameter points,
-not exact 5% control or a guarantee for every sparse design. Stress cases retain
-failed fits, conservatism and an observed 6.62% L2 rate in one leverage scenario.
+| Guide | Contents |
+|:--|:--|
+| [Getting started](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/getting-started.Rmd) | Fitting, diagnostics, tables and plots. |
+| [Statistical details](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/statistical-details.Rmd) | Process definitions, weights, offsets, windows and custom models. |
+| [Joint inference, normality and bootstrap](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/joint-normality-bootstrap.Rmd) | The additional procedures, assumptions and interpretation. |
+| [Ordering and ties](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/ordering-and-ties.Rmd) | Fixed and fitted orderings, measurement resolution and unavailable inference. |
+| [Small designs](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/small-design-diagnostics.Rmd) | Sampling units, limited information and known calibration failures. |
+| [Finite-panel validation](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/finite-panel-validation.Rmd) | Fixed-order bootstrap evidence, uncertainty and adverse findings. |
+| [Ordinal mixed models](https://github.com/Marimuda/gof/blob/feature/clmm-integration/vignettes/ordinal-mixed-models.Rmd) | Nested random effects, numerical checks and cluster-level inference. |
 
-The [finite-panel validation guide](vignettes/finite-panel-validation.Rmd)
-reports the full scope, uncertainty and adverse findings. All 106 cell summaries
-and design/stream metadata are installed with the package. The assessment was
-model-assisted under an explicit owner decision; no independent human review
-or expert endorsement is claimed. See also the separate approximate normality
-method and its limitations in the capability guide.
+## Statistical scope
 
-## Installation
+The multiplier procedures use asymptotic approximations. Rare events, severe
+imbalance or limited information can produce poor calibration even with many
+rows. Fitted-value ordering also depends on numerical fitting accuracy;
+unresolved comparisons withhold inferential p-values while retaining curves
+for inspection. Genuine ties enter together. Prespecified fixed covariate
+orderings avoid the estimated-coordinate ambiguity.
 
-This maintenance fork of Klaus K. Holst's
-[original gof project](https://github.com/kkholst/gof) is available at
-[Marimuda/gof](https://github.com/Marimuda/gof). Its changes have not been
-released on CRAN or merged into the upstream repository. See
-[RELEASE_STATUS.md](RELEASE_STATUS.md) for platform qualification and
-source provenance.
+`cumres_joint()` shares multipliers across selected orderings to provide
+family tests and simultaneous null reference envelopes. Separate marginal
+`cumres()` simulations cannot be combined into joint draws.
+`cumres_normality()` is an asymptotic Gaussian SEM procedure; its supported
+fits require complete, independent-subject data. It does not establish that
+every latent or measurement error is normal.
 
-Install release 1.3.0, including its guides, with:
+`cumres_bootstrap()` supports fixed design orderings for canonical binomial
+and Poisson models. Fitted-null calibration remains approximate. Simulation
+under genuinely specified means permits a distinct Monte Carlo test. Failed
+and unresolved refits remain in the accounting. See the guides for weighted
+and grouped responses, ordinal aggregation, boundary fits and availability
+rules before interpreting results.
 
-```{r install-fork, eval=FALSE}
-install.packages("remotes")
-remotes::install_github("Marimuda/gof", ref = "v1.3.0",
-                        dependencies = TRUE, build_vignettes = TRUE)
-```
-
-For reproducible work, retain the release tag or use a specific commit,
-and record that revision with your analysis results.
-
-To install a supplied source archive, first install its runtime and compiler
-interface dependencies, then install that archive:
-
-```{r install-archive, eval=FALSE}
-install.packages(c("lava", "Rcpp", "RcppArmadillo", "numDeriv", "lpSolve"))
-install.packages("gof_1.3.0.tar.gz", repos = NULL, type = "source")
-```
-
-From the root of a checkout, this also builds the installed guides:
-
-```{r install-checkout, eval=FALSE}
-install.packages("remotes")
-remotes::install_local(".", dependencies = TRUE, build_vignettes = TRUE)
-```
-
-R 4.1 or later and a C++17 toolchain are required. Source installation needs
-the development tools appropriate to your R installation; Windows users
-need the matching Rtools, and macOS users need the command-line developer
-tools. C++23 is a tested integration configuration; the package retains
-C++17 as its minimum. Building the guides from a checkout also needs a
-Pandoc version supported by `rmarkdown` (at least 2.8 for the current
-qualification). Supplied source archives already contain the built guides.
-
-## Help and worked guides
-
-The same function reference is available in RStudio's Help pane and other
-R interfaces:
-
-```{r help, eval=FALSE}
-?gof
-?cumres
-?cumres.glm
-?cumres.lvmfit
-?cumres.ordreg
-?cumres_joint
-?cumres_normality
-?cumres_bootstrap
-?`cumres-object`
-
-vignette("getting-started", package = "gof")
-vignette("statistical-details", package = "gof")
-vignette("joint-normality-bootstrap", package = "gof")
-vignette("ordering-and-ties", package = "gof")
-```
-
-The ordinal default combines the joint cutpoint process for one ordering;
-`aggregate="score"` retains the older category-score-mean check, and
-`aggregate="cutpoints"` exposes signed components. Mean-preserving changes
-in category probabilities can be missed by the score sum.
-
-The guides cover weighted and grouped responses, offsets, missing rows,
-moving windows, reproducibility and the assumptions behind custom models.
-
-`subset.max = 500` limits the number of distinct **evaluation points** in
-the default/linear/GLM/SEM process. It does not reduce the fitted sample to
-500 observations. Tied observations enter the process together. Use
-`subset.max = Inf` for every distinct value; ordinal diagnostics use their
-own full distinct-value grid. Moving-window grids include entry and exit
-events over the complete window support; a finite cap approximates that
-full-domain statistic.
-
-## Scope of inference
-
-The implemented multiplier process assumes independent residual units and
-a valid coefficient influence representation. Normal/Poisson weights
-describe response-mean precision; binomial weights must define integer
-trial counts. The SEM method requires complete independent-subject
-Gaussian fits; clustered, weighted and incomplete-data SEMs are rejected.
-The ordinal method rejects fitting options that the upstream fitter ignores.
-Arbitrary callback or ordering functions require a statistical justification
-from the caller, including the stronger conditions for estimated orderings.
-Numerical convergence alone does not establish a regular interior mean fit;
-separation, recession and numerical local-root checks reject unqualified GLMs.
-Ordinal score constraints are checked as well.
-
-Recognized zero-information linear/GLM processes are marked
-`informative = FALSE`. Numerically unresolved score-space cases have missing
-p-values and retain their curves for inspection. An unavailable information
-flag in another adapter is distinct from that numerical case; see
-`?"cumres-object"`.
-
-The default `cumres()` call provides separate checks for each ordering.
-Its saved null curves from different orderings cannot be combined as a
-joint draw. `cumres_joint()` instead shares multipliers by subject and
-provides family tests and simultaneous null reference envelopes over the
-chosen orderings and evaluated grids. This does not check every possible
-model departure.
-
-`cumres_normality()` checks Gaussian SEM residual distributions with an
-explicit correction for estimated nuisance parameters. It complements
-the existing SEM mean/linearity diagnostics. A projected latent-residual
-check cannot uniquely identify the source of nonnormality under alternatives.
-Its one-step calibration is asymptotic; finite-sample rejection rates can
-depart from the nominal level.
-
-The multiplier approximation can fail with rare events, severe imbalance
-or little effective information despite a large nominal sample.
-`cumres_bootstrap()` supplies model-based calibration for canonical binomial
-and Poisson diagnostics. A fitted-null bootstrap remains an approximation;
-simulation under genuinely specified means permits a distinct Monte Carlo
-test. Failed refits are accounted for rather than silently discarded.
-See `vignette("joint-normality-bootstrap", package = "gof")` for supported
-models and interpretation.
-
-Regression tests, independent numerical references, calibration experiments
-and native sanitizers support the recorded implementation checks. They do
-not establish correctness for every supplied model or finite sample.
-
-Fitted-value ordering also depends on numerical fitting accuracy. The default
-local check warns and withholds inferential p-values for unresolved fitted
-comparisons, retaining their numerical curves. `on_unresolved = "error"` stops
-instead. A passed numerical check does not certify the exact likelihood root
-or statistical calibration. Prespecified fixed covariate orderings avoid this
-estimated-coordinate ambiguity.
-
-Genuine ties enter together. Named `resolution` steps can describe the known
-recording precision of observed ordering variables, for example
-`cumres(fit, variable = "x", resolution = c(x = 0.25))`. The model and residual
-units are unchanged. Fitted predictions cannot be coarsened this way.
-Inspect `diagnostic$ordering` for the applied rule, tie counts and availability
-reasons. See `vignette("ordering-and-ties", package = "gof")` for the policies.
+The fixed-order bootstrap study retained 637,000 records across 106 cells.
+All 14 eligible primary cells met the project-specific 4–6% practical
+criterion; two greenflies cells met only an upper-bound criterion. Stress
+cases retain failed fits, conservatism and an observed 6.62% L2 rejection
+rate in one leverage scenario. These results support the declared design
+and parameter points, rather than exact 5% control or universal validity.
+The assessment was model-assisted, without independent human review or expert
+endorsement. The [validation guide](https://github.com/Marimuda/gof/blob/release/1.3.0/vignettes/finite-panel-validation.Rmd)
+reports the full scope, provenance and limitations; compact evidence is
+installed with the package.
 
 ## Citation and development
 
-Use `citation("gof")` for the software and the Lin, Wei and Ying (2002)
-method reference. The original authorship and license are retained. The
-SEM help page also cites the relevant structural-model method paper.
-
-`NEWS.md` records user-visible changes. `DEVELOPMENT.md` explains reproducible
-documentation and package checks; `CONTRIBUTING.md` describes how to report
-or propose a change. The repository audit records distinguish statistical
-support boundaries, passed local checks and platform jobs still to run.
-
-The documentation site can be built locally with
-`pkgdown::build_site(preview = FALSE)`. Building it does not publish it.
+Use `citation("gof")` for the software and method references.
+[NEWS.md](https://github.com/Marimuda/gof/blob/release/1.3.0/NEWS.md) records user-visible changes.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers issue reports, development,
+compatibility policy and validation commands.

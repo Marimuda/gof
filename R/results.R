@@ -61,8 +61,10 @@
 #'   New diagnostics also retain one row of descriptive `design_info`, copied
 #'   into summaries and repeated as additional result-table columns:
 #'   \describe{
-#'     \item{unit}{Engine unit: `"row"`, `"trial"`, `"subject"` or explicit
-#'       `"residual"`. This describes counting, not scientific independence.}
+#'     \item{unit}{Engine unit: `"row"`, `"trial"`, `"subject"`, `"block"` or
+#'       explicit `"residual"`. This describes counting, not scientific
+#'       independence. A `"block"` is an independent group of data rows that
+#'       shares one multiplier, such as a top-level random-effect cluster.}
 #'     \item{n_rows}{Contributing model-data rows before binomial expansion.
 #'       Missing for explicit residual inputs. SEM data overrides describe the
 #'       diagnostic rows, which need not be the original estimation rows.}
@@ -82,6 +84,14 @@
 #'       pooling. Ordinal cutpoints and pooled SEM residual components do not
 #'       create additional independent subjects.}
 #'   }
+#'   Ordinal diagnostics also retain a `multiplier` data frame with one row per
+#'   multiplier factor: `factor`, its number of `levels`, the data `rows` it
+#'   indexes, and the `draw` and `combine` rules. A fixed-effect ordinal fit
+#'   reports one `"rows"` factor with one multiplier per data row; print and
+#'   summary list the factors only when they are not just `"rows"`.
+#'   Mixed-model ordinal diagnostics additionally retain `random_effects`
+#'   (random-effect terms and covariance summaries) and `fit_check`
+#'   (integrator, estimate shift and numerical acceptance checks).
 #'   Unknown metadata remain missing. These descriptive fields do not establish
 #'   adequate information, calibrated inference, a universal residual-df formula
 #'   or an n/p cutoff. Availability is still defined by each adapter's information,

@@ -158,6 +158,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       GOF_SLOW_TESTS: "true"
+      GOF_CLMM_WORKERS: "2"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
@@ -179,7 +180,9 @@ jobs:
                      GOF_SEM_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
                                                            "calibration-sem-ordinal.rds"),
                      GOF_WEIGHT_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
-                                                              "calibration-weights.rds"))
+                                                              "calibration-weights.rds"),
+                     GOF_CLMM_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                            "calibration-clmm.rds"))
           result <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = TRUE)
           saveRDS(result, "qualification/calibration-tests.rds")
           capture.output(sessionInfo(), file = "qualification/session-info.txt")
@@ -187,7 +190,7 @@ jobs:
         if: always()
         with:
           name: calibration
-          path: qualification/*.rds
+          path: qualification/
           if-no-files-found: ignore
 
   static:

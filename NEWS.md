@@ -1,3 +1,22 @@
+# gof 1.4.0 (development)
+
+* Added `cumres.clmm()` for ordinal mixed models fitted with the optional
+  `ordinal` package. Single grouping factors and nesting chains support
+  random intercepts/slopes, all five links and the four threshold structures.
+  Crossed effects remain unsupported.
+* Added `gof_clmm_control()`, adaptive quadrature, frozen-node score polishing,
+  marginal cumulative-category residuals and one multiplier per independent
+  top-level cluster. Results retain parameter shifts, quadrature checks and
+  covariance-boundary diagnostics. Actual boundary fits are refused;
+  imprecise interior covariances and large parameter shifts warn.
+* Extracted a shared ordinal engine while preserving existing `lava::ordreg`
+  results and random streams. `lava` remains a hard dependency.
+* Added a resumable calibration protocol with independent pilot, slow-test and
+  confirmation seeds, explicit refusal accounting and retained adverse results.
+* Consolidated contributor guidance and moved historical working notes out
+  of the package checkout. Temporary local notes and agent state are excluded
+  from Git and source archives.
+
 # gof 1.3.0
 
 * Completed the fixed-order response-bootstrap finite-panel study on the exact
@@ -60,8 +79,8 @@ Development history incorporated in 1.3.0; retained for provenance.
 
 # gof 1.2.1
 
-Platform qualification and source provenance are recorded in
-`RELEASE_STATUS.md`. The package requires R >= 4.1 and C++17;
+Platform qualification and source provenance are recorded with the
+annotated `v1.2.1` release tag. The package requires R >= 4.1 and C++17;
 C++23 remains an integration configuration.
 
 * Separated cumulative kernels, randomness and utility components while
@@ -118,8 +137,9 @@ C++23 remains an integration configuration.
 
 # gof 1.0.5
 * Extended qualification to every native utility, public R method and
-   documented adapter option. AUDIT.org tracks the defects, evidence, fixes,
-   support boundaries and validation status before C++ modernization.
+   documented adapter option. The historical audit record, retained in Git
+   history, tracks the defects, evidence, fixes, support boundaries and
+   validation status before C++ modernization.
 * Fixed vector softmax returning log probabilities, complex-step underflow,
    unsigned degrees of freedom, grouping/pattern buffer edge cases, 64-bit
    cluster labels, L2 intermediate overflow and mutable cumulative-process state.

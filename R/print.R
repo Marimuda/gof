@@ -26,6 +26,9 @@ summary.cumres <- function(object,...) {
     res$ordering <- object$ordering
     res$ordering_check <- object$ordering_check
     res$design_info <- object$design_info
+    res$multiplier <- object$multiplier
+    res$random_effects <- object$random_effects
+    res$fit_check <- object$fit_check
     res$table <- as.data.frame(object)
     return(structure(res, class="summary.cumres"))
 }

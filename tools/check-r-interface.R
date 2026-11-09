@@ -14,18 +14,19 @@ local({
                 "cumres.lvmfit", "cumres.ordreg", "plot.cumres", "cumres-object",
                 "coef.cumres", "summary.cumres", "as.data.frame.cumres",
                 "as.data.frame.summary.cumres", "tidy.cumres", "surgunit",
-                "cumres_joint", "cumres_normality", "cumres_bootstrap")
+                "cumres_joint", "cumres_normality", "cumres_bootstrap", "cumres.clmm", "gof_clmm_control")
     for (topic in topics) {
         if (!length(utils::help(topic, package = "gof", lib.loc = library_path)))
             stop("Installed help topic not found: ", topic)
     }
     vignettes <- utils::vignette(package = "gof", lib.loc = library_path)$results
-    if (is.null(vignettes) || nrow(vignettes) < 6L)
+    if (is.null(vignettes) || nrow(vignettes) < 7L)
         stop("Install the source archive after building its vignettes")
     html <- list.files(file.path(path, "doc"), pattern = "[.]html$", full.names = TRUE)
     if (!all(c("getting-started.html","statistical-details.html",
                "joint-normality-bootstrap.html","ordering-and-ties.html",
-               "small-design-diagnostics.html","finite-panel-validation.html") %in% basename(html)))
+               "small-design-diagnostics.html","finite-panel-validation.html",
+               "ordinal-mixed-models.html") %in% basename(html)))
         stop("The installed vignette HTML files are missing")
     evidence <- utils::read.csv(system.file("extdata","fixed-order","summary.csv",package="gof"))
     stopifnot(nrow(evidence)==106L,sum(evidence$primary_family)==16L,
@@ -101,7 +102,20 @@ local({
         for (diagnostic in list(joint,normality,bootstrap))
             stopifnot(identical(as.data.frame(generics::tidy(diagnostic)),as.data.frame(diagnostic)))
     }
+    if (requireNamespace("ordinal",quietly=TRUE) && requireNamespace("numDeriv",quietly=TRUE)) {
+        wine <- NULL
+        utils::data("wine",package="ordinal",envir=environment())
+        mixed_fit <- ordinal::clmm(rating~temp+contact+(1|judge),data=wine)
+        set.seed(2606)
+        mixed <- suppressWarnings(gof::cumres(mixed_fit,variable="tempwarm",R=9L,plots=2L))
+        stopifnot(inherits(mixed,"cumres"),identical(mixed$model,"clmm"),mixed$n==9L,
+                  identical(mixed$design_info$unit,"block"),
+                  identical(as.data.frame(mixed),as.data.frame(summary(mixed))),
+                  identical(mixed$fit_check,summary(mixed)$fit_check),
+                  identical(invisible(plot(mixed)),mixed))
+        cat("Optional ordinal::clmm installed-interface checks passed.\n")
+    } else cat("Optional ordinal::clmm interface omitted: dependency unavailable.\n")
     cat("Installed R-interface checks passed for gof ", version, " at ", path, "\n", sep = "")
     cat("Help topics: ", length(topics), "; built vignettes: ", nrow(vignettes),
-        "; native-pipe, table, summary and plot invariants passed for legacy and all three new endpoints.\n", sep = "")
+        "; native-pipe, table, summary and plot invariants passed.\n", sep = "")
 })
