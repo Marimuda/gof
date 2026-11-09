@@ -23,15 +23,29 @@ test_that("cumres.ordreg is bit-identical to the verbatim 1.3.0 implementation",
 })
 
 test_that("cumres.ordreg reproduces the stored 1.3.0 golden objects", {
-    golden <- readRDS(test_path("golden","ordinal-1.3.0.rds"))
-    models <- ordinal_golden_models()
-    cases <- ordinal_golden_cases()
-    expect_identical(attr(golden,"cases"),cases)
-    for (i in seq_len(nrow(cases))) {
-        new <- ordinal_golden_run(cumres,models,cases[i,])
-        expect_equal(drop_multiplier(new$result),golden[[i]]$result,info=rownames(cases)[i])
-        expect_identical(new$seed,golden[[i]]$seed,info=rownames(cases)[i])
+    compare_baseline <- function() {
+        kind <- RNGkind()
+        on.exit(do.call(RNGkind,as.list(kind)),add=TRUE)
+        # The stored fixture was generated with R 4.6.1. R-devel adds
+        # binom.kind to the seed header; use the recorded RNG configuration
+        # rather than dropping header fields or weakening exact comparisons.
+        # The verbatim-reference test above still exercises current defaults.
+        if ("binom.kind" %in% names(formals(RNGkind))) {
+            expect_warning(RNGversion("4.6.1"),"Buggy BTPE algorithm used for rbinom")
+        } else RNGversion("4.6.1")
+        golden <- readRDS(test_path("golden","ordinal-1.3.0.rds"))
+        models <- ordinal_golden_models()
+        cases <- ordinal_golden_cases()
+        expect_identical(attr(golden,"cases"),cases)
+        for (i in seq_len(nrow(cases))) {
+            new <- ordinal_golden_run(cumres,models,cases[i,])
+            expect_equal(drop_multiplier(new$result),golden[[i]]$result,info=rownames(cases)[i])
+            expect_identical(new$seed,golden[[i]]$seed,info=rownames(cases)[i])
+        }
     }
+    kind <- RNGkind()
+    compare_baseline()
+    expect_identical(RNGkind(),kind)
 })
 
 test_that("indeterminate ordinal information is handled as in 1.3.0", {

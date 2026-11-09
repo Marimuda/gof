@@ -14,6 +14,8 @@ pkgload::load_all(".",quiet=TRUE)
 source("tests/testthat/helper-models.R")
 source("tests/testthat/helper-ordinal-golden.R")
 
+# Preserve the RNG configuration recorded by this immutable baseline fixture.
+RNGversion("4.6.1")
 models <- ordinal_golden_models()
 cases <- ordinal_golden_cases()
 golden <- lapply(seq_len(nrow(cases)),function(i)
