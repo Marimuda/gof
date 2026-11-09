@@ -181,6 +181,12 @@ jobs:
                                                            "calibration-sem-ordinal.rds"),
                      GOF_WEIGHT_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
                                                               "calibration-weights.rds"),
+                     GOF_JOINT_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                             "calibration-joint.rds"),
+                     GOF_NORMALITY_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                                 "calibration-normality.rds"),
+                     GOF_BOOTSTRAP_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
+                                                                 "calibration-bootstrap.rds"),
                      GOF_CLMM_CALIBRATION_REPORT = file.path(normalizePath("qualification", mustWork = TRUE),
                                                             "calibration-clmm.rds"))
           result <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = FALSE,

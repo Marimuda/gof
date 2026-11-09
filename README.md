@@ -56,9 +56,10 @@ remotes::install_github("Marimuda/gof", ref = "feature/clmm-integration",
                         dependencies = TRUE, build_vignettes = TRUE)
 ```
 
-The development branch is a release candidate. Its calibration evidence
-and numerical support limits must be considered separately from software
-checks.
+The mixed-model path is experimental and **not release-qualified**. Its
+completed slow cohort failed the prespecified size/refusal criteria. The
+larger confirmation study is still running; the mixed-model guide
+retains the adverse results.
 
 ## Example
 

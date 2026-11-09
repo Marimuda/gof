@@ -159,6 +159,39 @@ of exact nominal size. The project criterion at m >= 50 is a 5% rejection
 rate between 3% and 7.5%, with refusal below 5%. Smaller-cluster results are
 descriptive. A failure of either condition must remain visible.
 
+### Completed slow cohort: release hold
+
+The separate slow cohort attempted 500 datasets in each of four designs with
+50 independent clusters. **Four of its eight primary statistic endpoints met
+the project criteria.** The logit random-intercept design with three rows per
+cluster rejected 2.67% of accepted fits for both statistics. In the logit
+random-slope design with ten rows per cluster, rejection rates were 1.94%
+(Sup) and 0.65% (L2), and 7.4% of attempts were refused at covariance boundaries.
+These outcomes fail the unchanged size/refusal criteria. Broad mixed-model
+release qualification is on hold.
+
+```{r slow-evidence, results='asis'}
+slow_path <- system.file("extdata","clmm-slow-calibration","summary.csv",package="gof")
+if (nzchar(slow_path)) {
+  slow <- subset(read.csv(slow_path),alpha==.05 & stratum=="all")
+  slow$project_criterion <- ifelse(slow$criterion_met,"met","FAILED")
+  knitr::kable(slow[c("id","structure","link","nc","statistic","attempted","accepted",
+                     "rate","lower95","upper95","refusal_rate","project_criterion")],
+               row.names=FALSE,digits=4)
+}
+```
+
+The installed `extdata/clmm-slow-calibration` directory retains all 2,000
+attempts, numerical refusals, warnings, intervals, strata and artifact provenance.
+`tools/export-clmm-slow-evidence.R` audits sealed artifact `13680316496` from the
+[CI run](https://github.com/Marimuda/gof/actions/runs/42621994375)
+before exporting these files. The local run uses this same slow-study seed
+roster and is a replay, not another 2,000 independent samples; do not pool the
+two runs. The full confirmation cohort has a disjoint seed roster and remains
+in progress. Its results cannot erase a failed slow-cohort gate.
+
+### Full confirmation cohort
+
 ```{r evidence, results='asis'}
 evidence_path <- system.file("extdata","clmm-calibration","summary.csv",package="gof")
 if (nzchar(evidence_path)) {

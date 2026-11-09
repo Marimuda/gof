@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "package": "gof",
+  "version": "1.4.0",
+  "cohort": "slow",
+  "source_commit": "ea75b3b5279274afbfdf5c46a01eb2cfc2db9244",
+  "ci_run": "https://github.com/Marimuda/gof/actions/runs/42621994375",
+  "ci_artifact": 13680316496,
+  "artifact_sha256": "c48d391e4618724bd54330bd0b1bca002da2267b565a1a83c58ab7cdd9b1b9ad",
+  "software_versions": {
+    "R": "4.6.2",
+    "ordinal": "2026.7-26",
+    "numDeriv": "2016.8-1.1"
+  },
+  "software_version_source": "Recorded CI job session log",
+  "created_utc": "2026-11-09 14:07:35 UTC",
+  "attempts": 2000,
+  "cells": [
+    {
+      "m": 50,
+      "nc": 3,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core02",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core05",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "slope",
+      "link": "logit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "core11",
+      "primary": true
+    },
+    {
+      "m": 50,
+      "nc": 10,
+      "structure": "intercept",
+      "link": "probit",
+      "sd": 1,
+      "alternative": "null",
+      "id": "link2",
+      "primary": true
+    }
+  ],
+  "replicates": 500,
+  "R": 199,
+  "seed_base": 120000000,
+  "full_cell_indices": {
+    "core02": 2,
+    "core05": 5,
+    "core11": 11,
+    "link2": 21
+  },
+  "seed_rule": "seed_base + full_cell_index * 100000 + replicate; multiplier seed = data seed + 50000",
+  "ordering": "x",
+  "aggregation": "omnibus",
+  "numerical_controls": "package defaults; Q+4 check",
+  "primary_cells": 4,
+  "primary_endpoints": 8,
+  "primary_passes": 4,
+  "project_criteria": "m >= 50 null cells: 5% rejection rate in [0.03,0.075] and refusal < 0.05; m=20 descriptive",
+  "slow_cohort_criteria_met": false,
+  "cohort_relationship": "Disjoint seeds from the full confirmation cohort. A local run with these same slow seeds is a replay, not additional independent samples; do not pool its attempts with these.",
+  "intervals": "Pointwise exact 95% binomial intervals conditional on accepted fits; no simultaneous or unconditional guarantee",
+  "integrity_audit": "Official artifact SHA256, installed R hashes, every individual attempt/key/seed, all 72 summary rows, independent beta-quantile intervals, refusal decomposition, uniformity distances and all 80 histogram rows audited",
+  "trajectory_limit": "Response datasets and multiplier-statistic matrices were not retained; replay requires the recorded source and seed roster",
+  "review_status": "Model-assisted assessment; no independent human statistical review or expert endorsement",
+  "installed_R_md5": {
+    "gof": "d6c68f1fe41ced6e98a766a3757313da",
+    "gof.rdb": "a4d78f29941a259d6b1212dc8667510c",
+    "gof.rdx": "097a54e68836abfbcbd4154954dbbf33"
+  },
+  "file_md5": {
+    "summary.csv": "8b732ab38012116dfc2457238d192b0d",
+    "attempts.csv.gz": "cd6d65665cb27b5da319d79bea00ecec",
+    "pvalue-histograms.csv": "8aa56ffc579f8a5acf7a5cac17af0521"
+  }
+}

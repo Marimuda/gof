@@ -57,6 +57,15 @@ criteria are exported as failures; the tool does not change thresholds or
 select only successful cells. The original source snapshot and execution
 receipts remain outside the checkout.
 
+Rscript tools/export-clmm-slow-evidence.R CALIBRATION_ZIP NEW_DESTINATION
+
+Audits and exports the sealed 2,000-attempt slow cohort from CI run 42621994375.
+The tool verifies the original artifact SHA256, installed-code hashes and all
+attempts, intervals and refusals before writing compact installed evidence.
+Its four failed primary endpoints remain failed. A local run using these same
+slow seeds is a replay and must not be pooled as additional independent samples.
+This developer tool requires digest and jsonlite; it does not change any fit.
+
 Rscript tools/check-clmm-input.R [new-output-directory]
 
 Reproduces the asymmetric-link input-fitting check on two deterministic

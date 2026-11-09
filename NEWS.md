@@ -17,6 +17,10 @@
   the mixed-model guide explains the large shifts and a verified input refit.
 * Added a resumable calibration protocol with independent pilot, slow-test and
   confirmation seeds, explicit refusal accounting and retained adverse results.
+* The completed 2,000-attempt slow cohort met four of eight primary endpoint
+  criteria. Sparse random-intercept and random-slope tests were conservative;
+  the slope design also had 7.4% boundary refusals. Broad mixed-model release
+  qualification is on hold. The larger confirmation cohort remains in progress.
 * Consolidated contributor guidance and moved historical working notes out
   of the package checkout. Temporary local notes and agent state are excluded
   from Git and source archives.
