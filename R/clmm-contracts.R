@@ -338,13 +338,21 @@ gof_integrator <- function(name,refresh,loglik,score,information,diagnostics=fun
 ##' @param max.refit.pairs Maximum predicted row/node pairs in a refit,
 ##'   including its higher-node check. This bounds automatic node escalation.
 ##' @param maxit Maximum Newton iterations per refresh.
+##' @param correction Parameter-estimation correction: `"derivative"` retains
+##'   the original model derivative/information calculation. Experimental
+##'   `"projection"` removes the empirical cluster-score space;
+##'   `"projection-HC2"` additionally adjusts each cluster by its score leverage.
+##'   These candidates require an identified interior fit and have not passed
+##'   full calibration qualification. They do not supply boundary inference.
 ##' @param max.dim Largest random-effect dimension per level accepted.
 ##' @returns A list of class `gof_clmm_control`.
 ##' @seealso [cumres.clmm()]
 ##' @export
 gof_clmm_control <- function(nodes=NULL,marginal.nodes=30L,score.tol=1e-8,node.tol=0.05,
                              shift.tol=Inf,shift.warn=0.5,boundary.tol=1e-6,boundary.z=1,
-                             max.refresh=5L,maxit=50L,max.dim=3L,refit=FALSE,max.refit.pairs=5e6) {
+                             max.refresh=5L,maxit=50L,max.dim=3L,refit=FALSE,max.refit.pairs=5e6,
+                             correction=c("derivative","projection","projection-HC2")) {
+    correction <- match.arg(correction)
     if (!is.null(nodes)) nodes <- gof_count(nodes,"nodes",1L)
     marginal.nodes <- gof_count(marginal.nodes,"marginal.nodes",2L)
     max.refresh <- gof_count(max.refresh,"max.refresh",1L)
@@ -361,7 +369,8 @@ gof_clmm_control <- function(nodes=NULL,marginal.nodes=30L,score.tol=1e-8,node.t
     structure(list(nodes=nodes,marginal.nodes=marginal.nodes,score.tol=score.tol,node.tol=node.tol,
                    shift.tol=shift.tol,shift.warn=shift.warn,boundary.tol=boundary.tol,
                    boundary.z=boundary.z,max.refresh=max.refresh,
-                   maxit=maxit,max.dim=max.dim,refit=refit,max.refit.pairs=max.refit.pairs),class="gof_clmm_control")
+                   maxit=maxit,max.dim=max.dim,refit=refit,max.refit.pairs=max.refit.pairs,
+                   correction=correction),class="gof_clmm_control")
 }
 
 gof_clmm_default_nodes <- function(q,control) {

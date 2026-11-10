@@ -111,6 +111,25 @@ recovery and three cauchit input/refitting checks using an isolated development
 library. Direct Gaussian-prior integration independently checks their likelihoods.
 These deliberately reused failure fixtures are numerical checks, not calibration.
 
+The candidate corrections can now be exercised through
+`gof_clmm_control(correction="projection")` or
+`gof_clmm_control(correction="projection-HC2")`. The original `"derivative"`
+correction remains the default. The observed process is the same for each
+choice; only its multiplier reference changes. `fit_check$correction` records
+the method, score-space rank and cluster leverages for the candidates.
+Rank-deficient cluster scores and numerically unit HC2 leverage are refused.
+These controls require the same checked interior fit as the original method;
+they do not produce p-values for covariance-boundary fits.
+
+The projection removes the empirical cluster-score space from the cluster
+residual contributions. HC2 then divides each projected cluster contribution
+by the square root of one minus its score leverage. Independent dense-matrix
+checks cover the simulated curves with weights, ties and rescaled score
+coordinates. These algebraic identities do not establish calibration.
+`tools/check-clmm-boundary.R` independently profiles the covariance in two
+retained near-boundary fixtures. It is a fitting investigation, not a claim
+of global optimality or a boundary-valid reference distribution.
+
 A separate pre-recorded development screen compared three inference corrections
 on 1,500 fresh datasets with unchanged baseline fitting. In the 150-cluster
 random-slope design, L2 rejection at nominal 5% was 2.2% with the original

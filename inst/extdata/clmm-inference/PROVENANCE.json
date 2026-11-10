@@ -1,0 +1,29 @@
+{
+  "scope": "Development screen only;16 attempts per design cannot qualify size or refusal rates",
+  "fitting": "Default interior fitter, refit=FALSE; Cauchit finite-start nonadaptive input and nodes=21 explicitly predeclared",
+  "attempts": 464,
+  "accepted": 412,
+  "failure_stages": {
+    "accepted": 412,
+    "polish": 52
+  },
+  "failure_codes": {
+    "accepted": 412,
+    "covariance_boundary": 27,
+    "input_nonconvergence": 1,
+    "polish_nonconvergence": 24
+  },
+  "correction_failure_semantics": "A correction-stage error refuses the common comparison; inspect stage rather than counting it as a fitting failure",
+  "source": "pilot-plan.json contains the pre-outcome numerical source hashes",
+  "tooling": "An extra closing parenthesis affected only the original post-run summary. Atomic numerical records were retained; this exporter independently reconstructs every endpoint from those records.",
+  "original_runner_sha256": "f7e73be771901fb5362d2e814248924345bc61d881199b42f07f3cad034811cc",
+  "exporter_sha256": "75631cdf91b628174550dac7999f1f2ccc83096ca084de143f4fffe236570599",
+  "sha256": {
+    "pilot-plan.json": "03b6ca3ec4fdd652ec1cf266881295aa48652e356b2bd5c0534e2456bde18f2a",
+    "boundary-profiles.csv": "e2c8cda0d16425e1cde8ad785df1f95c114ae80250045e10dfb19a82775e6bc4",
+    "attempts.csv.gz": "fe49024692390b258838a2207dfad0b90523b42b1b9fbc5958b025980b07acd9",
+    "summary.csv": "29deaea32d6cdf23eca7b700b9434e67327fb65301c7a4094db26646fa6de1ca",
+    "designs.csv": "2a17f489d9f6f1cba794950ef7e0dfd1595be4cdb994272ba4d8ddfb2954bf1d",
+    "raw-records-sha256.csv": "fe4f7363a695024b994d296b0a78849dd3b578e777f680366aaad7416a0019f1"
+  }
+}

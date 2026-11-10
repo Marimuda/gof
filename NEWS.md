@@ -1,5 +1,10 @@
 # gof 1.4.0 (development)
 
+* Added explicit experimental `projection` and `projection-HC2` CLMM
+  correction controls with score-rank/leverage diagnostics. Independent
+  cluster-matrix checks cover weighted residuals, ties and score rescaling.
+  The original derivative correction remains the default; neither candidate
+  supplies boundary inference or completes calibration qualification.
 * Corrected input convergence checks for the `ucminf` optimizer: its normal
   termination codes are 1/2, unlike `nlminb`'s code 0. Independent gradient
   and information checks remain required.

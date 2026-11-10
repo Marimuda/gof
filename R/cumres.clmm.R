@@ -104,7 +104,9 @@ cumres.clmm <- function(model,variable="predicted",R=100,plot=FALSE,
     marginal <- gof_clmm_marginal(problem,fit$theta,control$marginal.nodes)
     residual <- (outer(problem$y,seq_len(problem$K-1L),"<=")-marginal$cdf)*problem$weights
     gradient <- marginal$gradient*rep(problem$weights,problem$K-1L)
-    multiplier <- gof_clmm_multiplier(problem,fit)
+    correction <- gof_clmm_correction(problem,fit,residual,gradient,control$correction)
+    gradient <- correction$gradient
+    multiplier <- correction$multiplier
     informative <- gof_clmm_informative(residual,gradient,multiplier,ordering)
     re <- gof_clmm_unpack(problem,fit$theta)$re
     random_effects <- lapply(seq_along(problem$terms),function(i) {
@@ -123,6 +125,7 @@ cumres.clmm <- function(model,variable="predicted",R=100,plot=FALSE,
                 "iterations","refreshes","early_refreshes","trace","shift","node_check",
                 "boundary","diagnostics","initialization")]))
     result$fit_check$loglik_clmm <- as.numeric(stats::logLik(model))
+    result$fit_check$correction <- correction$metadata
     result$fit_check$ordering <- if (variable=="predicted") "fitted fixed predictor" else "observed covariate"
     if (isTRUE(plot)) graphics::plot(result,...)
     result
@@ -184,7 +187,8 @@ gof_clmm_informative <- function(residual,gradient,multiplier,ordering) {
     index <- f$index[o]
     for (k in seq_len(ncol(residual))) {
         partial <- matrix(0,n,m)
-        partial[cbind(seq_len(n),index)] <- residual[o,k]
+        partial[cbind(seq_len(n),index)] <- residual[o,k]*
+            if (is.null(f$loading)) 1 else f$loading[o]
         partial <- apply(partial,2L,cumsum)[ends,,drop=FALSE]
         G <- gradient[seq_len(n)+(k-1L)*n,,drop=FALSE][o,,drop=FALSE]
         G <- apply(G,2L,cumsum)[ends,,drop=FALSE]

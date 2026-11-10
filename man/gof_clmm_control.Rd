@@ -17,7 +17,8 @@ gof_clmm_control(
   maxit = 50L,
   max.dim = 3L,
   refit = FALSE,
-  max.refit.pairs = 5e+06
+  max.refit.pairs = 5e+06,
+  correction = c("derivative", "projection", "projection-HC2")
 )
 }
 \arguments{
@@ -65,6 +66,13 @@ covariance boundary and remains under experimental qualification.}
 
 \item{max.refit.pairs}{Maximum predicted row/node pairs in a refit,
 including its higher-node check. This bounds automatic node escalation.}
+
+\item{correction}{Parameter-estimation correction: \code{"derivative"} retains
+the original model derivative/information calculation. Experimental
+\code{"projection"} removes the empirical cluster-score space;
+\code{"projection-HC2"} additionally adjusts each cluster by its score leverage.
+These candidates require an identified interior fit and have not passed
+full calibration qualification. They do not supply boundary inference.}
 }
 \value{
 A list of class \code{gof_clmm_control}.
