@@ -83,9 +83,9 @@ test_that("ucminf termination codes follow its own convention and retain gradien
 test_that("an optional interior refit recovers a singular Laplace start against an independent likelihood oracle", {
     skip_if_not_installed("ordinal")
     skip_if_not_installed("numDeriv")
-    source(test_path("..","..","tools","clmm-study.R"),local=TRUE)
-    cell <- subset(gof_clmm_study_cells("full"),id=="core08")
-    d <- gof_clmm_study_data(cell,140800004L)
+    # The shared test fixture reproduces the study data without requiring
+    # repository-only tools, which R CMD check does not copy into tests/.
+    d <- clmm_simulate("slope",m=50L,nc=3L,seed=140800004L)
     input_environment <- list2env(list(d=d),parent=globalenv())
     f <- evalq(ordinal::clmm(y~x+(1+z|g),data=d),input_environment)
     # Emulate its singular Laplace solution without relying on a platform's
