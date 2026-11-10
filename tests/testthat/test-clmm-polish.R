@@ -43,7 +43,7 @@ test_that("polishing reaches the AGQ root and agrees with clmm(nAGQ = 25)", {
     expect_equal(fit$shift$estimate_clmm,unname(p$theta))
     expect_lt(fit$node_check$standardized_score,gof_clmm_control()$node.tol)
     expect_identical(fit$node_check$check_nodes,15L)
-    expect_named(fit$boundary,c("term","group","lambda_min","se","z","at_boundary"))
+    expect_named(fit$boundary,c("term","group","lambda_min","se","z","at_boundary","identified"))
     expect_false(any(fit$boundary$at_boundary))
     expect_gt(fit$boundary$z,2)
     expect_gte(fit$refreshes,2L)
@@ -101,7 +101,9 @@ test_that("covariances at the boundary are rejected", {
                         Z=cbind("(Intercept)"=1,tempwarm=X[,1L]))),
         blocks=list(id=j,m=9L),structure="nesting-chain",chain="judge",
         theta=c(fw$alpha,fw$beta,om))
-    expect_error(gof_polish(pw,gof_select_integrator(pw)),"at or near its boundary")
+    failure <- tryCatch(gof_polish(pw,gof_select_integrator(pw)),error=identity)
+    expect_s3_class(failure,"gof_clmm_polish_nonconvergence")
+    expect_true(is.data.frame(failure$diagnostics$boundary))
     ## Structure code flags singular supplied covariances up front.
     pb <- p
     pb$source$boundary <- "1 | g"

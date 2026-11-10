@@ -120,21 +120,22 @@ gof_clmm_boundary <- function(problem,theta,H,boundary.tol=1e-6) {
         ## (numerically) singular or indefinite directions of H.
         bad <- e$values<=tol & proj^2>1e-4*max(sum(g^2),.Machine$double.xmin)
         se <- if (any(bad)) Inf else sqrt(sum(proj[e$values>tol]^2/e$values[e$values>tol]))
-        ## A real boundary: the smallest eigenvalue is numerically zero
-        ## (variance ~ 0, |correlation| ~ 1) or not identified by H.
+        ## Keep a small covariance eigenvalue separate from failure to
+        ## identify its uncertainty using the observed information.
         data.frame(term=tm$label,group=tm$group,lambda_min=lam,se=se,
                    z=if (is.finite(se) && se>0) lam/se else 0,
-                   at_boundary=lam<=boundary.tol*max(1,max(es$values)) || !is.finite(se),
+                   at_boundary=lam<=boundary.tol*max(1,max(es$values)),
+                   identified=is.finite(se),
                    stringsAsFactors=FALSE)
     })
     do.call(rbind,rows)
 }
 
-gof_boundary_stop <- function(labels,detail="") {
-    stop("Random-effect covariance at or near its boundary (variance ~ 0, |correlation| ~ 1 or ",
+gof_boundary_stop <- function(labels,detail="",stage="polish",diagnostics=list()) {
+    gof_clmm_abort(paste0("Random-effect covariance at or near its boundary (variance ~ 0, |correlation| ~ 1 or ",
          "singular covariance) for term(s): ",paste(labels,collapse=", "),detail,
          ". The cluster-multiplier approximation is not valid at the boundary; ",
-         "simplify the random-effect structure",call.=FALSE)
+         "simplify the random-effect structure"),"covariance_boundary",stage,diagnostics)
 }
 
 ## @noRd
@@ -143,10 +144,37 @@ gof_boundary_stop <- function(labels,detail="") {
 ## acceptance checks. `integrator_factory(nodes)` builds the integrator
 ## (NULL = default nodes); see `gof_select_integrator()`.
 gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
+    result <- tryCatch(gof_polish_attempt(problem,integrator_factory,control),gof_clmm_error=identity)
+    if (!inherits(result,"gof_clmm_error")) return(result)
+    recoverable <- c("covariance_boundary","polish_nonconvergence","quadrature_unstable",
+                     "information_unidentified","information_indefinite")
+    if (!isTRUE(control$refit) || !result$code %in% recoverable) stop(result)
+    gof_retry_polish(problem,integrator_factory,control,result)
+}
+
+gof_polish_attempt <- function(problem,integrator_factory,control) {
+    snapshot <- new.env(parent=emptyenv())
+    tryCatch(gof_polish_impl(problem,integrator_factory,control,snapshot),error=function(e) {
+        diagnostics <- snapshot$diagnostics
+        if (is.null(diagnostics)) diagnostics <- list()
+        if (inherits(e,"gof_clmm_error")) {
+            e$diagnostics <- utils::modifyList(diagnostics,e$diagnostics)
+            stop(e)
+        }
+        gof_clmm_abort(conditionMessage(e),"numerical_failure","polish",diagnostics,e)
+    })
+}
+
+gof_polish_impl <- function(problem,integrator_factory,control,snapshot) {
+    on.exit(if (!isTRUE(snapshot$successful))
+        snapshot$diagnostics <- gof_polish_snapshot(environment()),add=TRUE)
     if (!inherits(problem,"gof_clmm_problem")) stop("problem must be a gof_clmm_problem",call.=FALSE)
     if (!inherits(control,"gof_clmm_control")) stop("control must come from gof_clmm_control()",call.=FALSE)
+    theta0 <- problem$theta
+    theta <- theta0
     if (length(problem$source$boundary))
-        gof_boundary_stop(problem$source$boundary," (singular covariance in the supplied fit)")
+        gof_boundary_stop(problem$source$boundary," (singular covariance in the supplied fit)",
+                          stage="input_validation",diagnostics=list(input_covariance=problem$source$covariance))
     integ <- integrator_factory(NULL)
     ## The estimator freezes the nodes: with Q = 1 the log-determinant of the
     ## Laplace approximation is frozen too and the fixed point is a joint-mode
@@ -156,8 +184,6 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
              paste(integ$nodes,collapse="/"),"): with frozen nodes, Laplace (1) and 2-node ",
              "rules do not define a usable estimator; increase nodes via gof_clmm_control(nodes=)",
              call.=FALSE)
-    theta0 <- problem$theta
-    theta <- theta0
     refreshes <- 0L
     iterations <- integer()
     delta <- NULL
@@ -209,15 +235,12 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
         H <- tryCatch(gof_polish_hessian(integ,theta,integ$refresh(theta)),error=function(e) NULL)
         if (!is.null(H)) {
             bd <- gof_clmm_boundary(problem,theta,H,control$boundary.tol)
-            ## Not converging while a covariance heads for its boundary.
-            low <- bd$at_boundary | bd$z<control$boundary.z
-            if (any(low)) gof_boundary_stop(bd$term[low],
-                paste0(" (polishing did not converge; z = ",paste(signif(bd$z[low],3),collapse=", "),")"))
+            boundary <- bd
         }
-        stop("Polishing the clmm estimates did not converge",
+        gof_clmm_abort(paste0("Polishing the clmm estimates did not converge",
              if (!is.null(failure)) paste0(" (",failure,")"),
-             " after ",refreshes," node refreshes; increase max.refresh or maxit in gof_clmm_control()",
-             call.=FALSE)
+             " after ",refreshes," node refreshes; increase max.refresh or maxit in gof_clmm_control()"),
+             "polish_nonconvergence","polish")
     }
     score <- integ$score(theta,state)
     ## Validation happens below, after the boundary check (at the boundary
@@ -233,6 +256,9 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
     if (any(boundary$at_boundary)) gof_boundary_stop(boundary$term[boundary$at_boundary],
         paste0(" (smallest eigenvalue ",paste(signif(boundary$lambda_min[boundary$at_boundary],3),collapse=", "),
                "; boundary.tol = ",control$boundary.tol,")"))
+    if (any(!boundary$identified))
+        gof_clmm_abort("Random-effect covariance is not identified by the observed information; ordinary inference is unavailable",
+                       "information_unidentified","polish")
     weak <- boundary$z<control$boundary.z
     if (any(weak))
         warning("Random-effect covariance imprecisely estimated for term(s) ",
@@ -241,9 +267,11 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
                 "the cluster-multiplier approximation may be less accurate",call.=FALSE)
     asym <- attr(info,"asymmetry")
     if (!is.finite(asym) || asym>1e-4)
-        stop("Observed information is not symmetric (relative asymmetry ",signif(asym,3),")",call.=FALSE)
+        gof_clmm_abort(paste0("Observed information is not symmetric (relative asymmetry ",signif(asym,3),")"),
+                       "information_asymmetric","polish")
     Rinfo <- tryCatch(chol(info),error=function(e) NULL)
-    if (is.null(Rinfo)) stop("Observed information at the polished estimate is not positive definite",call.=FALSE)
+    if (is.null(Rinfo)) gof_clmm_abort("Observed information at the polished estimate is not positive definite",
+                                     "information_indefinite","polish")
     Hinv <- chol2inv(Rinfo)
     dimnames(Hinv) <- dimnames(info)
     S <- colSums(score[[1L]])
@@ -257,20 +285,27 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
     node_check <- list(nodes=integ$nodes,check_nodes=integ4$nodes,standardized_score=std4,
                        tolerance=control$node.tol,loglik=sum(integ4$loglik(theta,state4)))
     if (std4>control$node.tol)
-        stop("Quadrature node check failed: the score at ",paste(integ4$nodes,collapse="/"),
+        gof_clmm_abort(paste0("Quadrature node check failed: the score at ",paste(integ4$nodes,collapse="/"),
              " nodes per dimension has standardized norm ",signif(std4,3)," > node.tol = ",
-             control$node.tol,"; increase nodes via gof_clmm_control(nodes=)",call.=FALSE)
+             control$node.tol,"; increase nodes via gof_clmm_control(nodes=)"),"quadrature_unstable","polish",
+             diagnostics=list(node_check=node_check))
 
     ## Shift from the supplied (clmm) estimates.
     se <- sqrt(diag(Hinv))
-    dl <- theta-theta0
-    shift <- data.frame(parameter=names(theta),estimate_clmm=unname(theta0),estimate=unname(theta),
+    reference <- problem$source$shift_reference
+    if (is.null(reference)) reference <- theta0
+    if (anyNA(reference) && is.finite(control$shift.tol))
+        gof_clmm_abort("A finite shift.tol cannot be checked for a singular input covariance on the log-Cholesky scale",
+                       "parameter_shift_unavailable","polish")
+    dl <- theta-reference
+    shift <- data.frame(parameter=names(theta),estimate_clmm=unname(reference),estimate=unname(theta),
                         se=unname(se),shift_se=unname(dl/se),stringsAsFactors=FALSE)
-    ms <- max(abs(shift$shift_se))
+    if (!is.null(problem$source$shift_reference)) shift$estimate_start <- unname(theta0)
+    ms <- max(abs(shift$shift_se),na.rm=TRUE)
     if (ms>control$shift.tol)
-        stop("Polished estimates moved ",signif(ms,3)," standard errors from the supplied fit (> shift.tol = ",
+        gof_clmm_abort(paste0("Polished estimates moved ",signif(ms,3)," standard errors from the supplied fit (> shift.tol = ",
              control$shift.tol,"); refit more accurately (e.g. clmm(nAGQ=)) or use ",
-             "gof_clmm_control(shift.tol=Inf) to accept",call.=FALSE)
+             "gof_clmm_control(shift.tol=Inf) to accept"),"parameter_shift","polish",diagnostics=list(shift=shift))
     if (ms>control$shift.warn)
         warning("Polished estimates moved up to ",signif(ms,3)," standard errors from the supplied fit; ",
                 "the diagnostic uses the polished estimates (see fit_check$shift)",call.=FALSE)
@@ -281,6 +316,7 @@ gof_polish <- function(problem,integrator_factory,control=gof_clmm_control()) {
                 sum(dg$expected_information)," random-effect unit(s) whose observed curvature is not ",
                 "positive definite at the stationary point (possibly a multimodal posterior); ",
                 "quadrature may be inaccurate for them",call.=FALSE)
+    snapshot$successful <- TRUE
     structure(list(theta=theta,loglik=sum(loglik),loglik_blocks=loglik,score=score,
                    standardized_score=std_score,information=info,vcov=Hinv,state=state,
                    iterations=iterations,refreshes=refreshes,early_refreshes=early,trace=trace,

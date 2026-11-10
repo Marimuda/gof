@@ -4,5 +4,7 @@ inst/extdata/fixed-order/* -text
 inst/extdata/fixed-order/*.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 inst/extdata/clmm-calibration/* -text
 inst/extdata/clmm-slow-calibration/* -text
+inst/extdata/clmm-repair/* -text
 # Preserve the recorded R session verbatim, including its printed padding.
 inst/extdata/clmm-calibration/session-info.txt whitespace=-blank-at-eol
+inst/extdata/clmm-repair/session-info.txt whitespace=-blank-at-eol

@@ -137,6 +137,7 @@ writeLines(c("# Ordinal mixed-model calibration evidence","",
     "- session-info.txt: recorded R, package, platform and numerical-library versions.",
     "- PROVENANCE.json: source binding, design roster, seed rule, integrity checks and the unchanged project release criterion.","",
     "All refusals remain in refusal-rate denominators. Rejection rates condition on accepted fits. Failed project criteria remain failed; this panel does not prove universal calibration.",
+    "Historical status values are preserved unchanged. The original `boundary` category also included some failed polishing and unidentified-information cases; it does not certify boundary optima.",
     "Response datasets and multiplier-statistic matrices were not retained. The frozen source and recorded seeds permit replay; no audit of unretained trajectories is claimed."),
     file.path(staging,"README.md"))
 if (!file.rename(staging,output)) stop("Could not atomically install the audited evidence directory")

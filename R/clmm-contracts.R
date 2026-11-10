@@ -324,12 +324,19 @@ gof_integrator <- function(name,refresh,loglik,score,information,diagnostics=fun
 ##'   that the diagnosed estimates differ from the supplied fit.
 ##' @param boundary.tol Relative tolerance defining a covariance at its
 ##'   boundary: a term whose smallest covariance eigenvalue is at most
-##'   `boundary.tol * max(1, largest eigenvalue)`, or whose smallest-eigenvalue
-##'   direction is not identified by the information, is refused.
+##'   `boundary.tol * max(1, largest eigenvalue)` is refused. Unidentified
+##'   information is also refused, using a separate failure code rather than
+##'   labelling the covariance itself as a boundary estimate.
 ##' @param boundary.z Warn when a term's smallest covariance eigenvalue is
 ##'   within `boundary.z` standard errors of zero. This flags imprecisely
 ##'   estimated covariances; it does not refuse the fit.
 ##' @param max.refresh Maximum number of node refreshes while polishing.
+##' @param refit Try at most two deterministic interior initializations after
+##'   a numerical refusal. Automatic node counts increase; explicit `nodes`
+##'   are retained. This optional recovery does not supply inference at a
+##'   covariance boundary and remains under experimental qualification.
+##' @param max.refit.pairs Maximum predicted row/node pairs in a refit,
+##'   including its higher-node check. This bounds automatic node escalation.
 ##' @param maxit Maximum Newton iterations per refresh.
 ##' @param max.dim Largest random-effect dimension per level accepted.
 ##' @returns A list of class `gof_clmm_control`.
@@ -337,12 +344,14 @@ gof_integrator <- function(name,refresh,loglik,score,information,diagnostics=fun
 ##' @export
 gof_clmm_control <- function(nodes=NULL,marginal.nodes=30L,score.tol=1e-8,node.tol=0.05,
                              shift.tol=Inf,shift.warn=0.5,boundary.tol=1e-6,boundary.z=1,
-                             max.refresh=5L,maxit=50L,max.dim=3L) {
+                             max.refresh=5L,maxit=50L,max.dim=3L,refit=FALSE,max.refit.pairs=5e6) {
     if (!is.null(nodes)) nodes <- gof_count(nodes,"nodes",1L)
     marginal.nodes <- gof_count(marginal.nodes,"marginal.nodes",2L)
     max.refresh <- gof_count(max.refresh,"max.refresh",1L)
     maxit <- gof_count(maxit,"maxit",1L)
     max.dim <- gof_count(max.dim,"max.dim",1L)
+    max.refit.pairs <- gof_count(max.refit.pairs,"max.refit.pairs",1L)
+    if (!is.logical(refit) || length(refit)!=1L || is.na(refit)) stop("refit must be TRUE or FALSE",call.=FALSE)
     positive <- function(x,name,inf=FALSE)
         if (!is.numeric(x) || length(x)!=1L || is.na(x) || x<=0 || (!inf && !is.finite(x)))
             stop(name," must be a positive",if (!inf) " finite"," number",call.=FALSE)
@@ -352,7 +361,7 @@ gof_clmm_control <- function(nodes=NULL,marginal.nodes=30L,score.tol=1e-8,node.t
     structure(list(nodes=nodes,marginal.nodes=marginal.nodes,score.tol=score.tol,node.tol=node.tol,
                    shift.tol=shift.tol,shift.warn=shift.warn,boundary.tol=boundary.tol,
                    boundary.z=boundary.z,max.refresh=max.refresh,
-                   maxit=maxit,max.dim=max.dim),class="gof_clmm_control")
+                   maxit=maxit,max.dim=max.dim,refit=refit,max.refit.pairs=max.refit.pairs),class="gof_clmm_control")
 }
 
 gof_clmm_default_nodes <- function(q,control) {

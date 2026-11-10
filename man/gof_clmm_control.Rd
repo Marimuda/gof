@@ -15,7 +15,9 @@ gof_clmm_control(
   boundary.z = 1,
   max.refresh = 5L,
   maxit = 50L,
-  max.dim = 3L
+  max.dim = 3L,
+  refit = FALSE,
+  max.refit.pairs = 5e+06
 )
 }
 \arguments{
@@ -42,8 +44,9 @@ that the diagnosed estimates differ from the supplied fit.}
 
 \item{boundary.tol}{Relative tolerance defining a covariance at its
 boundary: a term whose smallest covariance eigenvalue is at most
-\verb{boundary.tol * max(1, largest eigenvalue)}, or whose smallest-eigenvalue
-direction is not identified by the information, is refused.}
+\verb{boundary.tol * max(1, largest eigenvalue)} is refused. Unidentified
+information is also refused, using a separate failure code rather than
+labelling the covariance itself as a boundary estimate.}
 
 \item{boundary.z}{Warn when a term's smallest covariance eigenvalue is
 within \code{boundary.z} standard errors of zero. This flags imprecisely
@@ -54,6 +57,14 @@ estimated covariances; it does not refuse the fit.}
 \item{maxit}{Maximum Newton iterations per refresh.}
 
 \item{max.dim}{Largest random-effect dimension per level accepted.}
+
+\item{refit}{Try at most two deterministic interior initializations after
+a numerical refusal. Automatic node counts increase; explicit \code{nodes}
+are retained. This optional recovery does not supply inference at a
+covariance boundary and remains under experimental qualification.}
+
+\item{max.refit.pairs}{Maximum predicted row/node pairs in a refit,
+including its higher-node check. This bounds automatic node escalation.}
 }
 \value{
 A list of class \code{gof_clmm_control}.

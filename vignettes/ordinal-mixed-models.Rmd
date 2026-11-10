@@ -88,6 +88,39 @@ read later offsets by model-frame position; gof detects this mismatch and
 asks for a refit. An `offset=` argument is rejected because `clmm` ignores it.
 The supplied model object is never modified.
 
+Numerical refusal conditions inherit `gof_clmm_error`. Their `code`, `stage`
+and `diagnostics` fields distinguish unsuccessful input fitting or polishing
+from covariance boundaries and unidentified information. Available last
+parameters, scores, information and optimization traces are retained in the
+condition. A failed polishing run does not certify a boundary optimum. In a
+completed boundary table, `at_boundary` describes the covariance eigenvalue
+check and `identified` describes its information-based uncertainty separately.
+
+Optional `gof_clmm_control(refit=TRUE)` tries two deterministic interior starts
+after an eligible refusal. Automatic node counts increase; explicit node counts
+are retained, and `max.refit.pairs` bounds the row/node expansion. Every returned
+root passes the same score, information, boundary and node checks. The input
+model is not modified. The retry history is in `fit_check$initialization`.
+Log-Cholesky shifts from a singular input covariance are unavailable and reported
+as missing, with its original covariance retained separately. A finite
+`shift.tol` therefore refuses such a refit. This numerical recovery is optional
+and does not resolve the failed calibration gates or supply boundary inference.
+
+`Rscript tools/check-clmm-refit.R /path/to/new-output` reproduces a sparse-slope
+recovery and three cauchit input/refitting checks using an isolated development
+library. Direct Gaussian-prior integration independently checks their likelihoods.
+These deliberately reused failure fixtures are numerical checks, not calibration.
+
+A separate pre-recorded development screen compared three inference corrections
+on 1,500 fresh datasets with unchanged baseline fitting. In the 150-cluster
+random-slope design, L2 rejection at nominal 5% was 2.2% with the original
+correction, 5.6% with empirical score projection, and 4.8% with a leverage
+adjustment. The 50-cluster slope design still had 5.4% refusals, exceeding the
+unchanged availability criterion. No candidate has been adopted as a default.
+The installed `extdata/clmm-repair` evidence records all attempts, uncertainty,
+pre-recorded plans and replay instructions. It also records a separate 96-case
+numerical cost screen, which does not establish calibration or boundary validity.
+
 ## Asymmetric-link input fits in ordinal 2026.7-26
 
 The single-scalar random-effect backend in `ordinal` 2026.7-26 interchanges
@@ -166,7 +199,9 @@ The separate slow cohort attempted 500 datasets in each of four designs with
 the project criteria.** The logit random-intercept design with three rows per
 cluster rejected 2.67% of accepted fits for both statistics. In the logit
 random-slope design with ten rows per cluster, rejection rates were 1.94%
-(Sup) and 0.65% (L2), and 7.4% of attempts were refused at covariance boundaries.
+(Sup) and 0.65% (L2), and 7.4% of attempts were labelled `boundary` by the
+original implementation. That historical category also included failed
+polishing and unidentified information; it does not certify boundary optima.
 These outcomes fail the unchanged size/refusal criteria. Broad mixed-model
 release qualification is on hold.
 

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "status": "Development evidence; original release qualification remains failed",
+  "baseline_commit": "ff80632ae542b4de6719282d21df9b144fe3a15c",
+  "source_scope": "Prospective comparison uses unchanged baseline fitting. Numerical screen uses the separately frozen repair source manifest; subsequent explicit stats:: quantile prefixes do not change its mathematics.",
+  "scope": "L2 only, three designs, not Sup/power/full-scope validation. Numerical screen checks finite API output under a 60-second budget, not p-value calibration or global-optimum certification.",
+  "selection": "Candidates compared after completion; none adopted as a public inference default. The HC2 candidate still misses the original refusal criterion in core11.",
+  "prospective_failure_stages": {
+    "polish": 29
+  },
+  "source_inputs_sha256": "raw-inputs-sha256.csv.gz",
+  "exported_files_sha256": {
+    "numerical-attempts.csv.gz": "3eeb9a4a8155987a455abc0568a4d7d3d994cf94899adaad9ba3f7c58a47458d",
+    "numerical-checks.csv": "f6007357b023ba1c030d6466cf17cd8d1f721270d81d354d0501726eb69dc9df",
+    "numerical-screen-plan.json": "209ea9c2e14c109396b5de4ee2a7f0783042ed70cd65a11f16f86e658ec3fd10",
+    "numerical-source-sha256.json": "1f537f227cfc06d07c8c37cec06fd63381cabada4470120ac92d8044821e3d4a",
+    "numerical-summary.csv": "cf90bc0de19de282cb3c840eaa7a8dc0aefb8ac62bad95ed5b3e980389ac2728",
+    "prospective-attempts.csv.gz": "08a9d85f7e6e036aa8ef2d0197db6a2399fd9833099514bb3b3e5be2c91375e1",
+    "prospective-screen-plan.json": "6262d2177cca62ff18c7f922ccb7634a806dae2592339bd632c3ae302bba427e",
+    "prospective-summary.csv": "4d9bfa53cebd8bb1090f9ac138ff20f0564ba63ebdb642404aacf1356e861f3e",
+    "raw-inputs-sha256.csv.gz": "c11c0f0ab4872a7cec271340422d36cb3c5cb0024da0d140ea8549af6c889d2a",
+    "session-info.txt": "c637af67bafc08960f0255d2053ca1d79e2acec9c26483dfbc1cf4c5212afffe"
+  }
+}

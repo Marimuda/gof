@@ -59,26 +59,38 @@ gof_clmm_study_attempt <- function(cell,replicate,R=199L,seed_base=140000000L) {
     seed <- as.integer(seed_base+index*100000L+replicate)
     started <- proc.time()[3]
     warnings <- character()
+    stage <- "data_generation"
     result <- tryCatch(withCallingHandlers({
         data <- gof_clmm_study_data(cell,seed)
         formula <- switch(cell$structure,intercept=y~x+(1|g),slope=y~x+(1+z|g),nested=y~x+(1|g/h))
+        stage <- "input_fit"
         model <- ordinal::clmm(formula,data=data,link=cell$link)
         set.seed(seed+50000L)
+        stage <- "diagnostic"
         diagnostic <- gof::cumres(model,variable="x",R=R,plots=0L)
         list(status=if (anyNA(diagnostic$KS) || anyNA(diagnostic$CvM)) "indeterminate" else "accepted",
              p_sup=diagnostic$KS[1],p_l2=diagnostic$CvM[1],
              boundary_z=min(diagnostic$fit_check$boundary$z),
-             shift_se=max(abs(diagnostic$fit_check$shift$shift_se)),
+             shift_se=max(abs(diagnostic$fit_check$shift$shift_se),na.rm=TRUE),
+             shift_comparable=all(is.finite(diagnostic$fit_check$shift$shift_se)),
              node_score=diagnostic$fit_check$node_check$standardized_score)
     },warning=function(w) {warnings <<- c(warnings,conditionMessage(w)); invokeRestart("muffleWarning")}),
     error=function(e) {
         message <- conditionMessage(e)
-        status <- if (grepl("boundary|singular covariance",message)) "boundary" else
+        code <- if (inherits(e,"gof_clmm_error")) e$code else paste0(stage,"_failure")
+        failure_stage <- if (inherits(e,"gof_clmm_error")) e$stage else stage
+        status <- if (inherits(e,"gof_clmm_error")) switch(code,
+            covariance_boundary="boundary",quadrature_unstable="nodes",parameter_shift="shift",
+            input_nonconvergence="convergence",input_gradient="convergence",
+            polish_nonconvergence="convergence",refit_failed="convergence","failure") else
+            if (grepl("boundary|singular covariance",message)) "boundary" else
             if (grepl("node check",message)) "nodes" else
             if (grepl("shift.tol",message)) "shift" else
             if (grepl("converge|gradient|line search|iteration",message)) "convergence" else "failure"
         list(status=status,message=message,p_sup=NA_real_,p_l2=NA_real_,
-             boundary_z=NA_real_,shift_se=NA_real_,node_score=NA_real_)
+             boundary_z=NA_real_,shift_se=NA_real_,node_score=NA_real_,
+             failure_code=code,failure_stage=failure_stage,
+             failure_diagnostics=if (inherits(e,"gof_clmm_error")) e$diagnostics else list())
     })
     result$id <- cell$id; result$replicate <- replicate; result$seed <- seed
     result$warnings <- unique(warnings); result$seconds <- unname(proc.time()[3]-started)
@@ -121,7 +133,8 @@ gof_clmm_study_run <- function(output,mode="full",replicates=1000L,R=199L,worker
     cells <- gof_clmm_study_cells(mode)
     dir.create(output,recursive=TRUE,showWarnings=FALSE)
     dir.create(file.path(output,"records"),showWarnings=FALSE)
-    protocol <- list(schema=1L,mode=mode,cells=cells,replicates=replicates,R=R,seed_base=seed_base,
+    protocol <- list(schema=2L,mode=mode,cells=cells,replicates=replicates,R=R,seed_base=seed_base,
+        failure_accounting="Structured failure code/stage/state; nonconvergence is not classified as a covariance boundary",
         ordering="x",aggregation="omnibus",nodes="package defaults; Q+4 check",nested="three children per top-level cluster, nc rows per child",
         acceptance="conditional on an accepted numerical fit; all refused attempts remain in the denominator of refusal rates",
         primary_rule="m >= 50 null cells: 5% rejection rate in [0.03,0.075] and refusal < 0.05; m=20 descriptive",

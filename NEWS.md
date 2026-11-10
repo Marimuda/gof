@@ -1,5 +1,17 @@
 # gof 1.4.0 (development)
 
+* Corrected input convergence checks for the `ucminf` optimizer: its normal
+  termination codes are 1/2, unlike `nlminb`'s code 0. Independent gradient
+  and information checks remain required.
+* Added optional bounded numerical recovery with `gof_clmm_control(refit=TRUE)`.
+  Deterministic interior starts and higher automatic quadrature counts can
+  recover some singular Laplace starts. Every returned root still passes the
+  ordinary numerical checks; genuine boundary inference is not supplied.
+  Recovery is not enabled by default while calibration repair is underway.
+* Numerical refusals now carry structured CLMM failure codes, stages and
+  available parameter/score/information traces. Failed polishing and
+  unidentified information are distinguished from covariance boundaries.
+  Accepted-fit calculations are unchanged; the calibration release hold remains.
 * Added `cumres.clmm()` for ordinal mixed models fitted with the optional
   `ordinal` package. Single grouping factors and nesting chains support
   random intercepts/slopes, all five links and the four threshold structures.
@@ -19,7 +31,8 @@
   confirmation seeds, explicit refusal accounting and retained adverse results.
 * The completed 2,000-attempt slow cohort met four of eight primary endpoint
   criteria. Sparse random-intercept and random-slope tests were conservative;
-  the slope design also had 7.4% boundary refusals. Broad mixed-model release
+  the slope design also had 7.4% refusals labelled `boundary` by the original
+  classifier, which included some failed polishing/information checks. Broad mixed-model release
   qualification is on hold.
 * Completed the separate 29,000-attempt confirmation study. Twenty-three of
   36 primary endpoints met the unchanged criteria; sparse slope/nested and

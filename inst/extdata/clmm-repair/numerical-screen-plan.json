@@ -1,0 +1,20 @@
+{
+  "sealed_utc": "2026-11-10T00:51:02.586930+00:00",
+  "purpose": "Bounded numerical-workflow cost/availability screen, not calibration",
+  "cells": [
+    "core08",
+    "core14",
+    "link5"
+  ],
+  "replicates_per_cell": 32,
+  "seed_base": 170000000,
+  "seed_rule": "base + original full-cell index*100000 + replicate",
+  "input": "Original ordinal default except cauchit:empirical marginal cutpoints,beta0,sd0.5,nAGQ=-21",
+  "diagnostic": "refit=TRUE; original score/node/information/boundary checks; default numerical budgets except cauchit nodes21/max.refresh20",
+  "draws": 3,
+  "draws_scope": "API finite-output check only, no rejection-rate inference",
+  "workers": 6,
+  "per_case_seconds": 60,
+  "failure_accounting": "Every refusal, timeout and process failure retained. A timeout is not evidence of a boundary optimum.",
+  "source_snapshot": "numerical-source-sha256.json"
+}

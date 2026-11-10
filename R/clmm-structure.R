@@ -316,19 +316,28 @@ gof_clmm_problem <- function(model,control=gof_clmm_control()) {
 
     ## Convergence of the supplied fit.
     conv <- model$optRes$convergence
-    if (is.null(conv) || !identical(as.integer(conv),0L))
-        stop("The clmm fit did not converge (optimizer convergence code ",
+    ## ucminf codes 1/2 are normal gradient/step termination. Inspect the
+    ## actual optimizer result, since ordinal's matrix backend can fall back
+    ## to nlminb even when the requested method was ucminf.
+    success <- if (inherits(model$optRes,"ucminf")) c(1L,2L) else 0L
+    if (length(conv)!=1L || is.na(conv) || !conv %in% success)
+        gof_clmm_abort(paste0("The clmm fit did not converge (optimizer convergence code ",
              if (is.null(conv)) "missing" else conv,
              if (!is.null(model$optRes$message)) paste0(": ",model$optRes$message),
-             "); refit with different starting values or control settings first",call.=FALSE)
+             "); refit with different starting values or control settings first"),
+             "input_nonconvergence","input_validation",
+             diagnostics=list(optimizer=model$optRes,gradient=model$gradient,
+                              coefficients=c(model$alpha,model$beta),covariance=lapply(model$ST,tcrossprod)))
     N <- sum(w[keep])
     if (!is.null(model$gradient)) {
         mg <- max(abs(model$gradient))
         tol <- gof_clmm_gradient_tol*max(1,sqrt(N))
         if (!is.finite(mg) || mg>tol)
-            stop("The clmm fit has not converged: max |gradient| = ",format(mg,digits=3),
-                 " exceeds ",format(tol,digits=3),"; refit (e.g. with other starting values) first",
-                 call.=FALSE)
+            gof_clmm_abort(paste0("The clmm fit has not converged: max |gradient| = ",format(mg,digits=3),
+                 " exceeds ",format(tol,digits=3),"; refit (e.g. with other starting values) first"),
+                 "input_gradient","input_validation",diagnostics=list(optimizer=model$optRes,
+                     gradient=model$gradient,tolerance=tol,coefficients=c(model$alpha,model$beta),
+                     covariance=lapply(model$ST,tcrossprod)))
     }
 
     ## Fixed design and offset.
@@ -396,7 +405,9 @@ gof_clmm_problem <- function(model,control=gof_clmm_control()) {
                     "cluster multiplier approximation may be inaccurate with fewer than 30",call.=FALSE)
     }
     src <- list(call=call,dropped=sum(!keep),theta_clmm=theta,data=mf,fixed=re$fixed,
-                threshold=model$threshold,nAGQ=model$nAGQ,boundary=boundary,rows=which(keep))
+                threshold=model$threshold,nAGQ=model$nAGQ,boundary=boundary,rows=which(keep),
+                covariance=stats::setNames(lapply(model$ST,function(st) tcrossprod(unname(st))),
+                                           vapply(terms,`[[`,"","label")))
     new_gof_clmm_problem(y=y[keep],K=K,X=X,offset=off[keep],weights=w[keep],tJac=tJac,link=link,
                          terms=terms,blocks=blocks,structure=st$structure,chain=st$chain,
                          theta=theta,levels=lev,relations=relations,source=src)

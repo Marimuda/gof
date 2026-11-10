@@ -1,0 +1,25 @@
+{
+  "sealed_utc": "2026-11-10T00:17:01.690106+00:00",
+  "purpose": "Prospective candidate comparison for regular-fit L2 calibration; not full feature qualification",
+  "baseline_commit": "ff80632ae542b4de6719282d21df9b144fe3a15c",
+  "cells": [
+    "core05",
+    "core11",
+    "core12"
+  ],
+  "replicates_per_cell": 500,
+  "data_seed_base": 160000000,
+  "data_seed_rule": "base + original full-cell index*100000 + replicate",
+  "fitting": "Unchanged frozen baseline ordinal input and gof polished fit, with all refusals retained; isolate inference change from numerical recovery",
+  "candidates": [
+    "original model-derivative correction",
+    "empirical score projection",
+    "empirical score projection with HC2 leverage adjustment"
+  ],
+  "statistic": "Unchanged raw full-grid L2 norm",
+  "reference": "9999 eigenvalue-weighted chi-square draws of the exact finite-grid conditional Gaussian quadratic form",
+  "reference_seeds": "data seed+50000,60000,70000 for the three candidates",
+  "criteria": "Original conditional size[3%,7.5%] and refusal<5%; candidate comparison cannot qualify other designs or Sup/power",
+  "workers": 8,
+  "guard": "No results opened before sealing. Any method selection is development and must precede fresh full-scope confirmation; original negative cohorts remain unchanged."
+}

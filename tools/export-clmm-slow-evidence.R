@@ -128,6 +128,7 @@ writeLines(c("# Ordinal mixed-model slow-cohort evidence","",
     "- PROVENANCE.json: immutable artifact digest, source, design, seed rule and unchanged project criteria.","",
     paste0(sum(criterion)," of 8 primary statistic endpoints met the project criteria. Failed endpoints remain failed. This cohort does not qualify broad mixed-model inference."),
     "A local run using these same slow-study seeds is a replay, not another 2,000 independent samples. It must not be pooled with this cohort.",
+    "Historical status values are preserved unchanged. The original `boundary` category also included some failed polishing and unidentified-information cases; it does not certify boundary optima.",
     "Response datasets and multiplier-statistic matrices were not retained. The public study generator and recorded seeds permit replay; no audit of unretained trajectories is claimed."),
     file.path(staging,"README.md"))
 if(!file.rename(staging,output))stop("Could not atomically install audited slow-cohort evidence")

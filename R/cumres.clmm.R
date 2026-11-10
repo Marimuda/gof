@@ -35,6 +35,13 @@
 #' Parameter shifts, node checks and covariance-boundary diagnostics are
 #' retained in `fit_check`; actual boundary fits and failed checks are refused.
 #' Weakly estimated interior covariances and large shifts warn and are reported.
+#' Numerical refusals inherit `gof_clmm_error`. The condition's `code` and
+#' `stage` distinguish input convergence, unsuccessful polishing, covariance
+#' boundaries, unidentified information and quadrature failures. Its
+#' `diagnostics` retain the available last parameter, covariance, information
+#' and score state. Unsuccessful polishing does not certify a boundary
+#' optimum. The boundary table reports `at_boundary` separately from
+#' `identified`; no ordinary p-values are produced for these refusals.
 #' This development method is experimental: the completed slow cohort failed
 #' its prespecified size/refusal criteria. Broad mixed-model release
 #' qualification is on hold; see the mixed-model guide for the retained results.
@@ -114,7 +121,7 @@ cumres.clmm <- function(model,variable="predicted",R=100,plot=FALSE,
         metadata=list(random_effects=random_effects,
             fit_check=fit[c("theta","loglik","standardized_score","integrator","nodes",
                 "iterations","refreshes","early_refreshes","trace","shift","node_check",
-                "boundary","diagnostics")]))
+                "boundary","diagnostics","initialization")]))
     result$fit_check$loglik_clmm <- as.numeric(stats::logLik(model))
     result$fit_check$ordering <- if (variable=="predicted") "fitted fixed predictor" else "observed covariate"
     if (isTRUE(plot)) graphics::plot(result,...)

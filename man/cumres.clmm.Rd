@@ -62,6 +62,13 @@ exact integrated-likelihood solution. The input fit is not modified.
 Parameter shifts, node checks and covariance-boundary diagnostics are
 retained in \code{fit_check}; actual boundary fits and failed checks are refused.
 Weakly estimated interior covariances and large shifts warn and are reported.
+Numerical refusals inherit \code{gof_clmm_error}. The condition's \code{code} and
+\code{stage} distinguish input convergence, unsuccessful polishing, covariance
+boundaries, unidentified information and quadrature failures. Its
+\code{diagnostics} retain the available last parameter, covariance, information
+and score state. Unsuccessful polishing does not certify a boundary
+optimum. The boundary table reports \code{at_boundary} separately from
+\code{identified}; no ordinary p-values are produced for these refusals.
 This development method is experimental: the completed slow cohort failed
 its prespecified size/refusal criteria. Broad mixed-model release
 qualification is on hold; see the mixed-model guide for the retained results.
